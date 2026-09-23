@@ -48,3 +48,26 @@ jobs:
           name: Maata-macos-arm64
           path: app/src-tauri/target/release/bundle/macos/Maata.app
           if-no-files-found: error
+
+  apple-mlx-smoke:
+    # Exercises the Apple backend's MLX path on Apple Silicon (hosted runners are M-series VMs).
+    # Real performance numbers come only from the reference M5 Pro (maata-bench).
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - working-directory: engine
+        run: |
+          uv venv -p 3.12
+          uv pip install -e . "mlx" "mlx-whisper" numpy
+          uv run --no-sync python - <<'PY'
+          import numpy as np, mlx.core as mx
+          from huggingface_hub import snapshot_download
+          from maata_engine.backends.apple import MLXWhisper
+          print("MLX device:", mx.default_device())
+          path = snapshot_download("mlx-community/whisper-tiny-mlx")
+          t = np.arange(16000 * 5) / 16000
+          tr = MLXWhisper(__import__("pathlib").Path(path)).transcribe((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), "en")
+          print("transcribed OK:", tr.language, len(tr.words), "words")
+          PY
