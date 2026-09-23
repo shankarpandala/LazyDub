@@ -44,21 +44,23 @@ class MLXTranslator:
 
         self._generate = generate
         self._load = load
-        self.model, self.tok = load(str(translate_dir))
-        self._fix_translategemma(self.model)
+        self.model, self.tok = load(str(translate_dir), model_config=self.rope_override(translate_dir))
         self.condense_dir = condense_dir
         self._condenser = None
 
     @staticmethod
-    def _fix_translategemma(model) -> None:
-        # TranslateGemma stores its ×8 linear RoPE scaling in `rope_parameters`, which loaders that
-        # read `rope_scaling` miss (research survey §3). Verified on the reference Mac in S3.
-        args = getattr(model, "args", None)
-        if args is not None and getattr(args, "rope_scaling", None) is None:
-            rp = getattr(args, "rope_parameters", None) or {}
-            fa = rp.get("full_attention") if isinstance(rp, dict) else None
-            if fa and fa.get("rope_type") == "linear":
-                args.rope_scaling = {"type": "linear", "factor": fa.get("factor", 8.0)}
+    def rope_override(model_dir: Path) -> dict:
+        """TranslateGemma keeps its ×8 linear RoPE scaling in `rope_parameters`, which loaders reading
+        `rope_scaling` miss (research survey §3). Supply it at load time so the RoPE layers are built
+        with it; the pinned files stay unmodified. Verified on the reference Mac in S3."""
+        cfg = json.loads((model_dir / "config.json").read_text())
+        text = dict(cfg.get("text_config") or {})
+        rp = text.get("rope_parameters") or cfg.get("rope_parameters") or {}
+        fa = rp.get("full_attention") if isinstance(rp, dict) else None
+        if not fa or fa.get("rope_type") != "linear" or text.get("rope_scaling"):
+            return {}
+        text["rope_scaling"] = {"type": "linear", "factor": float(fa.get("factor", 8.0))}
+        return {"text_config": text} if cfg.get("text_config") else {"rope_scaling": text["rope_scaling"]}
 
     def translate(self, req: TranslationRequest) -> str:
         context = "".join(f"{s}\n" for s, _ in req.context[-3:])
@@ -75,10 +77,11 @@ class MLXTranslator:
                 return [telugu]
             self._condenser = self._load(str(self.condense_dir))
         model, tok = self._condenser
+        slots = ", ".join(['"..."'] * n)
         instruction = (
             "Rewrite this spoken Telugu line shorter, keeping its meaning and any English technical terms. "
             f"Each rewrite must be at most {int(max_units)} aksharas. Reply with JSON only: "
-            f'{{"candidates": [{", ".join(["\"...\""] * n)}]}}\n\nLine: {telugu}'
+            f'{{"candidates": [{slots}]}}\n\nLine: {telugu}'
         )
         prompt = tok.apply_chat_template([{"role": "user", "content": instruction}], add_generation_prompt=True, tokenize=False, enable_thinking=False)
         raw = self._generate(model, tok, prompt=prompt, max_tokens=400, verbose=False)
