@@ -39,7 +39,7 @@ maata-engine = "maata_engine.server:main"
 maata-bench = "maata_engine.bench:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "hypothesis>=6.100", "pytest-asyncio>=0.24"]
+dev = ["pytest>=8", "hypothesis>=6.100", "pytest-asyncio>=0.24", "av>=14"]
 
 [build-system]
 requires = ["hatchling"]
