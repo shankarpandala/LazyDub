@@ -22,12 +22,17 @@ This is the companion to `phase-0.md`. It says how each number is produced, so r
 | Whisper, Sortformer, Silero, WeSpeaker, Omnilingual, Qwen3-ASR / aligner | `cacheDir:` pointing at our folder, plus `offlineMode: true`. Qwen3 folder names must keep their `0.6B` / `4bit` markers, because the architecture is read from the model id. |
 | mlx-swift-lm models | the local-directory `ModelConfiguration` (*confirm at pin*) |
 | WhisperKit (if approved) | `modelFolder` / `tokenizerFolder`, with downloading disabled |
-| Indic-Mio | `INDIC_MIO_WAVLM_BUNDLE` set to a pinned local WavLM bundle. Without it, voice cloning downloads WavLM from `main`. |
+| Indic-Mio | `fromBundle` for the main model, plus `INDIC_MIO_WAVLM_BUNDLE` set to a pinned local WavLM bundle. Without it, voice cloning downloads WavLM from `main`. |
+| Gemma 4 / Qwen3 chat (speech-swift `Qwen3Chat`) | `fromDirectory(_:)` (*confirm at pin*) |
+| OmniVoice | `fromBundle` (its `fromPretrained` has no `cacheDir`) |
+| SpeechLanguageID, Nemotron (if D4 allows) | their `cacheDir` + `offlineMode: true` loaders (*confirm at pin*) |
+
+`fetch` writes each model into exactly the directory its loader receives. Loaders that take a `cacheDir` get the exact upstream model id, because some of them derive paths and variants from it.
 
 **Enforcement**
 
 - Every S2–S4 bench run executes under `sandbox-exec` with outbound network denied.
-- A connection attempt fails the run.
+- A blocked connection doesn't always surface: speech-swift's online path retries, then falls back to its cache. So after each run, the unified log is scanned for Sandbox `deny(1) network-outbound` entries from the bench PID, and any hit fails the run.
 - The result JSON records `offline: true`.
 
 ## 2. Run hygiene (every result)
@@ -100,14 +105,17 @@ For each Core ML model, the result records:
 
 **Video**
 
+- Target: 1080p avc1 video-only, with ≥ 20 random seeks, trying the strategies in §6.1's order.
 - `automaticallyWaitsToMinimizeStalling = false`, the same setting S5 needs.
 - **Direct URL:** `AVURLAssetHTTPUserAgentKey` is set to the resolving client's User-Agent, and each 403 is logged with its cause.
 - **Resource-loader cache:** uses a custom scheme (`maata-media://`), fills `contentInformationRequest` (content type, `clen`, byte-range support), and serves ranges from our URLSession.
 - **HLS:** for each client, record whether `hlsManifestUrl` appears on non-live videos.
 
-**Out-of-scope content.** For each out-of-scope class, record the error each resolver returns and whether it maps to a distinct §6.1 message.
+**Out-of-scope content** (live, upcoming premiere, members-only, age-restricted, private, DRM). For each class, record the error each resolver returns and whether it maps to a distinct §6.1 message.
 
-**yt-dlp** (only if Q4 approves)
+**In-scope edge cases** (made-for-kids, ended live, 4K, Shorts). Failures here are defects, reported under Risk 1.
+
+**yt-dlp** (benchmarked in S1 as §12 requires; whether to ship it is decided after S1)
 
 - **Environment:** `DENO_NO_UPDATE_CHECK=1`, `DENO_DIR` and `TMPDIR` inside our container.
 - **Flags:** `--no-remote-components --ignore-config --no-plugin-dirs --no-js-runtimes --js-runtimes deno:<path> --cache-dir <ours> -J`, never `-U`.
@@ -118,7 +126,10 @@ For each Core ML model, the result records:
 
 **Network audit**
 
-- `nettop -p <app pid>` covers AVFoundation's own requests; a URLProtocol can't see those.
+Pass criterion: only `youtube.com`, `www.youtube.com`, `*.googlevideo.com` and `i.ytimg.com` (thumbnails) may appear; any other host fails S1.
+
+- `nettop -p <app pid>` is meant to cover AVFoundation's own requests, which a URLProtocol can't see. Check that googlevideo connections really do show up under the app's PID.
+- A system-wide `tcpdump` capture of DNS and TLS SNI runs as a backstop for the whole session.
 - A URLProtocol log covers our own sessions.
 - `nettop` also covers the subprocesses.
 - Deno's upgrade host must never appear.
@@ -134,6 +145,15 @@ For each Core ML model, the result records:
 - **MIT ©** Resemble AI for VE, S3Gen, the conformer and `Cangjie5_TC.json`.
 - **Apache-2.0** licence text and notice for `s3_tokenizer.safetensors` (CosyVoice2 S3TokenizerV2).
 
+**Rate control: candidates and rule**
+
+- Native controls first (§6.5):
+  - a Chatterbox `cfgWeight` × `exaggeration` sweep, measuring the change in duration and in CER;
+  - OmniVoice `duration:`, if it's in the D6 comparison.
+- Then time-stretching: TimePitch and WSOLA.
+- **Acceptance (D7):** at 1.2× against the 1.0× render, CER rises by ≤ 1 point absolute, WeSpeaker similarity drops by ≤ 0.02, and the blind listening sheet doesn't reject it. The cheapest method that passes wins.
+- The 1.1× and 1.2× renders go into the blind listening sheet.
+
 **Offline rate change** with `AVAudioUnitTimePitch` in manual rendering mode (`enableManualRenderingMode(.offline, …)`)
 
 - Append `latency + tailTime` of silence to the input.
@@ -146,7 +166,8 @@ For each Core ML model, the result records:
 
 **CER judge**
 
-- Calibrate on FLEURS Telugu before trusting it, and report its own CER floor.
+- Omnilingual ASR is the primary judge (spec §11). Nemotron te-IN is the second judge, if D4 allows it.
+- Calibrate on **held-out** Telugu (D5), meaning speakers and sentences chatterbox-telugu didn't train on, before trusting it. Report its own CER floor. The Telugu→Telugu similarity upper bound and the S4 test lines use held-out material too.
 - For Tenglish lines, compute CER on Telugu spans only, with Latin spans masked in both reference and hypothesis.
 - English terms are rated in the blind listening sheet.
 
@@ -155,6 +176,16 @@ For each Core ML model, the result records:
 - English reference → Telugu output;
 - Telugu → Telugu, as the upper bound;
 - a preset voice, as the baseline.
+
+## 7b. S3 details
+
+**TranslateGemma loader fixes**
+
+- Applied in our adapter at load time, with no mlx-swift-lm fork, and the pinned files are left unmodified.
+- The adapter builds an overlay directory: a generated `config.json` (the pinned one plus `rope_scaling: {type: linear, factor: 8}` in `text_config`), with the pinned weights and tokenizer symlinked. If mlx-swift-lm accepts an in-memory config override at the pin, that's used instead.
+- `<end_of_turn>` is added through `extraEOSTokens`.
+
+**Length targets.** For each sentence, targets are 100 / 85 / 70 % of the akshara count of that model's own unconstrained translation. Lines with real timings also get B_u × a provisional rate, replaced by S4's measured aksharas/s.
 
 ## 8. S5 details
 
@@ -196,11 +227,17 @@ On each event, the affected player nodes (one per unit, pooled) are stopped and 
   - Preroll during freezes, and measure resume latency.
 - `AVPlayerView.controlsStyle = .none`, so every rate change goes through the SyncEngine.
 
-**User speed.** The real-time graph stays at 1.0×. Units that haven't played yet are re-rendered offline with the §7 method and rescheduled for the new video rate. The unit that's already playing finishes at 1.0×, or crossfades into a re-rendered tail.
+**Test media and dub units.** The test video is 60 fps with no audio track, and carries a binary frame code and a flash patch. The dub units are synthetic chirp bursts scheduled on AVAudioEngine at planned `s_u` times that fall on flash frames. The video's own audio is never played (§3.4).
+
+**User speed.** Two approaches are compared.
+
+- **(a) Offline re-render:** the real-time graph stays at 1.0×. Units that haven't played yet are re-rendered with the §7 method and rescheduled for the new video rate. The unit already playing is re-rendered from its current word boundary, or cut there. It is never left running at 1.0× past its slot, which would overlap the next unit.
+- **(b) Live TimePitch in the graph:** scheduled in node sample time through the rate.
+- **Measured for both:** time until the dub follows the new rate, and the start error of the unit that was playing.
 
 **`sourceClock`.** `CMAudioDeviceClockCreate` for the engine's current output device UID, rebuilt when the route changes.
 
-**Ground truth (Q12)**
+**Ground truth** (the S5 capture session in the plan's inputs table)
 
 - **Preferred:** a photodiode on the flash patch and a mic at the transducer, both recorded into one USB audio interface. The wired output is taken electrically; for AirPods, the mic is coupled to the earbud.
 - **Cheaper fallback:** a calibrated 240 fps iPhone slow-motion recording, synced with a clapper.

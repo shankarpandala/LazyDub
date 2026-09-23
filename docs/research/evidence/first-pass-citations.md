@@ -24,6 +24,8 @@ The dependency survey relies on a few supporting details that were not in any of
 | MADLAD repo `aufklarer/MADLAD400-3B-MT-MLX` at `e442b3cd`, Apache-2.0 | HF API | first-pass |
 | Sidon restoration outputs 48 kHz; HTDemucs-FT MLX is 320 MB | module sources / HF tree | first-pass |
 | No TranslateGemma or Gemma 3 support in speech-swift | repo-wide search | reviewer |
+| `Qwen3Chat` includes Qwen3.5 0.8B, Qwen3 4B and a Gemma 4 port | `Sources/Qwen3Chat/` | first-pass (Gemma 4 and Qwen3 4B defaults re-checked above) |
+| FluidAudio adds nothing speech-swift lacks for our needs (same Sortformer, Community-1, WeSpeaker, Silero set) | FluidAudio v0.17.1 source | first-pass |
 
 ## YouTubeKit (`e5b7d03`)
 

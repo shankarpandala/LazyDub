@@ -5,7 +5,7 @@ Maata (working name; the repo is `LazyDub`) is a native macOS app that plays You
 ## Read first
 
 1. `docs/SPEC.md`: the source of truth. Read all of it before doing anything.
-2. `docs/plans/phase-0.md`: the current phase plan and the open decisions (Q1–Q13). `docs/plans/phase-0-methods.md` says how every number is measured.
+2. `docs/plans/phase-0.md`: the current phase plan and the decisions (D1–D9), inputs and defaults to approve. `docs/plans/phase-0-methods.md` says how every number is measured.
 3. `docs/research/2026-09-23-dependency-survey.md`: researched facts about speech-swift, YouTubeKit, yt-dlp, the models and the toolchain. Each item's verification level is in `docs/research/evidence/`.
 
 ## Current status

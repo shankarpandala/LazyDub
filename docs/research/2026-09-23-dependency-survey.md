@@ -166,7 +166,7 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
 ## 5. Toolchain
 
 - **Xcode choice.** "Stable Xcode 26" is ambiguous now that Xcode 27.0 is GA.
-  - No upstream CI covers any Xcode 26.x or 27. speech-swift's CI builds with Xcode 16.4 / Swift 6.1 against mlx-swift 0.31.4. mlx-swift's self-hosted CI uses an unspecified Xcode.
+  - speech-swift's CI builds only with Xcode 16.4 / Swift 6.1, against mlx-swift 0.31.4. mlx-swift's self-hosted CI uses an unknown Xcode ("Xcode-latest"). So no upstream CI is *known* to cover speech-swift with Xcode 26.x or 27.
   - Xcode 26.4–26.6 resolve mlx-swift 0.31.6 (Swift 6.3). That needs `-skipPackagePluginValidation` in CI and triggers a "Trust & Enable" prompt for the CudaBuild plugin.
   - Xcode 26.0–26.3 fall back to mlx-swift 0.31.4.
 - **Recommendation:** pin **mlx-swift exact 0.31.4** in the app. It's the mlx-swift version speech-swift's CI (Xcode 16.4) resolves. It avoids mlx-swift 0.31.6's Swift 6.3 requirement and the plugin prompt. Xcode 26.4+ still needs Tahoe 26.2 whatever mlx-swift version is pinned. It satisfies both speech-swift (`from: 0.30.0`) and mlx-swift-lm (`upToNextMinor 0.31.4`). Commit `Package.resolved`.
@@ -214,4 +214,5 @@ Hugging Face labels are wrong in several places. The manifest must carry **verif
 | **Indic-Mio** | Apache-2.0 label | Training data includes `ylacombe/expresso` (**CC-BY-NC-4.0**) and possibly Emilia (NC). Its WavLM dependency may be **CC-BY-SA-3.0** (UniSpeech LICENSE), not MIT. |
 | Omnilingual ASR | Apache-2.0 | none |
 | Nemotron streaming ASR | openmdw-1.1 | Needs review |
+| SpeechLanguageID (`aufklarer/SpeechBrain-ECAPA-VoxLingua107-21M-{MLX,CoreML}`) | **not yet checked** | Check the SpeechBrain model's and VoxLingua107's data licences before S2 uses it |
 | YouTubeKit + bundled JS | MIT, Unlicense (ejs), ISC (meriyah), MIT (astring) | Include notices |
