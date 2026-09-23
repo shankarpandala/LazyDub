@@ -1,65 +1,54 @@
 # CLAUDE.md
 
-Maata (working name; the repo is `LazyDub`) is a native macOS app that plays YouTube videos dubbed into Telugu, entirely on-device.
+Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that plays YouTube videos dubbed into Telugu, with all AI inference on the user's device.
 
 ## Read first
 
-1. `docs/SPEC.md`: the source of truth. Read all of it before doing anything.
-2. `docs/plans/phase-0.md`: the current phase plan and the decisions (D1–D9), inputs and defaults to approve. `docs/plans/phase-0-methods.md` says how every number is measured.
-3. `docs/research/2026-09-23-dependency-survey.md`: researched facts about speech-swift, YouTubeKit, yt-dlp, the models and the toolchain. Each item's verification level is in `docs/research/evidence/`.
+1. `docs/SPEC.md` together with `docs/SPEC-AMENDMENT-01.md`. The amendment overrides the spec's native-macOS constraints: the app is now a Tauri shell with a web UI plus a local Python inference engine, on NVIDIA (Windows/Linux) and Apple Silicon, using YouTube's embedded player.
+2. `docs/plans/phase-0.md`: the current plan, decisions D1–D10, inputs and defaults. `docs/plans/phase-0-methods.md` says how numbers are measured.
+3. `docs/research/`: a survey from the earlier native-macOS plan. Its model, licence, TranslateGemma and YouTube-client findings still apply; its speech-swift, Swift and Xcode findings don't.
 
 ## Current status
 
 - **Phase 0 (spikes): the plan is written and is waiting for the maintainer's go-ahead.** No code yet.
-- Per spec §0, each phase runs: plan, then go-ahead, then build with tests, then report, then stop.
+- Per spec §0, each phase runs: plan, go-ahead, build with tests, report, stop.
 
 ## Where work runs
 
-- **Build, run and measure on the reference Mac:** M5 Pro, 24 GB, with the Xcode named in an ADR. Standard-preset (16 GB) numbers come from a named 16 GB Mac, if the maintainer provides one.
-- **Cloud (Linux) sessions** can't build the app, run MLX or Core ML, or reach YouTube (bot wall). Use them only for research and MLX-free pure-Swift packages.
-- **Never report a measurement** that wasn't produced on the reference Mac (or the named 16 GB Mac) and backed by a committed JSON result.
+- **Reference machines:** the M5 Pro (24 GB, Apple Silicon), plus an NVIDIA machine named in D6.
+- **Measurements:** only numbers produced on a reference machine and backed by committed JSON are ever reported.
+- **Cloud (Linux, no GPU) sessions:** usable for the UI, the Rust shell, pure-logic Python/TS and CI config. They can't measure performance or reach YouTube (bot wall).
 
 ## Commands
 
-To be filled in when the Phase 0 groundwork lands. Planned:
+To be filled in when the Phase 0 groundwork lands.
 
-- `xcodegen generate`: regenerate `Maata.xcodeproj` from `project.yml`. Never hand-edit the project.
-- `xcodebuild -scheme Maata -destination 'platform=macOS,arch=arm64' -onlyUsePackageVersionsFromResolvedFile build`: xcodebuild bundles MLX's `default.metallib` automatically. For `swift build` / `swift test` on MLX packages, use speech-swift's `scripts/build_mlx_metallib.sh` (spec §4).
-- `swift test --package-path Packages/<MLX-free package>`: pure-logic packages.
-- `maata-bench <stage> …`: prints JSON; ships with `mlx-swift_Cmlx.bundle` beside the binary.
+## Layout (planned)
 
-## Module map (spec §5; planned)
-
-MaataCore · StreamResolving · MediaIngest · SpeechFrontEnd · Translation · Synthesis · Timing · Playback · Orchestration · ModelManager · Storage · Diagnostics. Each is a local SwiftPM package under `Packages/`, and spikes live in `Spikes/`, which is throwaway.
+- `app/`: the Tauri shell (Rust) and the web UI (TypeScript).
+- `engine/`: the Python inference sidecar and `maata-bench`.
+- `docs/`: spec, amendment, plans, ADRs (`DECISIONS.md`) and spike results.
 
 ## Conventions
 
-- **Language:** Swift 6 language mode with complete strict concurrency. XcodeGen defaults to Swift 5, so set `SWIFT_VERSION: 6.0` explicitly.
-- **Concurrency:**
-  - Actors for stateful services, `@Observable` for UI state, and structured concurrency.
-  - speech-swift and YouTubeKit are Swift 5-mode and non-Sendable. Wrap them in actors, and serialise heavy MLX work.
-- **Safety and errors:** no force-unwraps outside tests; one OSLog category per module; typed errors per module that map to user-facing messages.
 - **Dependencies:**
-  - Pin exact tags or commits, and record each as an ADR in `docs/DECISIONS.md`.
-  - Ask the maintainer before adding any dependency the spec doesn't name.
-  - Commit `Package.resolved`.
-- **Linking:** never copy `-Wl,-undefined,dynamic_lookup` from speech-swift's example projects.
+  - Pin exact versions or commits: `uv.lock` for Python, `Cargo.lock` and the npm lockfile committed.
+  - Record pins as ADRs.
+  - Ask before adding any dependency the spec, the amendment or an approved decision doesn't name.
 - **Models:** never let a library download on its own.
-  - Fetch only through `maata-bench fetch` from `models.lock.json` (pinned commit and sha256).
-  - Load only from local paths: speech-swift's local-directory loaders, or `offlineMode: true` with our cache directory. Its online path tracks `main` with no revision pinning.
-  - Set `INDIC_MIO_WAVLM_BUNDLE` whenever Indic-Mio is used.
-  - Run model benches with outbound network denied (see `docs/plans/phase-0-methods.md` §1).
-- **YouTubeKit:** always pass `methods: [.local]`. The `.remote` method turns the user's Mac into an HTTP proxy for a third-party server.
+  - Fetch only through `models.lock.json` (pinned commit and sha256).
+  - Load from local paths with `HF_HUB_OFFLINE=1`.
+  - Run model benches with outbound network blocked.
+- **Engine interface:** a loopback WebSocket, using a per-launch token from the shell. The engine makes no network calls except yt-dlp fetching from YouTube.
+- **yt-dlp:** pinned; `--no-remote-components`; never `-U`.
 - **Test media:** only self-recorded or CC0/CC-BY. Never commit downloaded YouTube media.
 
-## Hard constraints (spec §3, non-negotiable)
+## Hard constraints
 
-- On-device inference only.
-- Native runtime only: MLX or Core ML, no Python, PyTorch or ONNX at runtime.
-- No bundled model weights.
-- AVPlayer only, and the original audio is never played.
-- macOS 15+, Apple Silicon only.
-- Apache-2.0 app code, with every model's license shown at download.
-- Distribution as a notarized DMG.
+- On-device inference only: no cloud AI, no telemetry.
+- No bundled model weights; the engine runtime is downloaded pinned and checksummed.
+- The YouTube player is always muted, and the original audio is never played.
+- Apache-2.0 app code, with every model's licence shown at download.
+- Signed installers per OS.
 
 If a constraint looks impossible, stop and lay out options.

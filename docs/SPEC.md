@@ -1,5 +1,7 @@
 # Maata — Build Spec for Claude Code
 
+> **Amended 2026-09-23:** the product is now a cross-platform hybrid desktop app (Tauri + local inference engine, NVIDIA and Apple Silicon, YouTube embedded player). `SPEC-AMENDMENT-01.md` overrides §2, §3.2–3.5, §3.7, §4, §5, §6.7, §10 and §12 where they conflict.
+
 Working name: **Maata** (మాట, Telugu for "word" or "speech"). Rename freely. This file is the source of truth for the project; read all of it before doing anything.
 
 ## 0. How we work

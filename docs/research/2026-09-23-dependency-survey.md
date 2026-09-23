@@ -1,5 +1,7 @@
 # Dependency survey, 2026-09-23
 
+> **Scope after SPEC-AMENDMENT-01 (2026-09-23):** this survey was written for the native macOS plan. Sections 1 (speech-swift Chatterbox loader), 2 (speech-swift ASR modules), 5 (Xcode/Swift toolchain), 6 (speech-swift offline paths) and the YouTubeKit part of 4 no longer apply to the cross-platform plan. Still valid: the chatterbox-telugu weight and tokenizer facts, TranslateGemma facts (template, gating, RoPE-scaling config), yt-dlp and YouTube client behaviour, and the licence table in §7.
+
 This survey checks the spec's September 2026 notes against current primary sources, before any dependency is pinned. The load-bearing claims were checked by a second, adversarial pass against source code at the commit named, or against Hugging Face API/tree data; that evidence, with file:line citations, is in `evidence/`. A few supporting details come only from the first-pass survey. `evidence/first-pass-citations.md` lists them with the citations a later review spot-checked. macOS-only behaviour is marked *unverified on macOS*.
 
 **Scope and caveats**
