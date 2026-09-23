@@ -10,8 +10,9 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
 
 ## Current status
 
-- **Phase 0 (spikes): the plan is written and is waiting for the maintainer's go-ahead.** No code yet.
-- Per spec §0, each phase runs: plan, go-ahead, build with tests, report, stop.
+- The maintainer delegated decisions (goal: best performance on the M5 Pro 24 GB and a very good-looking UI). They are recorded as ADRs in `docs/DECISIONS.md`.
+- Built: the engine (pure timing/text core, Apple/CUDA/mock backends, session pipeline, WebSocket server, pinned model fetcher, `maata-bench`), the Svelte UI and the Tauri shell.
+- Not yet measured on the M5 Pro: all real-model numbers. Run `scripts/setup-mac.sh`, then `maata-bench pipeline`.
 
 ## Where work runs
 
@@ -21,7 +22,12 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
 
 ## Commands
 
-To be filled in when the Phase 0 groundwork lands.
+- Engine tests: `cd engine && uv sync --group dev && uv run pytest -q`
+- UI checks: `cd app && npm ci && npx svelte-check && npx vitest run && npm run build`
+- Shell compile: `cd app/src-tauri && cargo check` (Linux needs libwebkit2gtk-4.1-dev)
+- Demo (no models): `cd engine && uv run maata-engine --backend mock --demo --ui ../app/dist --token demo --port 8765`, then open `http://127.0.0.1:8765/?token=demo`
+- Mac setup and launch: `./scripts/setup-mac.sh`, then `cd app && npm run tauri dev`
+- Fetch models: `uv run maata-bench fetch --backend apple`; bench: `uv run maata-bench pipeline FILE --backend apple`
 
 ## Layout (planned)
 

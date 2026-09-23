@@ -1,0 +1,50 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Test engine (pure core + demo pipeline; no models)
+        working-directory: engine
+        run: |
+          uv sync --group dev
+          uv run pytest -q
+
+  ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - working-directory: app
+        run: |
+          npm ci
+          npx svelte-check --tsconfig ./tsconfig.json
+          npx vitest run
+          npx vite build
+
+  macos-app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: app/src-tauri }
+      - name: Build Maata.app (unsigned)
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri build --bundles app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Maata-macos-arm64
+          path: app/src-tauri/target/release/bundle/macos/Maata.app
+          if-no-files-found: error
