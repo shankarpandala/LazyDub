@@ -1,6 +1,6 @@
 # Dependency survey, 2026-09-23
 
-This survey checks the spec's September 2026 notes against current primary sources, before any dependency is pinned. Every item was checked by a second, adversarial pass against source code at the commit named, or against Hugging Face API/tree data. The evidence, with file:line citations, is in `evidence/`.
+This survey checks the spec's September 2026 notes against current primary sources, before any dependency is pinned. The load-bearing claims were checked by a second, adversarial pass against source code at the commit named, or against Hugging Face API/tree data; that evidence, with file:line citations, is in `evidence/`. A few supporting details come only from the first-pass survey. `evidence/first-pass-citations.md` lists them with the citations a later review spot-checked. macOS-only behaviour is marked *unverified on macOS*.
 
 **Scope and caveats**
 
@@ -30,7 +30,7 @@ This survey checks the spec's September 2026 notes against current primary sourc
 
 The repo is at sha `d4341468`, CC-BY-4.0, not gated.
 
-- **T3:** `t3_mtl_te.safetensors`, F32, 2.14 GB, 291 tensors.
+- **T3:** `t3_mtl_te.safetensors`, F32, 2.14 GB, 292 tensors (536,126,464 params).
   - Its keys and shapes are identical to upstream `t3_mtl23ls_v2`, except `text_emb` and `text_head`, which are `[2521,1024]` against v2's `[2454,1024]`.
   - Base-language rows were also retrained: row 0 differs from v2 by 2.6e-2.
 - **Unchanged Resemble files:** `s3gen.pt`, `ve.pt`, `conds.pt` and `Cangjie5_TC.json` are byte-identical to `ResembleAI/chatterbox` (same LFS sha256).
@@ -55,7 +55,7 @@ speech-swift was checked at `c4c2fab`.
   - The first alone misses cases where a space or `]` is followed by a combining mark. The two together match the HF reference on 8/8 hand-written strings and **3007/3007 fuzz strings** on Swift 6.0.3, 6.2.4 and 6.4.
   - On 5.10.1, 4 fuzz strings containing the rare nukta (U+0C3C) differ, because of older ICU NFKD ordering.
   - Moving the Telugu tokens into `model.vocab` is *not* enough on its own: 2210/3007.
-- **Weights are upcast to fp32.** The loader converts every tensor to fp32 on load (`ChatterboxTTSModel.swift:180`). Runtime memory is therefore about the fp32 size whatever the storage dtype. Estimate for Chatterbox with the Telugu T3: ~3.9 GB of weights before KV cache and activations.
+- **Weights are upcast to fp32.** The loader converts every tensor to fp32 on load (`ChatterboxTTSModel.swift:180`). Runtime memory is therefore about the fp32 size whatever the storage dtype. Estimate for Chatterbox with the Telugu T3, from the header parameter counts: ~3.2 GB of weights (T3 2.14 + S3Gen 0.42 + S3 tokenizer 0.49, already F32 + conformer 0.14), before KV cache and activations.
 - **No watermark.** A grep for `perth` or `watermark` finds no watermark code. Upstream Python applies PerTh (`mtl_tts.py:175,354`). The Telugu model card's "every output carries PerTh" holds only for Python.
 - **Missing controls.**
   - No speaking-rate, duration or streaming controls.
@@ -126,9 +126,9 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
   - **Telugu:** `te` and `te-IN` are in the chat template, and WMT24++ includes te_IN.
   - **Template:** the user turn is a one-item list `{type: "text", source_lang_code, target_lang_code, text}`.
   - **Context:** input is ~2K tokens.
-- **mlx-swift-lm 3.31.4** loads these conversions as `gemma3` / `gemma3_text`, with two fidelity gaps to fix before measuring quality:
+- **mlx-swift-lm 3.31.4** should load these conversions as `gemma3` / `gemma3_text`. The configs and key layout match on reading, but this hasn't been run. There are two fidelity gaps to fix before measuring quality:
   1. **RoPE scaling is ignored.** TranslateGemma's config puts RoPE scaling in `rope_parameters.full_attention = {rope_type: linear, factor: 8}` with `rope_scaling: null`, and `Gemma3Text` reads only `rope_scaling`. Global-attention layers therefore run **without** the ×8 linear scaling. Python mlx-lm has the same gap. Fix by injecting `rope_scaling`.
-  2. **No EOS token id.** Neither config sets `eos_token_id`, so stop tokens (`<end_of_turn>`, `<eos>`) must be set explicitly.
+  2. **No EOS token id.** TranslateGemma's configs set no `eos_token_id`, and it isn't in mlx-swift-lm's registry. mlx-swift-lm already stops on the tokenizer's `<eos>`, so `<end_of_turn>` must be added via `extraEOSTokens`.
 - **Template mismatch:** TranslateGemma's strict template does plain translation. The §6.4 request needs context, glossary, a target length and JSON output, which doesn't fit the template. Expect a split: TranslateGemma translates, and an instruct model condenses, emits JSON and follows the length target. S3 measures whether one model can do both.
 - **Instruct candidates:**
   - speech-swift `Qwen3Chat` has Qwen3.5 0.8B, Qwen3 4B and a hand-written Gemma 4 port (`Gemma4Chat`).
@@ -138,7 +138,7 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
 
 ## 4. Streams (S1)
 
-**Verdict:** both resolvers now depend on essentially **one** YouTube client that needs no PO token: visionOS. A single YouTube change can break both at once, as the March 2026 breakage did for about 10 days.
+**Verdict:** both resolvers now depend on essentially **one** YouTube client that needs no PO token: visionOS. A single YouTube change could break both at once. YouTubeKit was broken from about 2026-03-07 to 03-16; whether yt-dlp broke over the same window wasn't checked.
 
 - **YouTubeKit** (0.4.9):
   - **Local by default:** `methods` default to `[.local]` on macOS. With `[.local]`, no code path contacts a non-YouTube host.
@@ -154,7 +154,7 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
   - **JavaScript runtime:** Deno is the only runtime enabled by default and is **not bundled**. Without it, yt-dlp falls back to a deprecated visionOS-only mode.
   - **Flags:** `--no-remote-components --ignore-config --no-plugin-dirs --no-js-runtimes --js-runtimes deno:<path> --no-cache-dir` (or `--cache-dir` inside our container), and never `-U`.
   - **Binary format:** `yt-dlp_macos` is a PyInstaller-frozen **Python interpreter** that extracts `Python.framework` to `$TMPDIR`.
-  - **Packaging:**
+  - **Packaging** (*unverified on macOS*: S1 checks this):
     - Downloading it at runtime (not embedding it) avoids re-signing it inside our notarized bundle.
     - An ad-hoc-signed arm64 binary without a quarantine attribute runs; a quarantined one is blocked.
     - A non-sandboxed app doesn't quarantine its URLSession downloads unless it opts in.
@@ -166,17 +166,17 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
 ## 5. Toolchain
 
 - **Xcode choice.** "Stable Xcode 26" is ambiguous now that Xcode 27.0 is GA.
-  - Neither mlx-swift's nor speech-swift's CI tests Xcode 27 or Swift 6.4.
+  - No upstream CI covers any Xcode 26.x or 27. speech-swift's CI builds with Xcode 16.4 / Swift 6.1 against mlx-swift 0.31.4. mlx-swift's self-hosted CI uses an unspecified Xcode.
   - Xcode 26.4–26.6 resolve mlx-swift 0.31.6 (Swift 6.3). That needs `-skipPackagePluginValidation` in CI and triggers a "Trust & Enable" prompt for the CudaBuild plugin.
   - Xcode 26.0–26.3 fall back to mlx-swift 0.31.4.
-- **Recommendation:** pin **mlx-swift exact 0.31.4** in the app. That's the combination speech-swift's CI exercises. It avoids the Swift 6.3 / Tahoe 26.2 floor and the plugin prompt, and satisfies both speech-swift (`from: 0.30.0`) and mlx-swift-lm (`upToNextMinor 0.31.4`). Commit `Package.resolved`.
+- **Recommendation:** pin **mlx-swift exact 0.31.4** in the app. It's the mlx-swift version speech-swift's CI (Xcode 16.4) resolves. It avoids mlx-swift 0.31.6's Swift 6.3 requirement and the plugin prompt. Xcode 26.4+ still needs Tahoe 26.2 whatever mlx-swift version is pinned. It satisfies both speech-swift (`from: 0.30.0`) and mlx-swift-lm (`upToNextMinor 0.31.4`). Commit `Package.resolved`.
 - **Metal kernels:**
   - Under `xcodebuild`, `default.metallib` lands in `mlx-swift_Cmlx.bundle` automatically; the Metal Toolchain component must be installed.
   - Only 9 kernels are precompiled; the rest are JIT-compiled from source on first use. This affects the cold-start target.
   - A CLI target doesn't embed SwiftPM resource bundles, so `maata-bench` must ship `mlx-swift_Cmlx.bundle` beside its binary or live inside the `.app`.
 - **Don't copy `-Wl,-undefined,dynamic_lookup`** from speech-swift's iOS XcodeGen examples: it turns link errors into runtime crashes.
 - **GitHub hosted runners:**
-  - `macos-26` offers Xcode 26.4.1–26.6 (default 26.6); `macos-15` tops out at 26.3.
+  - `macos-26` offers Xcode 26.0.1–26.6 (default 26.6); `macos-15` tops out at 26.3.
   - Standard arm64 runners have 7 GB RAM, 3 vCPU and 14 GB disk, and their virtualised GPU/ANE can't run stateful Core ML models.
   - So hosted CI does build and unit tests only. Model tests need a self-hosted Apple Silicon Mac.
 - **speech-swift dependency graph:** it resolves its whole graph: swift-transformers, Hummingbird, MCP SDK, swift-nio, swift-syntax, WhisperKit, and the SpeechCore.xcframework binary. Only the products we import get built and linked.
@@ -193,7 +193,7 @@ The model card's Python usage doesn't run on upstream chatterbox `5de7a54`: it l
   - **Community-1 and MADLAD:** `fromLocal(directory:)`.
   - **Whisper:** only via `fromPretrained(cacheDir:offlineMode:)`, because its init is private.
   - **Qwen3ASR and ForcedAligner:** these pick architecture and bit width from the **modelId string**, so local folder names must carry `0.6B`, `4bit` and similar markers, or the wrong config loads silently.
-  - **Indic-Mio:** loads WavLM from the default location unless `INDIC_MIO_WAVLM_BUNDLE` is set.
+  - **Indic-Mio:** voice cloning downloads WavLM from the Hub, unpinned, unless `INDIC_MIO_WAVLM_BUNDLE` points to a local bundle (`IndicMioTTSModel.swift:234-241`).
 
 ## 7. Licenses: what the manifest must say
 
@@ -210,7 +210,7 @@ Hugging Face labels are wrong in several places. The manifest must carry **verif
 | Sortformer (aufklarer, from v2.1) | **NVIDIA Open Model License** + NVIDIA notice (the conversion's CC-BY-4.0 label is incomplete) | Notice. v2 (not 2.1) is CC-BY-4.0; v1 is CC-BY-NC, so avoid v1. |
 | Pyannote Community-1 (aufklarer mirror) | CC-BY-4.0 | Attribution |
 | WeSpeaker | **CC-BY-4.0** (labelled MIT) | Attribution |
-| **OmniVoice** | **CC-BY-NC** (weights, per the upstream card since 2026-07-03) + **Boson Higgs Audio 2 community license** (codec) | **Non-commercial.** "Built with Higgs Materials…" display, no use of outputs to train other LLMs, and an extra licence above 100k MAU. The speech-swift README's "Apache-2.0" is stale. |
+| **OmniVoice** | **CC-BY-NC** (weights, per the upstream card since 2026-07-03) + **Boson Higgs Audio 2 community license** (codec) | **Non-commercial.** "Built with Higgs Materials…" display, no use of outputs to train other LLMs, and an extra licence above 100,000 annual active users. The speech-swift README's "Apache-2.0" is stale. |
 | **Indic-Mio** | Apache-2.0 label | Training data includes `ylacombe/expresso` (**CC-BY-NC-4.0**) and possibly Emilia (NC). Its WavLM dependency may be **CC-BY-SA-3.0** (UniSpeech LICENSE), not MIT. |
 | Omnilingual ASR | Apache-2.0 | none |
 | Nemotron streaming ASR | openmdw-1.1 | Needs review |

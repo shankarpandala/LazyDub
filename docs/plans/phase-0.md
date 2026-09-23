@@ -1,255 +1,251 @@
 # Phase 0 plan: spikes
 
-Status: **proposed; waiting for the maintainer's go-ahead** (spec §0). Nothing in this plan has been built yet.
+Status: **proposed; waiting for the maintainer's go-ahead** (spec §0). Nothing is built yet.
 
-The inputs are `docs/SPEC.md` and `docs/research/2026-09-23-dependency-survey.md`, the verified dependency survey. The survey changed several assumptions in the spec; section 1 lists them.
+- The survey this plan builds on: `docs/research/2026-09-23-dependency-survey.md`.
+- How every number gets measured (memory, cold vs. warm, sync mechanics, offline enforcement): `phase-0-methods.md`.
 
-## 0. Where this runs
+## Goals
 
-- **The Mac runs everything.** Every spike builds, runs and is measured on the reference M5 Pro (24 GB), from a Claude Code session on that machine (the Desktop app or `claude remote-control`).
-- **The cloud container runs nothing that counts.** It has no Xcode, Metal or Neural Engine, and YouTube serves it a bot wall. It can only do research and MLX-free pure-Swift work.
-- **Recorded with every result:** macOS build, Xcode build, power source, and whether other apps were running.
-- **First step in the local session:** record `sw_vers`, `xcodebuild -version` for each installed Xcode, `xcode-select -p`, and free disk space.
+1. Pick the default engine for each stage, and the resolver, ingest and sync approaches, with measurements from the M5 Pro.
+2. Show whether the §10 targets can be met with those choices, for the Recommended preset (24 GB) and the Standard preset (16 GB).
+3. Produce the Telugu Chatterbox MLX bundle and the speech-swift patch that loads it.
 
-## 1. What the research changed
+Everything is built and measured on the reference Mac, from a local Claude Code session. The cloud container can't run Xcode, Metal or the Neural Engine, and YouTube blocks it.
 
-| Spec assumption | What's actually true (see the survey) | Effect on Phase 0 |
+## What the research changed
+
+| Spec assumption | What's actually true | Consequence |
 |---|---|---|
-| speech-swift's Chatterbox port just needs converted weights | The loader hard-codes vocab 2352 and the language gate lacks `te`. Its tokenizer can't read the Telugu JSON, and when it can, it turns most Telugu into `[UNK]`. The fix is verified in Swift (3007/3007 fuzz strings match HF). | S4 needs a speech-swift patch (fork or adapter; see Q2). The weight conversion itself is a key rename on one safetensors file, so the Swift converter is small. |
-| WhisperASR gives word timestamps | It gives text only. It also silently drops the rest of a 30 s window after a word repeats 3×, and detects language only from the first 30 s. | S2 becomes "ASR + a word-timing strategy". Candidates: Qwen3ForcedAligner (English only, not Hindi), our own DTW over the Whisper bundle's alignment heads, or WhisperKit (Q3). |
-| TranslateGemma handles the whole §6.4 request | Its strict template is translate-only. mlx-swift-lm drops its ×8 linear RoPE scaling on global layers and has no EOS id. | S3 fixes the loader first, then tests TranslateGemma alone vs. TranslateGemma + an instruct model for JSON, length targets and condensing. |
-| OmniVoice is Apache-2.0 | Weights are CC-BY-NC, and the codec is under the Boson Higgs Audio license. Indic-Mio has NC training data and an ambiguous WavLM license. | S4 evaluates both for comparison only. Neither goes in a shipped preset without an explicit decision (Q6). |
-| "Build with stable Xcode 26; 27 is beta" | Xcode 27.0 went GA on 2026-09-14. Xcode 26.4+ resolves mlx-swift 0.31.6 (Swift 6.3 + a CudaBuild plugin prompt). | Pin mlx-swift exact 0.31.4 and the Xcode version explicitly (Q1). |
-| YouTubeKit and yt-dlp are independent fallbacks | Both depend on essentially one PO-token-free client (visionOS). `yt-dlp_macos` is a frozen Python interpreter, and Deno isn't bundled. | S1 measures both against the same videos. Q4 asks whether `yt-dlp_macos` is acceptable under §3.2. |
-| The Swift port watermarks like Python | It doesn't. The Telugu model card says every output carries PerTh. | Q7. |
+| speech-swift's Chatterbox only needs converted weights | Its hard-coded vocab and language gate reject Telugu, and its tokenizer turns most Telugu into `[UNK]`. A fix is verified in Swift. | A small speech-swift patch (Q2). Converting the weights is only a key rename. |
+| WhisperASR gives word timestamps | It returns text only, and it can silently drop text. | S2 compares strategies for word timing. |
+| TranslateGemma covers the whole §6.4 request | Its template only translates. mlx-swift-lm skips its RoPE scaling. | S3 tests TranslateGemma alone and paired with an instruct model. |
+| OmniVoice is Apache-2.0 | Its weights are CC-BY-NC, and its codec uses Boson's license. | Comparison only (Q6). |
+| Build with stable Xcode 26, since 27 is beta | Xcode 27.0 went GA on 2026-09-14. | Name the exact Xcode and pin mlx-swift to 0.31.4 (Q1). |
+| The two resolvers are independent fallbacks | Both depend on essentially one YouTube client, and `yt-dlp_macos` is a frozen Python binary. | Q4. |
 
-## 2. Groundwork (timebox: 1 day)
+## Groundwork (1 day)
 
-This is the minimum that makes the spikes reproducible. Anything under `Spikes/` is throwaway; everything else is kept.
+- **Project setup.**
+  - `project.yml` for XcodeGen 2.46.0: `SWIFT_VERSION: 6.0`, complete strict concurrency, macOS 15, arm64 only.
+  - `Package.resolved` is committed through a `.gitignore` exception inside the generated project, and I'll check that `xcodegen generate` preserves it. CI and the bench scripts build with `-onlyUsePackageVersionsFromResolvedFile`.
+- **Packages I keep.** These are the real Phase 1 homes, so no bench code depends on throwaway code:
+  - **`MaataCore`:** types, the engine protocols from §5, and the Telugu `AksharaCounter`.
+  - **`Diagnostics`:** the result JSON schema, memory and timing probes, WER/CER/DER scoring, and percentiles.
+  - **`StreamResolving`:** the URL / video-ID / `t=` parser, with §11 unit tests.
+  - **`SpeechFrontEnd`, `Translation`, `Synthesis`:** the S2–S4 engine adapters. Adapters for engines that lose are deleted after the report.
+  - **`Tools/maata-convert-chatterbox`:** the Swift CLI that builds the Telugu bundle.
+- **`maata-bench`.** One subcommand each for `fetch`, `asr`, `diarize`, `align`, `translate` and `tts`, plus `corun` for co-residency and contention runs.
+  - It ships with `mlx-swift_Cmlx.bundle` beside the binary.
+  - The S1 and S5 prototypes need AVPlayer, so they're throwaway apps under `Spikes/` that write the same JSON.
+- **Models stay offline.**
+  - `models.lock.json` pins repo, commit, file, size and sha256 for every model and tool.
+  - `maata-bench fetch` downloads and verifies them.
+  - Every spike loads only from local paths, and S2–S4 runs execute with outbound network denied (details in methods §1).
+  - No library downloads anything on its own, not even temporarily.
+- **ADRs** in `docs/DECISIONS.md` pin:
+  - speech-swift (fork) commit;
+  - mlx-swift **exact 0.31.4**;
+  - mlx-swift-lm **exact 3.31.4**, declared directly because S3 links MLXLLM;
+  - YouTubeKit 0.4.9;
+  - yt-dlp and Deno by sha256;
+  - XcodeGen;
+  - the Xcode version.
+- **CI** on GitHub `macos-26` with a pinned Xcode: generate, build, and run the MLX-free tests. No model tests.
 
-- **`project.yml` (XcodeGen 2.46.0).**
-  - `SWIFT_VERSION: 6.0` set explicitly (XcodeGen's preset defaults to 5.0), complete strict concurrency, deployment target macOS 15.0, arm64 only.
-  - Targets: a placeholder `Maata` app and a `maata-bench` CLI.
-  - Not included: `-undefined dynamic_lookup`.
-- **Local packages under `Packages/`:**
-  - **`MaataCore`:** shared types (`VideoTime`, `AudioClip`, `SourceUnit`, `DubUnit`, `Speaker`, `LanguageCode`), the §5 engine protocols, and the preliminary Telugu `AksharaCounter` needed by S3 (see §3.3). MLX-free, and `swift test`-able on macOS and Linux.
-  - **`Diagnostics`:** the bench result schema (JSON), stage timers, a peak-memory sampler, WER/CER/DER scoring, and percentile and histogram helpers. MLX-free.
-- **`maata-bench`:**
-  - Subcommands `stream | asr | diarize | align | translate | tts | sync`. Each writes one JSON result, with fields: tool git SHA, machine info, engine, model id + revision, input hash, cold/warm flag, per-stage wall time, RTF, time to first output, peak `phys_footprint`, MLX peak memory, plus spike-specific fields.
-  - Ships with `mlx-swift_Cmlx.bundle` beside the binary; a CLI target doesn't embed SwiftPM resources.
-- **Pins recorded as ADRs** in `docs/DECISIONS.md`:
-  - speech-swift commit (or fork commit), mlx-swift **exact 0.31.4**, mlx-swift-lm 3.31.4 (transitive), YouTubeKit 0.4.9, yt-dlp 2026.08.19 + Deno 2.9.7 (checksums), XcodeGen 2.46.0, and the Xcode version.
-  - `Package.resolved` is committed.
-- **CI** (`.github/workflows/ci.yml`, `macos-26` runner, pinned Xcode): `xcodegen generate`, build, and MLX-free unit tests. No model tests (7 GB runners; their virtual ANE can't run stateful Core ML models).
-- **Docs:** `docs/SPIKES.md` (results) and `docs/TEST_VIDEOS.md` (a template with the §11 categories, for you to fill in); `CLAUDE.md` updated with real commands.
+## Spikes
 
-Spike code lives in `Spikes/S1…S5/` with its own XcodeGen spec, and is deleted or archived after the report.
+Timeboxes are caps: when one runs out, the spike reports what it has. S1 and S5 need no input from you, so they go first.
 
-## 3. Spikes
-
-Each spike stops at its timebox and reports what it has. The timeboxes are caps, not estimates, and spikes that don't wait on your inputs run first.
-
-### S1: Streams (timebox: 2 days)
+### S1: Streams (2 days)
 
 **Build**
 
-- `StreamResolver` implementations behind the §5 protocol:
-  - **YouTubeKit:** always `methods: [.local]`. One `YouTube` instance per extraction, inside an actor, with extractions serialised. Our own video-ID/`t=` parser.
-  - **yt-dlp:** `yt-dlp_macos` + Deno from a dev tools folder, checksums (and the yt-dlp GPG signature) verified. Flags: `--no-remote-components --ignore-config --no-plugin-dirs --no-js-runtimes --js-runtimes deno:<path> --cache-dir <ours> -J`, never `-U`.
-- A minimal AVPlayer test app.
+- A YouTubeKit resolver that only ever passes `methods: [.local]`.
+- A yt-dlp + Deno resolver, **only if Q4 approves it**.
+- A throwaway AVPlayer app.
 
-**Measure** on every `TEST_VIDEOS.md` entry (see Q9), plus edge cases: made-for-kids, age-restricted, ended live, private/deleted, > 1 h, 4K.
+**Measure**, on `TEST_VIDEOS.md` plus out-of-scope cases (live, upcoming premiere, members-only, age-restricted, made-for-kids, private) and every URL form:
 
-- **Resolution:** success rate and resolve latency, cold and warm (JS cache).
-- **Stream properties:** for each resolved stream, client `c=`, itags and codecs, `clen`, `expire`, and whether `pot` is present.
-- **Audio fetch:** full itag-140 fetch in 10 MiB ranges (throughput, mid-file 403s), and **time from resolve to the first 60 s of audio decoded to PCM (target ≤ 2 s)**. Candidates, fastest first:
-  - (a) a byte-range fetch of the init segment plus the first fragments, then AVAssetReader on the partial file;
-  - (b) AVFragmentedAsset;
-  - (c) our own fMP4 fragment reader feeding AudioConverter.
-- **Video playback:** a 1080p avc1 video-only stream in AVPlayer, played directly vs. through an `AVAssetResourceLoaderDelegate` chunker. Time to first frame, seek latency (20 random seeks), stalls. Fallback: HLS (where offered), then muxed itag 18 with the audio track disabled.
-- **Expiry:** URL lifetime, behaviour after expiry and after a network change, and re-resolve plus byte-range resume.
-- **Network audit:** every host contacted, via a logging `URLProtocol` for our own sessions plus `nettop` for subprocesses. It must be only YouTube and Google video hosts.
+- **Resolution:** success rate, and cold and warm latency.
+- **Errors:** whether each out-of-scope case produces its own distinct error.
+- **Stream details:** client and itags seen, `clen`, `expire`, and whether `pot` is present.
+- **Audio:** time from resolve to the first 60 s of decoded PCM (**target ≤ 2 s, reported by video length up to ≥ 2 h**).
+  - The first sample's alignment to the video timeline (AAC priming, edit lists), with a pass mark of ≤ 1 ms.
+  - Full-file fetch in ranges.
+- **Video**, in §6.1's order: direct video-only MP4, then HLS (*see Q11*), then a resource-loader cache, then muxed with the audio track disabled.
+  - Time to first frame, seek latency, and stalls.
+- **Expiry:** URL lifetime and refresh.
+- **Network audit:** every host the app and its subprocesses contact.
 
-**Decides:** default resolver and fallback, video strategy, and audio ingest strategy (ADRs).
+**Decides:** the default and fallback resolver, the video strategy, and the ingest method.
 
-### S2: Front-end (timebox: 3 days)
+### S2: Front-end (3 days)
 
 **Candidates**
 
-- **Diarization:** Sortformer streaming (Core ML) vs. Community-1 + VBx (Core ML), using 60 s windows with 5 s overlap. Cross-window speaker reconciliation uses WeSpeaker cosine similarity.
-- **ASR + word timing:**
-  - (a) speech-swift WhisperASR + Qwen3ForcedAligner (English);
-  - (b) WhisperASR + our own DTW over the bundle's alignment heads (every Whisper language, including Hindi);
-  - (c) WhisperKit with `wordTimestamps` (**only if Q3 approves it**);
-  - (d) Qwen3-ASR + aligner as a secondary option.
-  - Nemotron streaming (word timings for en/hi/te) only if all of the above fall short, since its license needs review.
-- **Language ID:** Whisper's first-window detection vs. SpeechLanguageID (VoxLingua107) over several windows.
+- **Diarization:** Sortformer or Community-1 + VBx, both Core ML. Speakers are reconciled across windows with WeSpeaker.
+- **Word timing:**
+  - (a) WhisperASR + Qwen3ForcedAligner. The aligner covers 11 languages including English, but not Hindi or Telugu.
+  - (b) WhisperASR + our own DTW over the bundle's alignment heads, which works in every Whisper language.
+  - (c) WhisperKit, *if Q3 allows*.
+  - (d) Qwen3-ASR + the aligner.
+- **Language ID:** Whisper's first-window guess, or SpeechLanguageID (*Q3*).
 
-**Measure**
+**Measure**, per language (English and Hindi), on your fixtures, and on AMI/LibriSpeech until they arrive (*Q8*):
 
-- DER (collar 0.25 s, and no collar) and speaker-count accuracy.
-- WER, normalised.
-- Word-start error vs. labels (median / p95).
-- RTF and time to first 60 s window, cold and warm.
-- Peak memory.
-- Compute placement: which units Core ML actually uses, checked once per model in Instruments.
-- The known Whisper failure modes: the repeat cutoff, 30 s window seams, and language-ID misses on intros.
+- **Accuracy:** DER, speaker-count accuracy, and WER.
+- **Word timing:** start and end error (median, p95, signed bias), detection of pauses over 300 ms, `s_u`/`e_u` error after a draft Segmenter, and the dropped-word rate.
+- **Speed and memory:** RTF, first-load / cold / warm time, and peak memory.
+- **Hardware placement:** where Core ML actually runs each model.
+- **Contention:** RTF while Chatterbox is synthesizing on the GPU.
 
-**Data**
+**Decides:** the diarizer, the word-timing strategy for each source language, and the language-ID method.
 
-- Your labelled fixtures (Q9).
-- Until they arrive: AMI meeting-corpus excerpts (CC-BY 4.0, with reference diarization and words) and LibriSpeech (CC-BY 4.0), if Q8 approves.
-- Scoring code (DER/WER/CER) is written in Swift in `Diagnostics`, with unit tests.
-
-### S3: Translation (timebox: 3 days)
+### S3: Translation (3 days)
 
 **Candidates**
 
-- TranslateGemma 4B and 12B (mlx-community 4-bit, plus 8-bit for 4B) through mlx-swift-lm, after two fixes:
-  - inject `rope_scaling: {type: linear, factor: 8}`;
-  - set explicit stop tokens.
-- Condenser / JSON model: Gemma 4 and Qwen3-4B instruct.
-- MADLAD-400 3B (speech-swift, int4 and int8) as the non-LLM baseline.
+- **TranslateGemma 4B and 12B.** mlx-community 4-bit mirrors, plus 8-bit for 4B. Two loader fixes first: RoPE scaling, and `<end_of_turn>` as a stop token.
+- **Instruct models** for JSON and condensing: Gemma 4 E4B and Qwen3-4B.
+- **MADLAD-400 3B**, scored on quality, latency and memory only; it can't produce JSON or aim for a length.
 
-**Build**
+**Pipelines**
 
-- A prompt harness implementing the §6.4 request (context of the previous 3 units, glossary, target aksharas, JSON output with one retry, then plain fallback) and the §6.4 condense call (2–3 candidates).
-- Two pipelines:
-  - (i) TranslateGemma in its own template plus the instruct model for condense/JSON;
-  - (ii) the instruct model alone.
+- (i) TranslateGemma for translation, with an instruct model for condensing and JSON.
+- (ii) An instruct model alone.
+- (iii) MADLAD with an instruct condenser. This is the Standard-preset candidate.
 
 **Measure**
 
-- Latency per unit (time to first token, total; p50 / p95) and tokens/s.
-- Peak memory, for each model alone and for each translate-plus-condense pair loaded together.
-- JSON validity before and after the retry.
-- Length accuracy: the distribution of `|aksharas − target| / target`, and the condense hit rate (≤ N aksharas).
-- Your 1–5 scores (adequacy, natural spoken Telugu, Tenglish handling) on the ~50-sentence set (Q9).
-- An A/B of the RoPE fix itself, so we know it matters.
+- **Latency:** per unit (TTFT, total, p50/p95), and tokens/s.
+- **Memory:** peak for each model alone and for each pair.
+- **JSON validity:** before and after the retry.
+- **Length accuracy:** `|aksharas − target| / target`, with targets set at 100 / 85 / 70 % of the unconstrained output. Reported separately for pure Telugu and code-mixed lines.
+- **Condensing:** hit rate.
+- **Quality:** your 1–5 scores on the ~50 sentences.
+- **The RoPE fix:** an A/B test.
 
-**The akshara counter** is preliminary, in `MaataCore`: grapheme clusters minus spaces and punctuation, with explicit rules for word-final pollu (`న్` counts 0.5 → configurable) and ZWNJ half-forms.
+**AksharaCounter**
 
-- The research verified that Swift 5.7+ treats conjunct + matra as one `Character` (GB9c), on Linux toolchains.
-- S3 re-runs the same tests on macOS, because segmentation there comes from the OS's `libswiftCore`.
+- Split text into script runs.
+- Telugu runs count grapheme clusters, with rules for word-final pollu and ZWNJ.
+- Latin runs use an English syllable heuristic ("machine learning" → 4).
+- Digits count through their spoken form.
+- Grapheme segmentation is verified on Linux Swift 5.10.1–6.4 and gets re-checked on macOS here.
 
-### S4: TTS (timebox: 4 days)
+**Decides:** whether translation and condensing use one model or a pair, plus the models and quantization for Recommended and for Standard.
+
+### S4: TTS (4 days)
 
 **Build**
 
-1. **The speech-swift patch** (per Q2):
-   - `T3Config` from `config.json`'s `vocab_size`.
-   - Tokenizer: added tokens matched on Unicode scalars, literal `[SPACE]` replacement, both merge formats accepted.
-   - The language set derived from the `[xx]` tokens present in the tokenizer, so `te` works without hard-coding.
-   - A public `ChatterboxS3GenRef` init, so voice conditioning can be cached to disk.
-   - A cancellation check and a seedable RNG in the T3 sampling loop.
-   - Each item gets a golden test against HF `tokenizers` ids (Q5).
-2. **`maata-convert-chatterbox`:** a Swift dev CLI, not shipped in the app.
-   - Inputs: `t3_mtl_te.safetensors` and the aufklarer MLX bundle.
-   - Output: a complete offline bundle: `model.safetensors` (VE + S3Gen + renamed Telugu T3), `conformer.safetensors`, `s3_tokenizer.safetensors`, `tokenizer.json`, `Cangjie5_TC.json`, `config.json`, and a README with CC-BY-4.0 and MIT attribution.
-   - You publish it on Hugging Face.
-3. **Adapters** for chatterbox-telugu (primary), Indic-Mio and OmniVoice behind `VoiceCloningTTS`, with in-memory conditioning caches.
-4. **Rate control:** Chatterbox has none, so compare AVAudioUnitTimePitch in offline manual rendering against WSOLA at 1.0 / 1.1 / 1.2×. OmniVoice's `duration:` parameter is tested as a native alternative.
+- The **speech-swift patch** (Q2). It fixes the vocab, tokenizer and language set; makes voice conditioning cacheable to disk; and adds cancellation and a seedable RNG. Golden token-id tests come from Q5.
+- **`maata-convert-chatterbox`**, which produces the full offline bundle with its licence files. See the methods doc §7 for the attribution and change notice.
+- **Adapters** for Chatterbox-Telugu, Indic-Mio (WavLM pinned locally) and OmniVoice (the last two for comparison, Q6).
+- **Rate control**, since Chatterbox has none: AVAudioUnitTimePitch in offline mode vs. WSOLA, at 1.0 / 1.1 / 1.2×.
 
 **Measure**
 
-- RTF and time to first audio per unit, bucketed by line length (≈2 / 5 / 10 s).
-- Voice-conditioning preparation time.
-- Peak memory. The loader upcasts to fp32; we'll measure whether keeping fp16 is worth a further patch.
-- Round-trip CER through a Telugu ASR judge. The judge (Omnilingual CTC 1B/3B, or Nemotron te-IN if approved) is first calibrated on FLEURS Telugu (CC-BY 4.0), so its own error floor is known.
-- Cross-lingual speaker similarity: English reference → Telugu output via WeSpeaker cosine, against an upper bound (Telugu reference → Telugu) and a preset-voice baseline.
-- Tenglish sentences (30, drawn from the S3 set).
-- Failure rates: truncation at `maxNewTokens`, repetition, `[UNK]` counts.
-- Listening samples in `docs/spikes/s4-samples/`, generated only from self-recorded or CC-BY references (LibriTTS-R if Q8 approves).
+- **Speed:** RTF and time to first audio for lines of about 2, 5 and 10 s; conditioning time; load time.
+- **Memory:** peak, with fp32 and fp16 in memory.
+- **Round-trip CER:** using a Telugu ASR judge, calibrated first on FLEURS.
+- **Cross-lingual speaker similarity:** English reference → Telugu output, compared with a Telugu→Telugu upper bound and a preset-voice baseline.
+- **Tenglish:**
+  - CER on the Telugu spans, with Latin-script spans masked out;
+  - English-term intelligibility, marked by you in a blind listening sheet;
+  - `[UNK]`, truncation and repetition counts.
+- **Rate-control quality:** CER and similarity drop at 1.2×, and render cost. The rule is decided in advance: take the cheapest method that stays within the agreed margin.
 
-### S5: Sync (timebox: 3 days)
+**Also produces** blind, engine-anonymised listening samples (CC-BY or self-recorded references only).
 
-**Build:** a small macOS app.
+**Decides:** the default TTS engine, the rate-control method, fp16 vs. fp32, and how voice conditioning is persisted.
 
-- **Test media:** a generated test video (CC0, made with AVAssetWriter) with a visible frame counter.
-- **Synthetic dub units:** tone bursts with known onsets, scheduled on AVAudioEngine.
-- **Planning:** units are planned in video time and converted to host time through the player item's timebase.
-- **Start, seek and timeline edits:**
-  - Start and seek via `preroll(atRate:)` + `setRate(_:time:atHostTime:)`, so video and audio start on the same future host time.
-  - Timeline edits (0.85× slow-down, freeze-frame ≤ 1.5 s) are scheduled with `setRate(_:time:atHostTime:)`, and the audio is re-anchored at each edit.
+### S5: Sync (3 days)
 
-**Measure** actual vs. planned start of every unit, two ways:
+**Build**
 
-- **Internal (becomes the production metric):** the output render callback's host time + sample offset + the device's presentation latency, mapped into video time through the item timebase.
-- **External (ground truth, used once to validate the internal metric):** a ScreenCaptureKit capture of the app's frames and audio on the host clock, analysed offline (frame counter vs. tone onsets).
+- **Test media:** a generated 60 fps test video with a frame code, a flash patch and chirp bursts. It is fragmented MP4 served through a custom-scheme resource loader, with a muxed variant whose audio track is disabled.
+- **SyncEngine prototype:**
+  - Start and seek use `preroll` + `setRate(_:time:atHostTime:)` at a future host time.
+  - Timeline edits run *at their moment* from a host-clock timer, because that API re-anchors immediately and doesn't support HLS.
+  - It re-anchors on every timebase, stall and rate notification.
+  - A user speed change re-renders the pending units offline; the real-time audio graph always stays at 1.0×.
 
-**Scenarios:** 10-minute steady playback; user rates 0.75–1.5× (dub time-stretched); timeline slow-downs and freezes; 30 seeks; injected stalls (the resource loader delays bytes); play/pause cycles.
+**Measure**, as audible host-time error per unit:
 
-**Conditions:**
+- **Internal:** a per-unit metric from rendered samples, compensated for output-device latency.
+- **External:** validated against **ground truth** captured on a physical rig or a 240 fps camera (*Q12*).
 
-- With and without `AVPlayer.sourceClock` = the output device's audio clock.
-- Output devices: built-in speakers, wired headphones, and AirPods. Bluetooth latency is large, and the metric must account for it.
+**Scenarios**
 
-**Report:** p50 / p95 / max start error per scenario, and drift over time. Targets: p95 ≤ 50 ms, max ≤ 120 ms; the Phase 1 gate is p95 ≤ 80 ms.
+- 10 min of steady playback;
+- user rates from 0.75× to 1.5×;
+- slow-downs and freezes;
+- 30 seeks;
+- injected stalls;
+- pause/play.
 
-## 4. Measurement rules (all spikes)
+Each scenario runs with and without `sourceClock` set to the device's audio clock, on built-in speakers, wired output and AirPods.
 
-- **Setup:** the M5 Pro on AC power, no other heavy apps. Each configuration gets one warm-up and then ≥ 5 runs. Report p50 / p95 / max, plus n.
-- **Cold vs. warm:**
-  - *Cold* = a fresh process with Core ML models already compiled, and whatever MLX JIT kernel compilation happens in that process (only 9 kernels are precompiled).
-  - *Warm* = the same process, second run onward.
-- **Memory:**
-  - Peak = the maximum `phys_footprint` from `task_info`, sampled every 50 ms, cross-checked once per spike with `footprint`.
-  - MLX's own peak counter is reported alongside.
-  - Budget: 60% of 24 GB = 14.4 GB.
-- **Storage:** raw JSON under `docs/spikes/results/<spike>/`, summarised in `docs/SPIKES.md`. No number goes into a doc unless a committed JSON backs it.
-- **Unmet targets:** a missed target is reported as measured, with options (spec §0).
+**Report:** p50 / p95 / max and drift over time. Targets: p95 ≤ 50 ms and max ≤ 120 ms.
 
-**Memory estimate for the Recommended preset** (file sizes, *not measured*; S2–S4 replace it):
+**Decides:** `sourceClock` or not, the start/seek and edit mechanism, and the production drift metric.
 
-| Model | Estimated memory |
-|---|---|
-| Whisper turbo | 1.6 GB |
-| Aligner | ~0.5 GB |
-| Diarization + VAD | < 0.4 GB |
-| Chatterbox, fp32 in memory | ~3.9 GB |
-| TranslateGemma 4B 4-bit | 2.2 GB |
-| (alternatively) TranslateGemma 12B 4-bit | 6.7 GB |
-| A separate 4B instruct condenser | ~2.3 GB |
-| App + AVPlayer | ~1 GB |
+## Checking the §10 targets
 
-That puts the 4B path near 12 GB and the 12B path near 16.5 GB, over the 14.4 GB budget before KV caches. Expect 12B to be High Quality only, unless it can also do the condensing.
+The final report has a "Phase 0 vs §10" table. Each row is labelled *composed, not end-to-end*:
 
-## 5. Modules touched
+- **Paste → start,** warm and cold: S1 resolve and first 60 s, then S2 on the first window, then S3 + S4 for units 1–2. Model load times are included.
+- **Throughput:** the combined cost of the S3 and S4 GPU queue must stay ≤ 40 s per minute of video. The S2 contention run counts toward this.
+- **Peak memory:** one run loads the candidate set in a single process (`maata-bench corun`), for Recommended (**14.4 GB** budget) and for Standard (**9.6 GB**). The Standard run happens on a 16 GB Mac if one is available (Q12).
+- **Start error:** from S5.
+- **Added video time:** can't be measured until Phase 4.
 
-- **Kept:** `project.yml`, `Packages/MaataCore`, `Packages/Diagnostics`, `maata-bench`, CI, `docs/DECISIONS.md`, `docs/SPIKES.md`, `docs/TEST_VIDEOS.md`, `CLAUDE.md`.
-- **Throwaway:** `Spikes/S1…S5`.
-- **Outside this repo:** the speech-swift fork/patch (Q2) and the published Telugu MLX bundle (you publish it).
+Estimate only (weight sizes, with Chatterbox upcast to fp32; not measured):
 
-## 6. Risks
+- The 4B path is about **11.7–13.7 GB**, depending on the condenser.
+- 12B plus a condenser is about **16.2–18.1 GB**.
+- 12B alone is about **13.9 GB**.
 
-1. **YouTube.** Both resolvers depend on one client that needs no PO token; made-for-kids videos and `.web`-only itags already fail. Mitigation: keep both resolvers, and make a yt-dlp pin bump a manifest update rather than an app release.
-2. **Word timing** now needs a second model or new code (see S2). Hindi source has no aligner at all today.
-3. **Memory:** the 12B translator likely doesn't fit alongside everything else at 24 GB (the estimate in §4).
-4. **Licenses:** OmniVoice (NC), Indic-Mio (NC data, WavLM SA?), Sortformer (NVIDIA OML), Gemma ToU. The manifest must carry verified license strings, because several Hugging Face labels are wrong.
-5. **Toolchain drift:** Xcode 27 is GA but untested upstream; 26.4+ changes the mlx-swift resolution.
-6. **speech-swift is Swift 5 mode and tracks `main`.** We pin a commit, wrap it in actors, and never use its online download paths (no revision pinning; 110 s offline retry loop).
-7. **Your inputs are on the critical path:** S2 fixtures, the S3 sentences, and S4 listening.
+So 12B probably belongs in High Quality, and Standard needs something like pipeline (iii) with Chatterbox kept in fp16.
 
-## 7. Decisions needed from you
+## Risks
 
-| # | Question | My recommendation |
+1. **YouTube:** both resolvers depend on one client. Made-for-kids videos and itags that exist only on the web client are expected to fail; this is inferred from source, and S1 measures it.
+2. **Word timing:** it needs a second model or new code, and Hindi has no aligner.
+3. **Memory:** 12B at 24 GB; any LLM pair at 16 GB.
+4. **Licenses:** several labels on Hugging Face are wrong, so the manifest carries verified strings.
+5. **Toolchain:** no upstream CI covers any Xcode 26.x or 27; speech-swift's CI uses Xcode 16.4.
+6. **speech-swift:** it compiles in Swift 5 mode, isn't Sendable, and its online paths aren't pinned. We wrap it in actors and use only its offline paths.
+7. **Your inputs** are on the critical path for S2–S4.
+
+## Decisions needed from you
+
+| # | Question | Recommendation |
 |---|---|---|
-| Q1 | Xcode: the spec says "stable Xcode 26", but 27.0 went GA on 2026-09-14. Which exact version do we build with? | The newest installed **26.x**, named in an ADR, with mlx-swift pinned **exact 0.31.4**. Revisit Xcode 27 after Phase 1, once upstream CI covers it. |
-| Q2 | Chatterbox Telugu: fork speech-swift or write an adapter? | **Fork under your account** (`shankarpandala/speech-swift`) holding the minimal patch set from S4; each item goes upstream as a PR, and we pin the fork commit until it merges. An adapter-only route would copy ~150 lines of private loader code and can't add disk-cached conditioning or cancellation. I'll need the fork added to the session. |
-| Q3 | Approve **WhisperKit** (MIT, v1.1.0) as an S2 candidate? The spec doesn't name it. | Yes, as a candidate only. It gives word timestamps and language ID for every Whisper language, including Hindi. |
-| Q4 | `yt-dlp_macos` is a PyInstaller-frozen **Python interpreter**. Is it acceptable under §3.2, given that §6.1 sanctions yt-dlp for resolution and fetch only? | Yes: it does no inference, runs as a subprocess, and is pinned and verified. Without it, YouTubeKit is a single point of failure. |
-| Q5 | May a dev-only Python script (outside the app, never shipped) generate golden token ids with HF `tokenizers`? Or will you supply goldens from your training environment? | Either works; the Python script is faster to start with. |
-| Q6 | OmniVoice (CC-BY-NC + Boson) and Indic-Mio (NC training data): evaluate for comparison only? | Yes. Neither ships in a preset unless you decide otherwise after S4. |
-| Q7 | Watermarking: the Swift port applies none, but your model card says every output is watermarked. Port PerTh (MIT, ~37 MB net) to MLX, or drop the claim for Swift output? | Decide after S4; S4 can measure PerTh's cost if you want it ported. |
-| Q8 | May the spikes use AMI, LibriSpeech, LibriTTS-R and FLEURS (all CC-BY 4.0), with small attributed excerpts committed as fixtures? | Yes. It unblocks S2–S4 before your fixtures arrive. |
-| Q9 | Your inputs: `TEST_VIDEOS.md` URLs; labelled diarization/ASR fixtures (RTTM + word-timed transcripts, including one Hindi clip); the ~50-sentence S3 set; listening sessions. | Shall I draft the S3 sentence set for you to edit? It would cover numbers, dates, currency, names, tech terms, idioms, and short and long lines. |
-| Q10 | Name: the repo is `LazyDub`, the spec says `Maata`. Which one goes in module prefixes, the bundle ID and cache paths? | `Maata` (spec), unless you prefer otherwise; renaming later touches everything. |
+| Q1 | Which Xcode? 27.0 is GA; 26.4+ needs Tahoe 26.2 and 27 needs Tahoe 26.6. | Choose based on the Mac's macOS and a version CI can pin (`macos-26` has 26.0.1–26.6). Pin mlx-swift 0.31.4 either way. |
+| Q2 | Fork speech-swift, or build an adapter? | **Fork under your account.** The minimal patch goes upstream as PRs, and we pin the fork until they're merged. An adapter can't add disk-cached conditioning or cancellation. |
+| Q3 | Allow these extras the spec doesn't name? **WhisperKit** (MIT) as an S2 candidate; **SpeechLanguageID** (VoxLingua107, licence to be verified); **Nemotron** streaming ASR (openmdw-1.1, licence to be reviewed) as a fallback and as a Telugu CER judge. | Yes to all three, as candidates only. |
+| Q4 | `yt-dlp_macos` is a frozen Python interpreter. Is it acceptable under §3.2, given §6.1? | Yes: it does no inference, and it's pinned and verified. Without it, S1 reports on YouTubeKit alone and lays out options. |
+| Q5 | Golden token ids: can I use a dev-only Python script with HF `tokenizers`, or will you supply them? | Either works. |
+| Q6 | OmniVoice (NC and Boson) and Indic-Mio (NC data): comparison only? | Yes. |
+| Q7 | The Swift port adds no PerTh watermark, but your model card promises one. Port PerTh (MIT), or change the claim? | Decide after S4. `MODELS.md` records the finding either way. |
+| Q8 | May the spikes use AMI, LibriSpeech, LibriTTS-R and FLEURS (CC-BY 4.0), with small attributed excerpts committed? | Yes. |
+| Q9 | Inputs I need: TEST_VIDEOS URLs; labelled fixtures, including one Hindi; the ~50 S3 sentences; listening sessions. | Shall I draft the sentence set for you to edit? |
+| Q10 | Should the modules, bundle ID and cache paths use `Maata` or `LazyDub`? | `Maata`. |
+| Q11 | Apple doesn't support `setRate(_:time:atHostTime:)` on HLS, so HLS video would break the sync design. Can HLS come off §6.1's list? | Yes, unless S1 finds HLS is the only option. |
+| Q12 | For S5 ground truth, do you have a 240 fps iPhone, or a USB audio interface with a photodiode and mic? Is a 16 GB Mac available for Standard numbers? | The iPhone is enough. |
+| Q13 | The mlx-community TranslateGemma mirrors ship without the Gemma Notice file. Use them for the spikes, and decide on mirrors vs. `google/*` with the token flow after S3? | Yes. |
 
-## 8. Deliverables at the end of Phase 0
+## Deliverables
 
-- `docs/SPIKES.md`: every measurement, backed by committed JSON, with a recommendation per spike.
-- ADRs in `docs/DECISIONS.md` for every pin and every default chosen.
-- S4 listening samples.
-- The Telugu Chatterbox bundle, ready for you to publish.
-- Upstream PRs drafted for the speech-swift patches.
-- A report against the §10 targets, where Phase 0 can measure them. Then stop.
+- `docs/SPIKES.md` with a recommendation per spike. Every number in it is backed by committed JSON.
+- ADRs for every pin and default.
+- The §10 table.
+- Listening samples.
+- The Telugu bundle, ready for you to publish.
+- Upstream speech-swift PRs.
+- A `MODELS.md` stub.
+
+Then I stop.

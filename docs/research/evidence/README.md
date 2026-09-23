@@ -15,3 +15,4 @@ These notes are the raw evidence behind `../2026-09-23-dependency-survey.md`. Ea
 | `licenses.md` | Licenses, gating and redistribution duties for every candidate model |
 | `toolchain.md` | Xcode / Swift / mlx-swift / XcodeGen / GitHub runner compatibility |
 | `streams.md` | YouTubeKit and yt-dlp + Deno behaviour, hosts contacted, PO tokens, packaging |
+| `first-pass-citations.md` | Supporting details from the first-pass survey, with citations and how far each was checked |

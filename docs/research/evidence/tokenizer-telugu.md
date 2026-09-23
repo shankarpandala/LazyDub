@@ -144,5 +144,5 @@ These results are from `swift-6.4-RELEASE` on x86_64 Linux. Swift 5.10.1, 6.0.3 
    - `mtl_tts.py:31-55` `SUPPORTED_LANGUAGES` lacks `te`, and `:293` raises `ValueError`.
    - `:204` builds `T3(T3Config.multilingual())` with 2454 rows (`t3_config.py:39-41`), so the strict `load_state_dict` of the 2521-row checkpoint would fail.
    - Dev-time Python goldens therefore need a patched chatterbox.
-3. **The Telugu T3 is F32.** It is 2.14 GB (`t3_mtl_te.safetensors`, 291 tensors), so it needs conversion or quantisation for the app.
+3. **The Telugu T3 is F32.** It is 2.14 GB (`t3_mtl_te.safetensors`, 292 tensors), so it needs conversion or quantisation for the app.
 4. **Load order in speech-swift.** `ChatterboxTTSModel.fromPretrained` loads the tokenizer (`:167`) *before* the weights. Every tokenizer blocker above (T2 plus the file name) fails the whole model load.
