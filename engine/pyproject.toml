@@ -11,7 +11,7 @@ dependencies = [
 
 [project.optional-dependencies]
 # Stream resolution (runs on every platform).
-resolve = ["yt-dlp>=2026.8.19"]
+resolve = ["yt-dlp>=2026.8.19", "av>=14"]
 # Apple Silicon backend (primary; ADR-002/003).
 apple = [
     "mlx>=0.29; sys_platform == 'darwin' and platform_machine == 'arm64'",
@@ -20,6 +20,7 @@ apple = [
     "torch>=2.8",
     "torchaudio>=2.8",
     "pyannote.audio>=4.0",
+    "soundfile>=0.12",
     # chatterbox-telugu needs the maintainer's patched chatterbox (upstream lacks `te` and
     # pins torch 2.6); it is installed from the `tts` source below, not PyPI.
 ]
@@ -30,6 +31,7 @@ cuda = [
     "faster-whisper>=1.2",
     "llama-cpp-python>=0.3",
     "pyannote.audio>=4.0",
+    "soundfile>=0.12",
 ]
 
 [project.scripts]
