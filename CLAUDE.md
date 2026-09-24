@@ -28,6 +28,7 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
 - Demo (no models): `cd engine && uv run maata-engine --backend mock --demo --ui ../app/dist --token demo --port 8765`, then open `http://127.0.0.1:8765/?token=demo`
 - Mac setup and launch: `./scripts/setup-mac.sh`, then `cd app && npm run tauri dev`
 - Fetch models: `uv run maata-bench fetch --backend apple`; bench: `uv run maata-bench pipeline FILE --backend apple`
+- Verify on the M5 Pro (real pipeline metrics + UI screenshot into `docs/spikes/results/<machine>/`): `./scripts/verify-mac.sh [YOUTUBE_URL]`, then review and commit the results
 
 ## Layout (planned)
 

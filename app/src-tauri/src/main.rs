@@ -87,7 +87,13 @@ fn main() {
                     if let Some(rest) = line.strip_prefix("MAATA_ENGINE_READY ") {
                         let port = rest.split_whitespace().find_map(|kv| kv.strip_prefix("port=")).unwrap_or("0");
                         match Url::parse(&format!("http://127.0.0.1:{port}/?token={token}")) {
-                            Ok(url) => { let _ = win.navigate(url); }
+                            Ok(mut url) => {
+                                // MAATA_OPEN=<YouTube URL> opens a video at launch (used by scripts/verify-mac.sh).
+                                if let Ok(open) = std::env::var("MAATA_OPEN") {
+                                    url.query_pairs_mut().append_pair("v", &open);
+                                }
+                                let _ = win.navigate(url);
+                            }
                             Err(e) => show_error(&win, &e.to_string()),
                         }
                         break;
