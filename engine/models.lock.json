@@ -1,0 +1,282 @@
+{
+ "version": 1,
+ "models": [
+  {
+   "id": "whisper-large-v3-turbo-mlx",
+   "role": "asr",
+   "repo": "mlx-community/whisper-large-v3-turbo",
+   "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+   "license": "MIT",
+   "gated": false,
+   "backends": [
+    "apple"
+   ],
+   "files": [
+    {
+     "path": "README.md",
+     "size": 359,
+     "git_oid": "3569b423420febc3a0e1949b9e6aff2bf3bba2c7"
+    },
+    {
+     "path": "config.json",
+     "size": 268,
+     "git_oid": "6ac9a52a28f70a2e5681c250a470eca6e9c8cc3e"
+    },
+    {
+     "path": "weights.safetensors",
+     "size": 1613977612,
+     "sha256": "951ed3fc1203e6a62467abb2144a96ce7eafca8fa77e3704fdb8635ff3e7f8a6"
+    }
+   ],
+   "total_bytes": 1613978239
+  },
+  {
+   "id": "translategemma-4b-it-4bit-mlx",
+   "role": "translator",
+   "repo": "mlx-community/translategemma-4b-it-4bit",
+   "revision": "5788ec08c047f3f2e17808101b8d9566ac930d58",
+   "license": "Gemma Terms of Use",
+   "gated": false,
+   "backends": [
+    "apple"
+   ],
+   "files": [
+    {
+     "path": "README.md",
+     "size": 1209,
+     "git_oid": "0c8d4b33cc7114c68e88e05d8712f0591a62f966"
+    },
+    {
+     "path": "added_tokens.json",
+     "size": 35,
+     "git_oid": "e17bde03d42feda32d1abfca6d3b598b9a020df7"
+    },
+    {
+     "path": "chat_template.jinja",
+     "size": 16982,
+     "git_oid": "d571968f9770221512d29627697012202451983c"
+    },
+    {
+     "path": "config.json",
+     "size": 2815,
+     "git_oid": "0e99f7ca3dfb3669512bad9a8cad9309bc695e4e"
+    },
+    {
+     "path": "generation_config.json",
+     "size": 128,
+     "git_oid": "2f21cf06d0ec7276182c026cdca4787c59cdc4d0"
+    },
+    {
+     "path": "model.safetensors",
+     "size": 2183295977,
+     "sha256": "113acb0c29997a3015af84bec2c8f967cb7b15f8959d1c26b9628b921e324c40"
+    },
+    {
+     "path": "model.safetensors.index.json",
+     "size": 79768,
+     "git_oid": "b5177528e6593460b36e13bcc3c74b133f5bb74f"
+    },
+    {
+     "path": "special_tokens_map.json",
+     "size": 662,
+     "git_oid": "1a6193244714d3d78be48666cb02cdbfac62ad86"
+    },
+    {
+     "path": "tokenizer.json",
+     "size": 33384568,
+     "sha256": "4667f2089529e8e7657cfb6d1c19910ae71ff5f28aa7ab2ff2763330affad795"
+    },
+    {
+     "path": "tokenizer.model",
+     "size": 4689074,
+     "sha256": "1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c"
+    },
+    {
+     "path": "tokenizer_config.json",
+     "size": 1155413,
+     "git_oid": "1808e290e254686735ff6ee74dc147b61da1aa20"
+    }
+   ],
+   "total_bytes": 2222626631
+  },
+  {
+   "id": "qwen3-4b-instruct-4bit-mlx",
+   "role": "condenser",
+   "repo": "mlx-community/Qwen3-4B-Instruct-2507-4bit",
+   "revision": "50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b",
+   "license": "Apache-2.0",
+   "gated": false,
+   "backends": [
+    "apple"
+   ],
+   "files": [
+    {
+     "path": "README.md",
+     "size": 969,
+     "git_oid": "371d88e9e3f85edb72629352f2c2addbe9c79ef4"
+    },
+    {
+     "path": "added_tokens.json",
+     "size": 707,
+     "git_oid": "b54f9135e44c1e81047e8d05cb027af8bc039eed"
+    },
+    {
+     "path": "chat_template.jinja",
+     "size": 4040,
+     "git_oid": "a18870ad4ba26ac6c43758fc506c1bb6ff206bb4"
+    },
+    {
+     "path": "config.json",
+     "size": 938,
+     "git_oid": "ce8b8eccd1cdf6d8a30767f58e8ff858dd15eab5"
+    },
+    {
+     "path": "generation_config.json",
+     "size": 238,
+     "git_oid": "432531a002c181a19de338313d2375e9d7494d7e"
+    },
+    {
+     "path": "merges.txt",
+     "size": 1671853,
+     "git_oid": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+    },
+    {
+     "path": "model.safetensors",
+     "size": 2263022417,
+     "sha256": "2a73c6c248601ab904e035548abd8e6abb65ea27dcb5f342fb0a8910eb44173f"
+    },
+    {
+     "path": "model.safetensors.index.json",
+     "size": 63964,
+     "git_oid": "4741a210f9920c2949ca73bbb2a7ce9583e7fd83"
+    },
+    {
+     "path": "special_tokens_map.json",
+     "size": 613,
+     "git_oid": "ac23c0aaa2434523c494330aeb79c58395378103"
+    },
+    {
+     "path": "tokenizer.json",
+     "size": 11422654,
+     "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+    },
+    {
+     "path": "tokenizer_config.json",
+     "size": 5440,
+     "git_oid": "474bbcd82077828bdec32b8dbc1826cdff2a792a"
+    },
+    {
+     "path": "vocab.json",
+     "size": 2776833,
+     "git_oid": "4783fe10ac3adce15ac8f358ef5462739852c569"
+    }
+   ],
+   "total_bytes": 2278970666
+  },
+  {
+   "id": "pyannote-community-1",
+   "role": "diarization",
+   "repo": "pyannote/speaker-diarization-community-1",
+   "revision": "3533c8cf8e369892e6b79ff1bf80f7b0286a54ee",
+   "license": "CC-BY-4.0",
+   "gated": true,
+   "backends": [
+    "apple",
+    "cuda"
+   ],
+   "files": [
+    {
+     "path": "README.md",
+     "size": 9978,
+     "git_oid": "8356d6634d7b1074581dd36e2225887ec809326e"
+    },
+    {
+     "path": "config.yaml",
+     "size": 444,
+     "git_oid": "4022db43960736338378fdb6b5a85cfdae198910"
+    },
+    {
+     "path": "diarization.gif",
+     "size": 861445,
+     "sha256": "****************************************************************"
+    },
+    {
+     "path": "embedding/pytorch_model.bin",
+     "size": 26646242,
+     "sha256": "****************************************************************"
+    },
+    {
+     "path": "plda/plda.npz",
+     "size": 133852,
+     "sha256": "****************************************************************"
+    },
+    {
+     "path": "plda/xvec_transform.npz",
+     "size": 134376,
+     "sha256": "****************************************************************"
+    },
+    {
+     "path": "segmentation/pytorch_model.bin",
+     "size": 5906507,
+     "sha256": "****************************************************************"
+    }
+   ],
+   "total_bytes": 33692844
+  },
+  {
+   "id": "chatterbox-telugu",
+   "role": "tts",
+   "repo": "shankarpandala/chatterbox-telugu",
+   "revision": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+   "license": "CC-BY-4.0 (T3, tokenizer); MIT (Resemble AI acoustic stack)",
+   "gated": false,
+   "backends": [
+    "apple",
+    "cuda"
+   ],
+   "files": [
+    {
+     "path": "Cangjie5_TC.json",
+     "size": 1920163,
+     "git_oid": "d77891f84ca1db0d6f7058a4ee081d4bb0bfe88e"
+    },
+    {
+     "path": "README.md",
+     "size": 7090,
+     "git_oid": "4d49d748824946c692642568a5ca6c4c1c2a120d"
+    },
+    {
+     "path": "conds.pt",
+     "size": 107374,
+     "sha256": "6552d70568833628ba019c6b03459e77fe71ca197d5c560cef9411bee9d87f4e"
+    },
+    {
+     "path": "config.json",
+     "size": 194,
+     "git_oid": "bd5c7aab30689ea32f78170404c679aacb80b635"
+    },
+    {
+     "path": "grapheme_mtl_merged_expanded_v1.json",
+     "size": 89649,
+     "git_oid": "281f4bdeb356e5dc9fef37c84e8aa6315a720119"
+    },
+    {
+     "path": "s3gen.pt",
+     "size": 1057165844,
+     "sha256": "9b9ff07e60b20c136e2b1b3d7563a24604e8d2c4c267888d1ee929dd0151d2a3"
+    },
+    {
+     "path": "t3_mtl_te.safetensors",
+     "size": 2144538616,
+     "sha256": "9f2065c55a098c2714486a47ad8f848cb1da969e5cb283330765a46f6c007da9"
+    },
+    {
+     "path": "ve.pt",
+     "size": 5698626,
+     "sha256": "4b16d836bc598509860f6fa068165a8bb5e9ac84f05582dfcf278a5a372879f1"
+    }
+   ],
+   "total_bytes": 3209527556
+  }
+ ]
+}

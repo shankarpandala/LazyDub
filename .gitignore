@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.hypothesis/
+engine/.venv/
+# Node / UI
+node_modules/
+app/dist/
+# Rust / Tauri
+app/src-tauri/target/
+app/src-tauri/gen/
+# Local models and caches
+models/
+*.safetensors
+*.gguf
+.DS_Store

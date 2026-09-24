@@ -1,0 +1,82 @@
+/* Maata design system (ADR-009): a dark cinematic default, with a warm turmeric → vermilion → kumkum accent. */
+
+:root {
+  --font-sans: "Inter Variable", "Noto Sans Telugu Variable", system-ui, -apple-system, sans-serif;
+  --font-te: "Noto Sans Telugu Variable", "Inter Variable", sans-serif;
+
+  --bg: #0a0910;
+  --bg-raised: #13111c;
+  --surface: rgb(255 255 255 / 0.045);
+  --surface-hover: rgb(255 255 255 / 0.08);
+  --surface-strong: rgb(255 255 255 / 0.1);
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.16);
+  --text: #f5f2ec;
+  --text-2: #b7b0c4;
+  --text-3: #7b748c;
+
+  --turmeric: #f7b733;
+  --vermilion: #f2603c;
+  --kumkum: #d8336b;
+  --accent: var(--vermilion);
+  --accent-grad: linear-gradient(120deg, var(--turmeric) 0%, var(--vermilion) 52%, var(--kumkum) 100%);
+  --accent-glow: 0 0 0 1px rgb(242 96 60 / 0.35), 0 8px 32px -8px rgb(242 96 60 / 0.55);
+
+  --ok: #3ddc97;
+  --warn: #f7b733;
+  --danger: #ff5d5d;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 26px;
+  --shadow-lg: 0 30px 80px -20px rgb(0 0 0 / 0.65), 0 0 0 1px var(--border);
+  --blur: saturate(160%) blur(22px);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+:root[data-theme="light"] {
+  --bg: #f6f3ee;
+  --bg-raised: #ffffff;
+  --surface: rgb(20 14 30 / 0.04);
+  --surface-hover: rgb(20 14 30 / 0.07);
+  --surface-strong: rgb(20 14 30 / 0.09);
+  --border: rgb(20 14 30 / 0.09);
+  --border-strong: rgb(20 14 30 / 0.16);
+  --text: #1b1624;
+  --text-2: #5a526a;
+  --text-3: #8d869c;
+  --shadow-lg: 0 30px 80px -30px rgb(40 20 60 / 0.35), 0 0 0 1px var(--border);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv11", "ss01";
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#app { height: 100%; }
+button { font: inherit; color: inherit; }
+input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--turmeric); outline-offset: 2px; border-radius: 6px; }
+.te { font-family: var(--font-te); }
+.tabular { font-variant-numeric: tabular-nums; }
+.grad-text {
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

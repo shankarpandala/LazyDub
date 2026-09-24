@@ -1,0 +1,73 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Test engine (pure core + demo pipeline; no models)
+        working-directory: engine
+        run: |
+          uv sync --group dev
+          uv run pytest -q
+
+  ui:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - working-directory: app
+        run: |
+          npm ci
+          npx svelte-check --tsconfig ./tsconfig.json
+          npx vitest run
+          npx vite build
+
+  macos-app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: app/package-lock.json }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: app/src-tauri }
+      - name: Build Maata.app (unsigned)
+        working-directory: app
+        run: |
+          npm ci
+          npx tauri build --bundles app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Maata-macos-arm64
+          path: app/src-tauri/target/release/bundle/macos/Maata.app
+          if-no-files-found: error
+
+  apple-mlx-smoke:
+    # Exercises the Apple backend's MLX path on Apple Silicon (hosted runners are M-series VMs).
+    # Real performance numbers come only from the reference M5 Pro (maata-bench).
+    runs-on: macos-15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - working-directory: engine
+        run: |
+          uv venv -p 3.12
+          uv pip install -e . "mlx" "mlx-whisper" numpy
+          uv run --no-sync python - <<'PY'
+          import numpy as np, mlx.core as mx
+          from huggingface_hub import snapshot_download
+          from maata_engine.backends.apple import MLXWhisper
+          print("MLX device:", mx.default_device())
+          path = snapshot_download("mlx-community/whisper-tiny-mlx")
+          t = np.arange(16000 * 5) / 16000
+          tr = MLXWhisper(__import__("pathlib").Path(path)).transcribe((0.1 * np.sin(2 * np.pi * 220 * t)).astype(np.float32), "en")
+          print("transcribed OK:", tr.language, len(tr.words), "words")
+          PY

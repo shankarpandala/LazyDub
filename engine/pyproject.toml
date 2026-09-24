@@ -1,0 +1,53 @@
+[project]
+name = "maata-engine"
+version = "0.1.0"
+description = "Maata local inference engine: YouTube → Telugu dubbing, on-device."
+requires-python = ">=3.11,<3.13"
+license = "Apache-2.0"
+dependencies = [
+    "numpy>=1.26",
+    "websockets>=13",
+]
+
+[project.optional-dependencies]
+# Stream resolution (runs on every platform).
+resolve = ["yt-dlp>=2026.8.19", "av>=14"]
+# Apple Silicon backend (primary; ADR-002/003).
+apple = [
+    "mlx>=0.29; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-whisper>=0.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-lm>=0.28; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torch>=2.8",
+    "torchaudio>=2.8",
+    "pyannote.audio>=4.0",
+    "soundfile>=0.12",
+    # chatterbox-telugu needs the maintainer's patched chatterbox (upstream lacks `te` and
+    # pins torch 2.6); it is installed from the `tts` source below, not PyPI.
+]
+# NVIDIA backend (secondary).
+cuda = [
+    "torch>=2.8",
+    "torchaudio>=2.8",
+    "faster-whisper>=1.2",
+    "llama-cpp-python>=0.3",
+    "pyannote.audio>=4.0",
+    "soundfile>=0.12",
+]
+
+[project.scripts]
+maata-engine = "maata_engine.server:main"
+maata-bench = "maata_engine.bench:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6.100", "pytest-asyncio>=0.24", "av>=14"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/maata_engine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
