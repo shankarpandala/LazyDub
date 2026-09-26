@@ -1,6 +1,6 @@
 import pytest
 
-from maata_engine.text.akshara import count_telugu, count_units, english_syllables
+from maata_engine.text.akshara import count_telugu, count_units, english_syllables, mixed_units
 from maata_engine.text.normalize_te import normalize_telugu, number_to_telugu
 
 
@@ -30,9 +30,18 @@ def test_english_syllables(word, n):
     assert english_syllables(word) == n
 
 
-def test_tenglish_mix():
-    # "machine learning" counts 4 syllables, not 15 letters
-    assert count_units("మనం machine learning నేర్చుకుందాం") == 2 + 4 + 4
+def test_a_dub_line_is_counted_in_telugu_script_only():
+    # English is written in Telugu script (ARCHITECTURE §3.8): its aksharas are its length, and Latin letters count 0
+    assert count_units("మనం మెషిన్ లెర్నింగ్ నేర్చుకుందాం") == 2 + 2.5 + 2.5 + 4  # మె·షి·న్ and లె·ర్నిం·గ్
+    assert count_units("మనం machine learning నేర్చుకుందాం") == 2 + 4
+    assert count_units("3 రోజులు") == count_units("మూడు రోజులు") == 5  # digits as they are said
+
+
+def test_mixed_units_count_latin_english_in_syllables():
+    # "machine learning" counts 4 syllables, not 15 letters; an English source line is measured this way
+    assert mixed_units("మనం machine learning నేర్చుకుందాం") == 2 + 4 + 4
+    assert mixed_units("Please bring the tickets.") == 1 + 1 + 1 + 2
+    assert mixed_units("It costs 5 dollars.") == 1 + 1 + 2 + 2  # the digit as its spoken Telugu (ఐదు)
 
 
 @pytest.mark.parametrize(

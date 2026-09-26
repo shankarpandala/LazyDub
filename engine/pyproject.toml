@@ -12,26 +12,28 @@ dependencies = [
 [project.optional-dependencies]
 # Stream resolution (runs on every platform).
 resolve = ["yt-dlp>=2026.8.19", "av>=14"]
-# Apple Silicon backend (primary; ADR-002/003).
+# Apple Silicon backend (primary; ADR-002/003). No local LLM: text goes through the user's Claude CLI (ADR-019).
 apple = [
     "mlx>=0.29; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "mlx-whisper>=0.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
-    "mlx-lm>=0.28; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torch>=2.8",
     "torchaudio>=2.8",
     "pyannote.audio>=4.0",
     "soundfile>=0.12",
-    # chatterbox-telugu needs the maintainer's patched chatterbox (upstream lacks `te` and
-    # pins torch 2.6); it is installed from the `tts` source below, not PyPI.
+    # chatterbox-telugu runs on the maintainer's patched Chatterbox (upstream lacks `te`),
+    # pinned by commit in [tool.uv.sources] below (ADR-013).
+    "chatterbox-tts",
+    "indic-nlp-library>=0.92",  # the fork's Telugu text normalisation; skipped silently if absent
 ]
 # NVIDIA backend (secondary).
 cuda = [
     "torch>=2.8",
     "torchaudio>=2.8",
     "faster-whisper>=1.2",
-    "llama-cpp-python>=0.3",
     "pyannote.audio>=4.0",
     "soundfile>=0.12",
+    "chatterbox-tts",
+    "indic-nlp-library>=0.92",
 ]
 
 [project.scripts]
@@ -47,6 +49,23 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/maata_engine"]
+
+[tool.uv]
+# The Chatterbox fork hard-pins torch 2.6 / numpy<2 for its training stack, but pyannote 4 needs
+# torch >= 2.8. Relax those pins; keep its tested transformers, whose Llama internals T3 relies on.
+# Drop what Telugu inference never imports: the Gradio demo, the zh/ja text front-ends, and dev
+# tooling that s3tokenizer (pre-commit) and indic-nlp-library (Sphinx docs) declare (ADR-013).
+override-dependencies = [
+    "torch>=2.8",
+    "torchaudio>=2.8",
+    "numpy>=1.26",
+    "safetensors>=0.5.3",
+    "transformers==5.2.0",
+]
+exclude-dependencies = ["gradio", "spacy-pkuseg", "pykakasi", "pre-commit", "sphinx-argparse", "sphinx-rtd-theme"]
+
+[tool.uv.sources]
+chatterbox-tts = { git = "https://github.com/shankarpandala/chatterbox", rev = "f30b0d1a31195cbe0c7feb04f606ffcabde5fcee" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

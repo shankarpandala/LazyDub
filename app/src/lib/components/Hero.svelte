@@ -6,7 +6,7 @@
   let { onOpen }: { onOpen: (url: string) => void } = $props();
   const steps = [
     { icon: "wave", title: "Listens", body: "Finds who speaks when, and what they say." },
-    { icon: "sparkle", title: "Translates", body: "Natural spoken Telugu, timed to each line." },
+    { icon: "sparkle", title: "Translates", body: "Natural spoken Telugu, timed to each line, with your Claude Code." },
     { icon: "user", title: "Speaks", body: "In a clone of each speaker's own voice." },
   ] as const;
 </script>
@@ -15,7 +15,7 @@
   <div class="headline">
     <h1><span class="te grad-text word">మాట</span></h1>
     <p class="tag">Any YouTube video, spoken in Telugu — in the speaker's own voice.</p>
-    <p class="sub">Everything runs on your Mac. Nothing you watch leaves it.</p>
+    <p class="sub">Listening and the voices run on your Mac. The transcript is translated by your own Claude Code.</p>
   </div>
 
   <div class="steps">

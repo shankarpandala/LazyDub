@@ -4,24 +4,33 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import logging
 import mimetypes
+import os
 import secrets
 import sys
+import threading
 from http import HTTPStatus
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 from websockets.asyncio.server import ServerConnection, serve
 from websockets.datastructures import Headers
+from websockets.exceptions import ConnectionClosed
 from websockets.http11 import Request, Response
 
 from .backends import load_backend
+from .claude_cli import DEFAULT_MODEL, ClaudeCLI
+from .gpu import GpuScheduler
 from .resolve import DemoResolver, YtDlpResolver
 from .session import Session
 
 log = logging.getLogger("maata.server")
+DIAG_FIELDS = ("audio", "rate", "gain", "volume", "buffers", "live", "units", "lead", "waiting", "missing", "time")
+
+HEALTH_TIMEOUT = 10.0  # s: `hello` waits no longer than this for the Claude CLI's version and sign-in state
 
 _CSP = (
     "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; "
@@ -49,7 +58,22 @@ class Engine:
         self.backend = load_backend(backend_name, models_dir)
         self.resolver = DemoResolver() if demo else YtDlpResolver()
         self.cache_dir, self.ui_dir, self.token, self.demo = cache_dir, ui_dir, token, demo
-        self.gpu = asyncio.Lock()
+        # One GPU owner at a time for the MLX (ASR) and MPS/CUDA (diarization, TTS) work of all sessions, by priority
+        # (gpu.py, ARCHITECTURE §5.3): concurrent MLX and MPS work measured slower than taking turns on the M5 Pro
+        # (ADR-004; ADR-016). Translation goes through the Claude CLI (ADR-019) and never asks for it.
+        self.gpu = GpuScheduler()
+
+    def claude_health(self) -> dict | None:
+        """The Claude CLI's state for `hello`, checked afresh on every connect (the user may have signed in or updated
+        since); None for the demo engine, which never calls Claude."""
+        return None if self.backend.name == "mock" else ClaudeCLI(self.cache_dir).health()
+
+    async def claude_hello(self) -> dict | None:
+        try:
+            return await asyncio.wait_for(asyncio.to_thread(self.claude_health), HEALTH_TIMEOUT)
+        except asyncio.TimeoutError:  # the check runs on in its thread; the UI isn't kept waiting for it
+            return {"installed": True, "version": None, "signedIn": None, "models": [], "model": DEFAULT_MODEL,
+                    "problem": "stalled", "message": f"Claude Code didn't answer within {HEALTH_TIMEOUT:.0f} s."}
 
     def process_request(self, conn: ServerConnection, req: Request) -> Response | None:
         u = urlparse(req.path)
@@ -60,14 +84,19 @@ class Engine:
         return _static(self.ui_dir, req.path)
 
     async def handler(self, ws: ServerConnection) -> None:
+        # Once the UI has gone, sends are dropped: the session is closed as the loop below ends, and a stage or a
+        # re-send still under way until then must not fail on it.
         async def sj(msg: dict) -> None:
-            await ws.send(json.dumps(msg, ensure_ascii=False))
+            with contextlib.suppress(ConnectionClosed):
+                await ws.send(json.dumps(msg, ensure_ascii=False))
 
         async def sb(data: bytes) -> None:
-            await ws.send(data)
+            with contextlib.suppress(ConnectionClosed):
+                await ws.send(data)
 
         session: Session | None = None
-        await sj({"type": "hello", "backend": self.backend.name, "device": self.backend.device, "demo": self.demo or self.backend.name == "mock"})
+        await sj({"type": "hello", "backend": self.backend.name, "device": self.backend.device, "demo": self.demo or self.backend.name == "mock",
+                  "claude": await self.claude_hello()})
         try:
             async for raw in ws:
                 if isinstance(raw, bytes):
@@ -77,16 +106,28 @@ class Engine:
                 if kind == "open":
                     if session:
                         await session.close()
-                    session = Session(self.backend, self.resolver, self.cache_dir, sj, sb, gpu_lock=self.gpu)
+                    session = Session(self.backend, self.resolver, self.cache_dir, sj, sb, gpu=self.gpu,
+                                      lookahead=float(msg.get("lookahead") or 600), style=str(msg.get("style") or "colloquial"),
+                                      speed_cap=float(msg.get("speedCap") or 1.2), allow_freeze=bool(msg.get("allowFreeze", True)),
+                                      clone_strength=str(msg.get("cloneStrength") or "closest"),
+                                      tts_script=str(msg.get("ttsScript") or "telugu"))
                     asyncio.create_task(session.open(str(msg.get("url", ""))))
+                elif session and kind == "player":
+                    session.set_player_rates([float(r) for r in msg.get("rates", [])])
                 elif session and kind == "seek":
                     session.seek(float(msg["time"]))
                 elif session and kind == "playhead":
-                    session.set_playhead(float(msg["time"]))
+                    session.set_playhead(float(msg["time"]), bool(msg["playing"]) if "playing" in msg else None)
+                elif session and kind == "audio":
+                    session.ask_audio([int(i) for i in msg.get("ids", [])])
+                elif session and kind == "prepare":
+                    session.set_prepare_all(bool(msg.get("whole")))
                 elif session and kind == "speed":
                     await session.set_speed(float(msg["speed"]))
                 elif session and kind == "speaker_preset":
                     await session.set_speaker_preset(str(msg["speaker"]), bool(msg["usePreset"]))
+                elif kind == "diag":  # the UI's playback state, for the log only (App.svelte: audio output, gain, held audio)
+                    log.info("ui playback %s", {k: msg[k] for k in DIAG_FIELDS if isinstance(msg.get(k), (int, float, str, bool))})
                 elif kind == "close" and session:
                     await session.close()
                     session = None
@@ -106,6 +147,30 @@ async def run(args: argparse.Namespace) -> None:
         await server.serve_forever()
 
 
+def _setup_logging(log_dir: Path) -> None:
+    """Log to stderr and to a rotating engine.log, so a dub can be inspected after the fact."""
+    from logging.handlers import RotatingFileHandler
+
+    fmt = "%(asctime)s %(name)s %(levelname)s %(message)s"
+    logging.basicConfig(level=logging.INFO, format=fmt)
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        fh = RotatingFileHandler(log_dir / "engine.log", maxBytes=20_000_000, backupCount=3, encoding="utf-8")
+        fh.setFormatter(logging.Formatter(fmt))
+        logging.getLogger().addHandler(fh)
+    except OSError:
+        log.warning("can't write logs to %s", log_dir, exc_info=True)
+    logging.getLogger("websockets").setLevel(logging.WARNING)  # per-request lines drown the dub log
+
+
+def _exit_when_stdin_closes() -> None:
+    """The shell holds our stdin open. EOF means it's gone, even if it was killed without cleanup,
+    so exit rather than linger holding gigabytes of models."""
+    sys.stdin.buffer.read()
+    log.info("shell went away; exiting")
+    os._exit(0)
+
+
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="maata-engine")
     p.add_argument("--port", type=int, default=0)
@@ -115,8 +180,12 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--cache", default="~/Library/Caches/Maata" if sys.platform == "darwin" else "~/.cache/maata")
     p.add_argument("--ui", help="directory of the built web UI to serve")
     p.add_argument("--demo", action="store_true", help="no network: synthetic video audio (with --backend mock)")
+    p.add_argument("--stdin-lifeline", action="store_true", help="exit when stdin closes (the launching shell holds it)")
+    p.add_argument("--log-dir", default="~/Library/Logs/Maata" if sys.platform == "darwin" else "~/.local/state/maata/logs")
     args = p.parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    _setup_logging(Path(args.log_dir).expanduser())
+    if args.stdin_lifeline:
+        threading.Thread(target=_exit_when_stdin_closes, name="stdin-lifeline", daemon=True).start()
     Path(args.cache).expanduser().mkdir(parents=True, exist_ok=True)
     asyncio.run(run(args))
 

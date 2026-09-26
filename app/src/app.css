@@ -24,6 +24,8 @@
 
   --ok: #3ddc97;
   --warn: #f7b733;
+  /* Warning text on the page background (--warn is too light to read on the light theme). */
+  --warn-ink: #f7b733;
   --danger: #ff5d5d;
 
   --r-sm: 8px;
@@ -47,6 +49,7 @@
   --text-2: #5a526a;
   --text-3: #8d869c;
   --shadow-lg: 0 30px 80px -30px rgb(40 20 60 / 0.35), 0 0 0 1px var(--border);
+  --warn-ink: #8a5a00;
 }
 
 * { box-sizing: border-box; }
