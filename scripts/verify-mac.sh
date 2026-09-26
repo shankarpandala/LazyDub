@@ -5,7 +5,11 @@
 #
 # 1. Generates a self-recorded 2-voice English test clip with macOS `say` (no third-party media).
 # 2. Runs the real dubbing pipeline on it with the Apple backend and saves the JSON metrics to
-#    docs/spikes/results/<machine>/pipeline-<timestamp>.json.
+#    docs/spikes/results/<machine>/pipeline-<timestamp>.json. Text is translated through your signed-in Claude Code
+#    (ADR-019); MAATA_BENCH_TRANSLATOR=mock runs the pipeline offline instead (translation not measured).
+#    MAATA_BENCH_TIMING=v1 times the lines as before timing v2: commit that run as the baseline, then
+#    MAATA_BENCH_BASELINE=<that JSON, from the repo root> measures the timing targets (ADR-017, ARCHITECTURE §3.10)
+#    against it.
 # 3. Launches Maata on YOUTUBE_URL (optional), waits, and saves a screenshot next to the JSON.
 # Review both files, then commit them: they are the measured numbers (spec: no number without JSON).
 set -euo pipefail
@@ -54,7 +58,15 @@ PY
 )
 
 bold "→ Pipeline on the Apple backend (real models)"
-( cd engine && uv run --no-sync maata-bench pipeline "$work/clip.wav" --backend apple ) | tee "$out/pipeline-${stamp}.json"
+baseline=""
+if [[ -n "${MAATA_BENCH_BASELINE:-}" ]]; then
+  [[ -f "$MAATA_BENCH_BASELINE" ]] || die "No baseline JSON at $MAATA_BENCH_BASELINE"
+  baseline="$(cd "$(dirname "$MAATA_BENCH_BASELINE")" && pwd)/$(basename "$MAATA_BENCH_BASELINE")"
+fi
+( cd engine && uv run --no-sync maata-bench pipeline "$work/clip.wav" --backend apple \
+    ${MAATA_BENCH_TRANSLATOR:+--translator "$MAATA_BENCH_TRANSLATOR"} \
+    ${MAATA_BENCH_TIMING:+--timing "$MAATA_BENCH_TIMING"} \
+    ${baseline:+--baseline "$baseline"} ) | tee "$out/pipeline-${stamp}.json"
 
 if [[ -n "${1:-}" ]]; then
   bold "→ Launching Maata on $1"

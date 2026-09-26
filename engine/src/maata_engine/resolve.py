@@ -27,6 +27,10 @@ class ResolvedVideo:
     duration: float
     channel: str
     audio_path: Path | None
+    # What the translation brief starts from (ARCHITECTURE §3.1, §4.2 brief v0): yt-dlp's metadata, as the uploader wrote it.
+    description: str = ""
+    chapters: tuple[tuple[float, str], ...] = ()  # (start s, title)
+    tags: tuple[str, ...] = ()
 
 
 class Resolver(Protocol):
@@ -72,10 +76,21 @@ class YtDlpResolver:
             if "Sign in to confirm" in msg:
                 raise ResolveError("YouTube is asking for a sign-in check. Try again in a few minutes.") from e
             raise ResolveError("Couldn't load this video from YouTube.") from e
-        return ResolvedVideo(ref.video_id, info.get("title") or "", float(info.get("duration") or 0), info.get("channel") or "", existing[0] if existing else None)
+        return ResolvedVideo(ref.video_id, info.get("title") or "", float(info.get("duration") or 0), info.get("channel") or "",
+                             existing[0] if existing else None, *metadata(info))
 
     def load_audio(self, video: ResolvedVideo) -> np.ndarray:
         return decode_audio(video.audio_path)  # type: ignore[arg-type]
+
+
+def metadata(info: dict) -> tuple[str, tuple[tuple[float, str], ...], tuple[str, ...]]:
+    """The description, chapters and tags of a yt-dlp info dict; anything missing or malformed is left out."""
+    chapters = tuple((float(c["start_time"]), str(c["title"]).strip()) for c in info.get("chapters") or []
+                     if isinstance(c, dict) and isinstance(c.get("start_time"), (int, float))
+                     and str(c.get("title") or "").strip())
+    tags = tuple(dict.fromkeys(t.strip() for t in info.get("tags") or [] if isinstance(t, str) and t.strip()))
+    description = info.get("description")
+    return (description.strip() if isinstance(description, str) else ""), chapters, tags
 
 
 def decode_audio(path: Path, sr: int = SR_ANALYSIS) -> np.ndarray:
@@ -98,7 +113,8 @@ class DemoResolver:
     """No network: a synthetic 3-minute 'video' for the demo engine and CI."""
 
     def resolve(self, ref: VideoRef, cache_dir: Path) -> ResolvedVideo:
-        return ResolvedVideo(ref.video_id, "Demo video", 180.0, "Maata demo", None)
+        return ResolvedVideo(ref.video_id, "Demo video", 180.0, "Maata demo", None, "A synthetic video for the demo engine.",
+                             ((0.0, "Start"),), ("demo",))
 
     def load_audio(self, video: ResolvedVideo) -> np.ndarray:
         rng = np.random.default_rng(0)

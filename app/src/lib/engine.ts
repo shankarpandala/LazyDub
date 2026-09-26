@@ -1,4 +1,4 @@
-import type { EngineMessage } from "./types";
+import type { ClientMessage, EngineMessage } from "./types";
 
 export type AudioFrame = { id: number; sampleRate: number; samples: Float32Array };
 
@@ -59,7 +59,7 @@ export class EngineClient {
     this.ws = ws;
   }
 
-  send(msg: Record<string, unknown>): void {
+  send(msg: ClientMessage): void {
     if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(msg));
   }
 

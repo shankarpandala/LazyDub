@@ -20,7 +20,8 @@ export interface VideoPlayer {
 export type PlayerEvents = {
   state: (s: PlayerState) => void;
   rate: (r: number) => void;
-  ready: () => void;
+  /** The player can take commands: its duration and the playback rates it offers (for slow-down edits). */
+  ready: (info: { duration: number; rates: number[] }) => void;
   error: (message: string) => void;
 };
 
@@ -86,7 +87,7 @@ export async function createYouTubePlayer(host: HTMLElement, videoId: string, st
       events: {
         onReady: () => {
           p.mute();
-          on.ready();
+          on.ready({ duration: p.getDuration(), rates: p.getAvailablePlaybackRates() });
           resolve();
         },
         onStateChange: (e: { data: number }) => {
@@ -113,6 +114,8 @@ export async function createYouTubePlayer(host: HTMLElement, videoId: string, st
 }
 
 /* ---------------- Demo player ---------------- */
+
+const DEMO_RATES = [0.25, 0.5, 0.75, 0.8, 0.85, 0.9, 0.95, 1, 1.25, 1.5, 1.75, 2];
 
 export function createDemoPlayer(canvas: HTMLCanvasElement, total: number, start: number, on: PlayerEvents): VideoPlayer {
   const ctx = canvas.getContext("2d")!;
@@ -156,7 +159,7 @@ export function createDemoPlayer(canvas: HTMLCanvasElement, total: number, start
     raf = requestAnimationFrame(draw);
   };
   raf = requestAnimationFrame(draw);
-  queueMicrotask(() => on.ready());
+  queueMicrotask(() => on.ready({ duration: total, rates: DEMO_RATES }));
   return {
     play: () => { if (!playing) { playing = true; last = performance.now(); on.state("playing"); } },
     pause: () => { if (playing) { playing = false; on.state("paused"); } },
@@ -164,7 +167,7 @@ export function createDemoPlayer(canvas: HTMLCanvasElement, total: number, start
     setRate: (r) => { rate = r; on.rate(r); },
     time: () => t,
     duration: () => total,
-    rates: () => [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+    rates: () => DEMO_RATES,
     destroy: () => cancelAnimationFrame(raf),
   };
 }

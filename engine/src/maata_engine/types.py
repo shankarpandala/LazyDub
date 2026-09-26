@@ -23,7 +23,11 @@ class SpeakerTurn:
 
 @dataclass(slots=True)
 class SourceUnit:
-    """A dubbing unit built from source-language words (spec §6.2 Segmenter)."""
+    """A dubbing unit built from source-language words (spec §6.2 Segmenter): one sentence, translated whole.
+
+    `breaks` and `anchors` are indices k into `words`: the pause before words[k]. A break is a pause long enough to be a
+    hard timing boundary; an anchor, a shorter breath at a clause or sentence mark where the dub may re-sync
+    (ARCHITECTURE §3.4, §3.10)."""
 
     id: int
     speaker: str
@@ -31,6 +35,9 @@ class SourceUnit:
     end: float
     text: str
     words: list[TimedWord] = field(default_factory=list)
+    breaks: list[int] = field(default_factory=list)
+    anchors: list[int] = field(default_factory=list)
+    cut_off: bool = False  # the speaker was interrupted, or trailed off as the next speaker came in: left unfinished
 
     @property
     def duration(self) -> float:

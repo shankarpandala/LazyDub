@@ -13,6 +13,16 @@ export function percentile(xs: number[], p: number): number | null {
   return s[Math.min(s.length - 1, Math.floor((p / 100) * s.length))]!;
 }
 
+/**
+ * Onset lag of the dub against the English (s; signed, early is negative) and the picture holds, over the
+ * lines that report them. Debug HUD only.
+ */
+export function lagStats(units: readonly { lag?: number; freeze?: number }[]): { p50: number | null; p95: number | null; n: number; freezes: number; frozen: number } {
+  const lags = units.map((u) => u.lag).filter((x): x is number => typeof x === "number" && Number.isFinite(x));
+  const holds = units.map((u) => u.freeze).filter((x): x is number => typeof x === "number" && Number.isFinite(x) && x > 0);
+  return { p50: percentile(lags, 50), p95: percentile(lags, 95), n: lags.length, freezes: holds.length, frozen: holds.reduce((a, b) => a + b, 0) };
+}
+
 /** Merge [start, end] intervals (dub-ready ranges on the scrubber). */
 export function mergeRanges(rs: [number, number][], gap = 1.5): [number, number][] {
   const s = [...rs].sort((a, b) => a[0] - b[0]);

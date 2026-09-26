@@ -28,10 +28,28 @@ class FileSpec:
     size: int
     sha256: str | None
     git_oid: str | None
+    lfs_oid: str | None = None  # git blob id of the file's LFS pointer at the pinned commit
 
 
 def load_lock(path: Path = LOCK) -> dict:
     return json.loads(path.read_text())
+
+
+def _spec(f: dict) -> FileSpec:
+    return FileSpec(f["path"], f["size"], f.get("sha256"), f.get("git_oid"), f.get("lfs_oid"))
+
+
+def _git_blob_sha1_bytes(data: bytes) -> str:
+    return hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+
+
+def lfs_pointer_oid(sha256: str, size: int) -> str:
+    """Git blob id of the canonical git-LFS pointer for a file with this content hash and size.
+
+    Hugging Face masks LFS sha256 values in its API for some gated repos, but the pointer's blob id
+    stays visible. Pinning that id pins the content: the pointer text embeds the sha256.
+    """
+    return _git_blob_sha1_bytes(f"version https://git-lfs.github.com/spec/v1\noid sha256:{sha256}\nsize {size}\n".encode())
 
 
 def _git_blob_sha1(data_path: Path) -> str:
@@ -56,6 +74,8 @@ def verify(p: Path, spec: FileSpec) -> bool:
         return False
     if spec.sha256:
         return _sha256(p) == spec.sha256
+    if spec.lfs_oid:
+        return lfs_pointer_oid(_sha256(p), spec.size) == spec.lfs_oid
     return spec.git_oid is None or _git_blob_sha1(p) == spec.git_oid
 
 
@@ -64,7 +84,7 @@ def fetch_model(model: dict, dest_root: Path, token: str | None = None,
     dest = dest_root / model["id"]
     dest.mkdir(parents=True, exist_ok=True)
     for f in model["files"]:
-        spec = FileSpec(f["path"], f["size"], f.get("sha256"), f.get("git_oid"))
+        spec = _spec(f)
         final = dest / spec.path
         if verify(final, spec):
             continue

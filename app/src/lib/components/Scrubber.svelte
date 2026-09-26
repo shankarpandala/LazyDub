@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from "../state.svelte";
-  import { fmtTime, mergeRanges } from "../format";
+  import { fmtTime } from "../format";
 
   let { onSeek }: { onSeek: (t: number) => void } = $props();
   let track: HTMLDivElement;
@@ -8,8 +8,8 @@
   let dragging = $state(false);
 
   const dur = $derived(Math.max(app.duration || app.video?.duration || 0, 1));
-  // Dub coverage: lines plus the silences between them, up to the engine's ready horizon.
-  const ranges = $derived(mergeRanges(app.units.map((u) => [u.start, Math.min(u.start + u.budget + 4, app.readyUntil)] as [number, number]), 4));
+  // Dub coverage: the engine's merged dubbed ranges (lines and the silences between them).
+  const ranges = $derived(app.readyRanges);
   const pct = (t: number) => `${Math.min(100, Math.max(0, (t / dur) * 100))}%`;
 
   function timeAt(clientX: number) {
@@ -42,7 +42,7 @@
   aria-valuemin="0"
   aria-valuemax={Math.round(dur)}
   aria-valuenow={Math.round(app.time)}
-  aria-valuetext={`${fmtTime(app.time)} of ${fmtTime(dur)}`}
+  aria-valuetext={`${fmtTime(app.time)} of ${fmtTime(dur)}, Telugu ready ${fmtTime(app.lead)} ahead`}
   onpointerdown={down}
   onpointermove={move}
   onpointerup={() => (dragging = false)}
@@ -50,7 +50,7 @@
   onkeydown={key}
 >
   <div class="rail">
-    {#each ranges as [a, b] (a)}
+    {#each ranges as [a, b], i (i)}
       <div class="ready" style={`left:${pct(a)};width:calc(${pct(b)} - ${pct(a)})`}></div>
     {/each}
     <div class="played" style={`width:${pct(app.time)}`}></div>

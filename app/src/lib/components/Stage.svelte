@@ -3,12 +3,14 @@
   import Scrubber from "./Scrubber.svelte";
   import { app } from "../state.svelte";
   import { fmtTime } from "../format";
+  import { PLAY_NOW_MIN, etaSeconds, fmtEta, progress } from "../buffer";
+  import { noticeText } from "../notices";
 
   let {
-    host = $bindable(), canvas = $bindable(), onToggle, onSeek, onSpeed, onVolume,
+    host = $bindable(), canvas = $bindable(), onToggle, onPlayNow, onSeek, onSpeed, onVolume,
   }: {
     host?: HTMLDivElement; canvas?: HTMLCanvasElement;
-    onToggle: () => void; onSeek: (t: number) => void; onSpeed: (s: number) => void; onVolume: (v: number) => void;
+    onToggle: () => void; onPlayNow: () => void; onSeek: (t: number) => void; onSpeed: (s: number) => void; onVolume: (v: number) => void;
   } = $props();
 
   const speeds = [0.75, 1, 1.25, 1.5];
@@ -17,11 +19,26 @@
 
   const chip = $derived.by(() => {
     if (app.error) return { tone: "danger", text: app.error.message };
-    if (app.waitingForDub) return { tone: "warn", text: `Preparing Telugu audio… ${Math.round(app.lead)} s` };
     if (app.stage === "resolving" || app.stage === "fetching") return { tone: "warn", text: app.message };
+    if (app.waitingForDub) return { tone: "warn", text: `Preparing Telugu · ${fmtTime(app.lead)} of ${fmtTime(app.need)}` };
     if (!app.units.length) return { tone: "warn", text: "Preparing Telugu audio…" };
-    if (app.readyUntil >= (app.duration || Infinity) - 1) return { tone: "ok", text: "Telugu audio ready" };
-    return { tone: "ok", text: `Telugu ready ${Math.round(app.lead)} s ahead` };
+    if (!app.allReady && app.lead < 1) return { tone: "warn", text: "Telugu not ready here yet" };
+    // The engine flagged speech too fast to dub on time: say so instead of letting the lag go unexplained (spec §3).
+    if (app.notice) return { tone: "warn", text: noticeText(app.notice) };
+    if (app.allReady) return { tone: "ok", text: "Telugu audio ready" };
+    return { tone: "ok", text: `Telugu ready ${fmtTime(app.lead)} ahead` };
+  });
+
+  // The preparing card replaces the big play button while playing would have to wait for the dub.
+  const prep = $derived(!!app.video && !app.error && (app.waitingForDub || (!app.playing && app.mustWait)));
+  const pct = $derived(progress(app.lead, app.need));
+  const eta = $derived(etaSeconds(app.lead, app.need, app.throughput));
+  const prepNote = $derived.by(() => {
+    const first = eta !== null ? fmtEta(eta) : app.units.length ? "measuring engine speed" : app.message || "starting up";
+    const parts = [first.replace(/…$/, "")];
+    if (app.waitingForDub) parts.push("plays on its own when ready");
+    const text = parts.join(" · ");
+    return text[0]!.toUpperCase() + text.slice(1);
   });
 </script>
 
@@ -43,7 +60,32 @@
       <span class="pulse"></span>{chip.text}
     </div>
 
-    {#if !app.playing}
+    {#if prep}
+      <div class="prep" role="group" aria-label="Preparing Telugu audio">
+        <div class="prep-head">
+          <span class="spin" aria-hidden="true"></span>
+          <div>
+            <div class="prep-title">Preparing Telugu · <span class="tabular">{fmtTime(app.lead)} of {fmtTime(app.need)} ready</span></div>
+            <div class="prep-note">{prepNote}</div>
+          </div>
+        </div>
+        <div class="prep-bar" role="progressbar" aria-label="Telugu ready" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(pct * 100)}>
+          <div style={`width:${pct * 100}%`}></div>
+        </div>
+        <div class="prep-actions">
+          {#if !app.waitingForDub}
+            <button class="btn primary" onclick={onToggle}><Icon name="play" size={13} /> Play when ready</button>
+          {/if}
+          <button
+            class="btn"
+            class:primary={app.waitingForDub}
+            disabled={app.lead < PLAY_NOW_MIN}
+            title={app.lead < PLAY_NOW_MIN ? "Nothing is ready at this point yet" : "Start now; playback pauses again if the Telugu runs out"}
+            onclick={onPlayNow}
+          >Play now</button>
+        </div>
+      </div>
+    {:else if !app.playing}
       <button class="bigplay" aria-label="Play" onclick={onToggle}><Icon name="play" size={30} /></button>
     {/if}
   </div>
@@ -118,6 +160,34 @@
     transition: transform 0.2s var(--ease);
   }
   .bigplay:hover { transform: scale(1.06); }
+  .prep {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(440px, calc(100% - 28px));
+    display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 14px; border-radius: var(--r-lg);
+    background: rgb(10 9 16 / 0.7); backdrop-filter: var(--blur); border: 1px solid rgb(255 255 255 / 0.12); color: #fff;
+    box-shadow: 0 24px 70px -20px rgb(0 0 0 / 0.7); animation: rise 0.35s var(--ease);
+  }
+  .prep-head { display: flex; gap: 12px; align-items: flex-start; }
+  .spin {
+    flex: none; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 0 25%, var(--turmeric) 60%, var(--vermilion) 85%, var(--kumkum));
+    -webkit-mask: radial-gradient(circle, transparent 7px, #000 7.5px); mask: radial-gradient(circle, transparent 7px, #000 7.5px);
+    animation: spin 1.1s linear infinite;
+  }
+  .prep-title { font-weight: 620; font-size: 14px; letter-spacing: -0.005em; }
+  .prep-title span { color: rgb(255 255 255 / 0.78); font-weight: 560; }
+  .prep-note { font-size: 12px; color: rgb(255 255 255 / 0.6); margin-top: 2px; }
+  .prep-bar { height: 6px; border-radius: 99px; background: rgb(255 255 255 / 0.12); overflow: hidden; }
+  .prep-bar div { height: 100%; border-radius: 99px; background: var(--accent-grad); transition: width 0.5s var(--ease); }
+  .prep-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px; cursor: pointer;
+    font-size: 12.5px; font-weight: 620; color: #fff; background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.16);
+    transition: background 0.15s, transform 0.15s var(--ease);
+  }
+  .btn:hover:not(:disabled) { background: rgb(255 255 255 / 0.14); }
+  .btn.primary { background: var(--accent-grad); border-color: transparent; color: #1a0f08; box-shadow: var(--accent-glow); }
+  .btn.primary:hover:not(:disabled) { background: var(--accent-grad); transform: scale(1.03); }
+  .btn:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
   .title-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 4px; }
   .title .t { font-size: 17px; font-weight: 620; letter-spacing: -0.01em; }
   .title .c { color: var(--text-2); font-size: 13px; margin-top: 2px; }
@@ -149,4 +219,6 @@
   .menu button:hover { background: var(--surface-hover); }
   .menu button.on { color: var(--vermilion); }
   @keyframes blink { 50% { opacity: 0.35; } }
+  @keyframes spin { to { transform: rotate(1turn); } }
+  @keyframes rise { from { opacity: 0; transform: translate(-50%, calc(-50% + 8px)); } }
 </style>

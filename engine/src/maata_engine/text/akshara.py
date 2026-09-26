@@ -1,9 +1,11 @@
-"""Speaking-length units for code-mixed Telugu ("Tenglish") text (spec §6.4, §6.6).
+"""Speaking-length units (spec §6.4, §6.6; docs/research/dubbing-2026-09/ARCHITECTURE.md §4.5).
 
-Telugu runs are counted in aksharas with explicit rules rather than grapheme clusters, so
-word-final pollu and ZWNJ half-forms can be weighted (Swift-style grapheme clustering counts
-them as full clusters). Latin runs use an English syllable heuristic. Digits are counted
-through their spoken Telugu form.
+A dub line is Telugu script only, English words included (the `spoken` field), so its length is counted in aksharas,
+with explicit rules rather than grapheme clusters so word-final pollu and ZWNJ half-forms can be weighted (Swift-style
+grapheme clustering counts them as full clusters). Digits are counted through their spoken Telugu form. English in Latin
+letters is not a dub line's length: the Latin rebuild of a line (`tenglish.latin_spoken`) is measured by the Telugu-script
+line it comes from, which predicts its duration better too (research gap-2 C). English source lines are counted in
+syllables (`mixed_units`), for the prior on how long their Telugu will be (ARCHITECTURE §4.3).
 """
 
 from __future__ import annotations
@@ -72,7 +74,12 @@ def english_syllables(word: str) -> int:
 
 
 def count_units(text: str, cfg: AksharaConfig = AksharaConfig()) -> float:
-    """Speaking-length units: Telugu aksharas + English syllables, digits spoken in Telugu."""
+    """Speaking-length units of a Telugu-script line: its aksharas, digits spoken in Telugu. Latin letters count 0."""
+    return count_telugu(normalize_telugu(text), cfg)
+
+
+def mixed_units(text: str, cfg: AksharaConfig = AksharaConfig()) -> float:
+    """Speaking-length units of text with English in Latin letters: English syllables plus Telugu aksharas, digits spoken
+    in Telugu. What an English source line is measured in for the prior on its Telugu length (ARCHITECTURE §4.3)."""
     normalized = normalize_telugu(text)
-    latin = sum(english_syllables(w) for w in _WORD.findall(normalized))
-    return count_telugu(normalized, cfg) + latin
+    return count_telugu(normalized, cfg) + sum(english_syllables(w) for w in _WORD.findall(normalized))

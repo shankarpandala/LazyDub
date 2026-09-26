@@ -49,8 +49,11 @@ fn engine_command(app: &tauri::AppHandle, token: &str) -> Result<Command, String
         }
         Command::new(bin)
     };
-    cmd.args(["--port", "0", "--token", token, "--ui"])
+    // The engine exits when its stdin closes. The write end lives in the stored `Child`, so the
+    // engine goes away with the shell even if the shell is killed without running its exit hook.
+    cmd.args(["--port", "0", "--token", token, "--stdin-lifeline", "--ui"])
         .arg(ui_dir)
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
     Ok(cmd)
@@ -83,8 +86,14 @@ fn main() {
                 let stdout = child.stdout.take();
                 *handle.state::<EngineProcess>().0.lock().unwrap() = Some(child);
                 let Some(stdout) = stdout else { return show_error(&win, "Engine produced no output") };
+                let mut ready = false;
+                // Keep draining stdout for the engine's lifetime: closing the pipe after the ready line
+                // turns every later stdout write in the engine (or its libraries) into EPIPE.
                 for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-                    if let Some(rest) = line.strip_prefix("MAATA_ENGINE_READY ") {
+                    if ready {
+                        println!("{line}");
+                    } else if let Some(rest) = line.strip_prefix("MAATA_ENGINE_READY ") {
+                        ready = true;
                         let port = rest.split_whitespace().find_map(|kv| kv.strip_prefix("port=")).unwrap_or("0");
                         match Url::parse(&format!("http://127.0.0.1:{port}/?token={token}")) {
                             Ok(mut url) => {
@@ -96,8 +105,10 @@ fn main() {
                             }
                             Err(e) => show_error(&win, &e.to_string()),
                         }
-                        break;
                     }
+                }
+                if !ready {
+                    show_error(&win, "The engine stopped while loading. Its log is in the terminal that launched Maata.");
                 }
             });
             Ok(())
