@@ -1,65 +1,7 @@
-export type Edit = { kind: "slow" | "freeze"; at: number; span: number; rate: number; added: number };
-
-export type DubUnit = {
-  id: number;
-  speaker: string;
-  start: number;
-  end: number;
-  budget: number;
-  audioRate: number;
-  audioWall: number;
-  voice: "cloned" | "preset";
-  source: string;
-  telugu: string;
-  units: number;
-  edits: Edit[];
-  /** Seconds the dub started after the English line (negative: early). Debug HUD only. */
-  lag?: number;
-  /** Seconds the picture was held for this line, the timeline's rare fallback (0 or absent: none). */
-  freeze?: number;
-  /** Voice match this line's cloned voice was actually built with, when the engine reports it (never the request). */
-  cloneStrength?: CloneStrength;
-  /**
-   * The take still runs long, and Claude is rephrasing the line in the background: a shorter take may replace this one
-   * (the same unit id, sent again) if it comes back in time.
-   */
-  provisional?: boolean;
-  /**
-   * false: the engine held this line's audio back, since it is beyond the window near the playhead it keeps in memory
-   * and sends (a minute behind to the look-ahead ahead). Ask for it with an `audio` message as the playhead nears it.
-   */
-  audio?: boolean;
-};
-
-export type SpeakerStatus = "found" | "cloning" | "cloned" | "preset";
-
-export type Speaker = {
-  id: string;
-  label: string;
-  voice: "cloned" | "preset";
-  status: SpeakerStatus;
-  referenceSeconds: number;
-  talkSeconds: number;
-  usePreset: boolean;
-  /**
-   * Voice match the engine actually built this speaker's clone with, including a fallback to another match when the
-   * requested one couldn't be built. Absent: not reported, and the UI names no match for this voice.
-   */
-  cloneStrength?: CloneStrength;
-};
-
-/** Diarization progress: the speaker pre-pass, then cloning its voices. */
-export type SpeakerScan = { phase: "scanning" | "cloning" | "ready"; until: number; duration: number; found: number };
-
-export type VideoInfo = { videoId: string; title: string; channel?: string; duration: number; start: number };
-
-export type Range = [number, number];
-
 /**
- * A stretch of video (from–to, video seconds) the engine flags to the listener. fast_speech: the speech is too fast to
- * dub within the speed-up cap even with the shortest translation, so the dub lags slightly there (spec §3).
+ * The engine protocol of the background dub (OFFLINE-RENDER §4): the engine owns the jobs, one runs at a time and the
+ * others wait in its queue; the UI shows them, sets them up and saves nothing of its own.
  */
-export type Notice = { kind: "fast_speech"; from: number; to: number };
 
 export type TranslationStyle = "colloquial" | "formal";
 
@@ -68,6 +10,165 @@ export type TranslationStyle = "colloquial" | "formal";
  * comparing the two by ear. The engine rebuilds the Latin form from the same translation.
  */
 export type TtsScript = "telugu" | "latin";
+
+/** The engine's stages, in order (`render.STAGES`). */
+export type StageKey =
+  | "fetch" | "speakers" | "transcript" | "units" | "voices" | "brief" | "separate" | "translate" | "voice_lines"
+  | "finish" | "video" | "export";
+
+export type StageState = "todo" | "running" | "done" | "failed";
+
+/** One stage of a `render`: its progress in its own unit, the seconds it took and what it has left (null: not running). */
+export type StageRow = {
+  key: StageKey;
+  label: string;
+  state: StageState;
+  done: number;
+  total: number;
+  unit: string;
+  seconds: number;
+  eta: number | null;
+  /** What the stage is doing besides its count ("Waiting for the background sound", "Finishing the file…"). */
+  extra?: string;
+};
+
+export type JobStatus = "queued" | "running" | "paused" | "interrupted" | "waiting" | "failed" | "done";
+
+/**
+ * The saved MP4 (§2.17). `missing`: the file isn't at its path any more (moved or deleted). `bed`: the Telugu voices are
+ * over the original music and sounds (false: the voices only, `warning` says why).
+ */
+export type Output = {
+  path: string;
+  bytes: number;
+  kind: "whole" | "preview";
+  at: number;
+  loudness: { I: number; TP: number; LRA: number } | null;
+  warning: string | null;
+  bed?: boolean;
+  missing: boolean;
+  note?: string;
+};
+
+/** The Mac slept while the job ran: the last progress before (`at`) and the first after (`resumed`), epoch seconds. */
+export type Slept = { at: number; resumed: number };
+
+/** Coverage classes of the wordings voiced (C complete, m minor, P partial, E error), and the lines outside them. */
+export type Coverage = {
+  C: number; m: number; P: number; E: number;
+  otherTier: number; unreviewed: number; skipped: number; lines: number;
+};
+
+/** The final lines (job.json `report`): those flagged long or unreviewed, and the overdraft seconds (§2.11). */
+export type Report = { lines: number; long: number; unreviewed: number; overdraft: number; carried: number };
+
+/** A job's progress, to every window, at most twice a second and on every state change. */
+export type Render = {
+  videoId: string;
+  status: JobStatus;
+  stage: StageKey | null;
+  stages: StageRow[];
+  stopAt: number | null;
+  finalUntil: number | null;
+  eta: number | null;
+  elapsed: number;
+  /** Its place in the queue (1: next), or null. */
+  position: number | null;
+  output: Output | null;
+  slept: Slept | null;
+  coverage: Coverage | null;
+  report?: Report | null;
+  error: string | null;
+};
+
+/** The options of a job (job.json `settings`). */
+export type JobSettings = {
+  speakers: number | null;
+  style: TranslationStyle;
+  stopAt: number | null;
+  speedCap: number;
+  ttsScript: TtsScript;
+  /** Speakers voiced with a stock voice instead of their clone. */
+  presets: string[];
+};
+
+/** A job of the library (`renders`), newest activity first. */
+export type JobItem = {
+  videoId: string;
+  title: string;
+  channel: string;
+  duration: number;
+  /** The cached thumbnail's loopback URL, or null (none yet, or the demo's). */
+  thumb: string | null;
+  status: JobStatus;
+  position: number | null;
+  stopAt: number | null;
+  settings: Partial<JobSettings> | null;
+  finalUntil: number | null;
+  stage: StageKey | null;
+  eta: number | null;
+  updatedAt: number | null;
+  createdAt: number | null;
+  bytes: number;
+  output: Output | null;
+  slept: Slept | null;
+  error: string | null;
+  expired: boolean;
+  /** What the job view shows while the job sends no `render` (it isn't running): its stages (no ETA) and report. */
+  stages: StageRow[];
+  elapsed: number;
+  coverage: Coverage | null;
+  report: Report | null;
+};
+
+/** Low and high, from the engine's priors. */
+export type Span = [number, number];
+
+export type Estimate = {
+  seconds: Span;
+  claudeCalls: Span;
+  /** The first 15 minutes'. */
+  preview?: { seconds: Span; claudeCalls: Span };
+  /** Seconds of work before a new job would start (null: nothing runs). */
+  ahead: number | null;
+};
+
+/** `inspect`'s answer: a video and its job, if it has one. */
+export type VideoInfo = {
+  videoId: string;
+  start: number;
+  title: string;
+  channel: string;
+  duration: number;
+  thumbnail: string;
+  render: JobItem | null;
+  estimate: Estimate;
+};
+
+export type FoundSpeaker = {
+  id: string;
+  label: string;
+  talkSeconds: number;
+  share: number;
+  firstAt: number;
+  turns: number;
+  /** Their share of each of 120 equal slices of the video. */
+  activity: number[];
+};
+
+/** The speaker check (§2.3): who the whole-file diarization found, and what it merged. */
+export type SpeakersFound = {
+  videoId: string;
+  mode: "auto" | "hint";
+  fresh: boolean;
+  /** Seconds, by the priors when it was sent, until the Telugu speech starts: correcting is free until then. */
+  freeFor: number;
+  bounds: [number, number] | null;
+  speakers: FoundSpeaker[];
+  merged: { from: string; into: string; why: string; talkSeconds: number }[];
+};
+
+export type EngineSettings = { outputDir: string };
 
 /** Why translation through the Claude CLI can't go on, as the engine classes it (ADR-019). */
 export type ClaudeProblemKind =
@@ -89,7 +190,7 @@ export type ClaudeHealth = {
 
 /**
  * A Claude call failed in a way translation can't get past on its own. Translation waits `retryIn` s (for a usage
- * limit, until it resets), then tries again; lines already translated keep playing.
+ * limit, until it resets), then tries again; the work on this Mac goes on meanwhile.
  */
 export type ClaudeProblem = {
   kind: ClaudeProblemKind;
@@ -99,57 +200,49 @@ export type ClaudeProblem = {
   /** Epoch seconds the usage limit resets, when known. */
   resetsAt?: number | null;
   retryIn?: number | null;
+  /** The job it held back. */
+  videoId?: string;
 };
-
-/**
- * Voice match (cloning strength): how closely a cloned voice follows the original speaker's delivery,
- * against how natively it speaks Telugu. The timbre always comes from the speaker.
- */
-export type CloneStrength = "closest" | "balanced" | "natural";
 
 export type EngineMessage =
   /** claude: null when the engine never calls Claude (the demo engine). */
-  | { type: "hello"; backend: string; device: string; demo: boolean; claude?: ClaudeHealth | null }
-  | ({ type: "video" } & VideoInfo)
-  | { type: "status"; stage: string; message: string; at: number | null }
-  | ({ type: "unit" } & DubUnit)
-  | { type: "unit_skipped"; id: number; start: number; end: number }
-  /**
-   * until: end of the contiguous dub from the engine's playhead; ranges: merged dubbed video ranges;
-   * throughput: engine speed (× realtime EWMA, 0 = unknown); targetLead: lead the engine recommends before playing.
-   */
-  | { type: "ready"; until: number; ranges: Range[]; throughput: number; targetLead: number }
-  | ({ type: "speaker_scan" } & SpeakerScan)
-  | { type: "speakers"; speakers: Speaker[] }
-  | { type: "stage_time"; stage: string; seconds: number; window: number }
-  | ({ type: "notice" } & Notice)
+  | {
+      type: "hello"; backend: string; device: string; demo: boolean; claude?: ClaudeHealth | null;
+      renders: JobItem[]; render: Render | null; settings: EngineSettings;
+    }
+  /** `url`: the link `inspect` asked about, as sent. */
+  | ({ type: "video"; url?: string } & VideoInfo)
+  | ({ type: "render" } & Render)
+  | { type: "renders"; items: JobItem[] }
+  | ({ type: "speakers_found" } & SpeakersFound)
+  | ({ type: "settings" } & EngineSettings)
   | ({ type: "claude_error" } & ClaudeProblem)
   /** A Claude call went through again after a claude_error. */
-  | { type: "claude_ok" }
-  | { type: "error"; message: string; retryable: boolean };
+  | { type: "claude_ok"; videoId?: string }
+  /** `url`: an `inspect` that failed, the link it asked about. */
+  | { type: "error"; message: string; retryable: boolean; url?: string };
+
+/** New dub's options, as `prepare` sends them. */
+export type DubOptions = {
+  speakers: "auto" | number;
+  style: TranslationStyle;
+  stopAt: number | null;
+  speedCap: number;
+  ttsScript: TtsScript;
+};
 
 export type ClientMessage =
-  /**
-   * speedCap: most a line may be sped up to fit its slot (1.0–1.25); allowFreeze: the picture may be held briefly,
-   * rarely, when a line still can't fit. The video is never slowed down.
-   */
-  | {
-      type: "open"; url: string; style: TranslationStyle; lookahead: number;
-      cloneStrength: CloneStrength; speedCap: number; allowFreeze: boolean; ttsScript: TtsScript;
-    }
-  | { type: "player"; rates: number[] }
-  | { type: "seek"; time: number }
-  /** playing: false while the video waits (paused, or for the dub): a slow engine uses that time to work further ahead. */
-  | { type: "playhead"; time: number; playing?: boolean }
-  /** Send the audio of these lines, which the UI doesn't hold (held back, or evicted). */
-  | { type: "audio"; ids: number[] }
-  /** "Prepare the whole video": dub to the end, whatever the look-ahead. */
-  | { type: "prepare"; whole: boolean }
-  | { type: "speed"; speed: number }
-  | { type: "speaker_preset"; speaker: string; usePreset: boolean }
-  /** Playback state for the engine log while the user wants to play: the audio output's state, gain and what is held. */
-  | {
-      type: "diag"; audio: string; rate: number; gain: number; buffers: number; live: number; units: number;
-      volume: number; lead: number; waiting: boolean; missing: number; time: number;
-    }
-  | { type: "close" };
+  | { type: "inspect"; url: string }
+  | ({ type: "prepare"; url: string } & DubOptions)
+  | { type: "pause"; videoId: string }
+  | { type: "resume"; videoId: string }
+  /** Refused while the job runs: the UI pauses it first. `forget` deletes its translations too. */
+  | { type: "remove"; videoId: string; forget?: boolean }
+  | { type: "set_speakers"; videoId: string; speakers: "auto" | number }
+  | { type: "set_voice"; videoId: string; speaker: string; usePreset: boolean }
+  | { type: "renders" }
+  /** One binary frame back: the speaker's Hear voice sample (engine.ts SAMPLE_ID). */
+  | { type: "voice_sample"; videoId: string; speaker: string }
+  /** The engine opens the job's own MP4 (or shows it in Finder); never a path the UI sends. */
+  | { type: "open_output"; videoId: string; reveal: boolean }
+  | { type: "settings"; outputDir: string };

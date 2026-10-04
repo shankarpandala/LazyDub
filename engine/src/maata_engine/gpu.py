@@ -1,15 +1,14 @@
-"""One GPU owner at a time, by priority (ARCHITECTURE §5.3; ADR-004, ADR-016).
+"""One GPU owner at a time, by priority (ARCHITECTURE §5.3; ADR-004, ADR-016; OFFLINE-RENDER §2.1).
 
-MLX work (ASR) and MPS/CUDA work (diarization, TTS) of every session take turns on the one GPU: running them side by
-side measured slower than taking turns on the M5 Pro (ADR-016). Translation goes through the Claude CLI (ADR-019) and
-never asks for it. The priorities, most urgent first:
-1. URGENT: the voicer while the dub reaches less than a minute past the playhead;
-2. FRONTIER: ASR and diarization the translator is waiting on (the scene frontier);
-3. VOICE: the voicer in normal operation;
-4. BACKGROUND: listening and diarizing beyond the frontier, and building the voices of speakers found later.
-Within a priority, first come first served. A waiter moves up a priority for every `age` seconds it has waited, so
-nothing starves: a background hold waits at most about three times `age` behind a stream of urgent ones.
-"""
+The render job's model calls take turns on the one GPU: MLX work (ASR, the separator) and MPS/CUDA work (diarization,
+TTS, building voices). Running them side by side measured slower than taking turns on the M5 Pro (ADR-016), and two
+calls on one model must never overlap. Translation goes through the Claude CLI (ADR-019) and never asks for it. The
+job runs every call at VOICE (`Dubber._gpu_priority`), so it is served first come first served. The other priorities
+are left from the streaming engine (deleted, ADR-021) and the job doesn't use them: URGENT (the voicer near the
+playhead), FRONTIER (ASR the translator waited on) and BACKGROUND (`Dubber._voice_from`'s and `_calibrate`'s default,
+which the job overrides). Within a priority, first come first served. A waiter moves up a priority for every `age`
+seconds it has waited, so nothing starves: a background hold waits at most about three times `age` behind a stream of
+urgent ones."""
 
 from __future__ import annotations
 

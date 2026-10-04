@@ -1,8 +1,9 @@
-"""DubTimeline: all audio placements and video edits, planned ahead of the playhead (§6.6).
+"""DubTimeline: audio placements and video edits (slow-downs, freezes) on a presentation clock (§6.6).
 
 `wall_time(v)` maps video time to "presentation" seconds from video t=0, accounting for
-every slow-down and freeze planned so far. The UI uses the edits; tests use the mapping to
-check that no two dub lines overlap in what the viewer actually hears.
+every slow-down and freeze added so far. Only tests use it (test_timing.py checks with it that
+no two dub lines overlap in what the viewer hears); the render job places its lines with
+`planner.TimelinePlanner` on the video's own clock, with no freezes (ADR-021).
 """
 
 from __future__ import annotations

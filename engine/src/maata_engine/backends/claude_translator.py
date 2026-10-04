@@ -2,13 +2,14 @@
 
 One `ClaudeTranslator` per video. Its calls:
 - brief v0: the video's metadata, placed as-is in the system prompt; no call (`brief_v0`);
-- brief v1 (and v2, a diff of v1): one call on the transcript so far, cached by transcript hash; swapped in by
-  `use_brief` at a scene boundary, when the scenes' glossary additions are folded in;
+- brief v1 (and v2, a diff of v1, and so on): one call per part of the whole transcript (the job sends it in parts),
+  cached by the call's message; set by `use_brief` before the first scene, with any glossary additions folded in;
 - scene: one call per scene for the lines the per-line cache lacks; ids that come back missing or unusable are asked
   for once more (with what was wrong), then one call per id, then marked skipped: never padded, never English (§4.9);
 - fit, re-translate and rephrase: the same system prompt and schema, the call type in the message; a fit only adds
-  tiers to the line it fits (or a wording of one closer to the slot), never a new `full`; a rephrase comes from the
-  voicer through `submit`, is never awaited there, and is dropped when its deadline passes;
+  tiers to the line it fits (or a wording of one closer to the slot), never a new `full`; a rephrase comes from a
+  scene's fix-ups through `submit`, outside the dub loop, and is cancelled when a Claude failure holds translation (a
+  request with a `deadline` is also dropped once it passes; the job sets none);
 - review: the coverage review of a scene's chosen wordings (§4.6), on its own model (Sonnet 5 at high effort by
   default), its own system prompt and schema; each line it classes P or E gets one re-translation from the English with
   the missing words named, which the deterministic checks class (qa/coverage.py), and the better of the two is kept.
@@ -30,7 +31,7 @@ import json
 import logging
 import threading
 import time
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Container, Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Coroutine
@@ -182,7 +183,7 @@ class ClaudeTranslator:
         try:
             if req.call == "scene":
                 await self._scene(req, result, pin)
-            else:  # a fit adds tiers to the line the session holds, even one made under brief v0; the others replace it
+            else:  # a fit adds tiers to the line the job holds, even one made under brief v0; the others replace it
                 base = ({s.id: line for s in req.lines if (line := self._cached(s, any_brief=True))}
                         if req.call == "fit" else None)
                 await self._ladder(req, list(req.lines), [], result, pin, base)
@@ -221,20 +222,23 @@ class ClaudeTranslator:
         await asyncio.gather(*tasks, return_exceptions=True)
 
     # ---- the coverage review (§4.6) ------------------------------------------------------------------------------
-    async def review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str]) -> SceneResult:
+    async def review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str],
+                     cache: Container[int] | None = None) -> SceneResult:
         """The coverage review of scene `req`'s `lines`, each on the tier `chosen` for it, as a task `cancel` reaches as
         it reaches `req`. A line that has a class already (from the line cache) keeps it; the others go to one review
         call, and the ids its reply lacks to one more. A line classed P or E gets one re-translation from its English
         with the missing words named (an E line with what was wrong); the deterministic checks class that one, and it
         replaces the line only with a better class. Every class is stored with its line in the line cache (a
-        re-translation only here, once judged).
+        re-translation only here, once judged); with `cache` (the review of the wordings voiced: OFFLINE-RENDER §2.10),
+        only those of the ids in it (a wording that isn't the line's own, a rephrase, never goes there), each with the
+        wording reviewed: a re-translation that replaces it is voiced first, and the render keeps it elsewhere.
         The result holds the lines to use, each with its class (None where the review had no usable answer). A failure
         the user must fix leaves the lines it reached unreviewed and comes back in `error`: a P or E line whose
         re-translation never came back too. Nothing is stored for them, so a later showing reviews them."""
-        return await self._track(self._review(req, lines, chosen), req)
+        return await self._track(self._review(req, lines, chosen, cache), req)
 
-    async def _review(self, req: SceneRequest, lines: Mapping[int, LineResult],
-                      chosen: Mapping[int, str]) -> SceneResult:
+    async def _review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str],
+                      cache: Container[int] | None = None) -> SceneResult:
         t0 = time.monotonic()
         result = SceneResult(req.scene, "review", lines=dict(lines))
         specs = {s.id: s for s in req.lines if s.id in lines}
@@ -283,7 +287,10 @@ class ClaudeTranslator:
                     line = replace(new, coverage=ours)
                     replaced.append(i)
             result.lines[i] = line
-            self._store(specs[i], line)
+            if cache is None:
+                self._store(specs[i], line)
+            elif i in cache:  # the wording reviewed, with its class: never a re-translation not yet voiced
+                self._store(specs[i], replace(lines[i], coverage=c))
         unreviewed = sorted(s.id for s in todo if result.lines[s.id].coverage is None)
         for i in unreviewed:
             log.info("scene %s: line %s unreviewed: %s", req.scene, i, why.get(i, getattr(result.error, "kind", "")))
@@ -394,6 +401,8 @@ class ClaudeTranslator:
                 continue  # a fit's `full` is only the wording it was given (§4.3), never a line to cache
             if req.call == "retranslate":
                 continue  # the review keeps this or the reviewed wording, and stores the one it keeps with its class
+            if req.call == "rephrase":
+                continue  # a wording shortened for one take: the reviewed line stays the cached one (OFFLINE-RENDER §2.10)
             self._store(by_id[lid], line)
         for g in checked.glossary_additions:
             if g.term.lower() not in {b.term.lower() for b in self.brief.glossary}:  # conflicts go to the brief
@@ -432,6 +441,10 @@ class ClaudeTranslator:
                          "answered_by": line.model, "brief": line.brief_version,
                          "coverage": coverage_json(line.coverage), "line": line_json(line), "at": round(time.time(), 3)})
 
+    def cached(self, spec: LineSpec) -> LineResult | None:
+        """The line a scene call would serve `spec` from the line cache, with its class; None when it would ask Claude."""
+        return self._cached(spec)
+
     def _cached(self, spec: LineSpec, any_brief: bool = False) -> LineResult | None:
         """The cached line for `spec`, if it still validates. A line made under brief v0 (the metadata alone: no
         speaker genders, address forms or glossary) is made again once a brief is in use; v1's serve v2 (§4.7)."""
@@ -456,7 +469,7 @@ class ClaudeTranslator:
                    tags: dict | None = None, cli: ClaudeCLI | None = None) -> ClaudeReply:
         """One CLI call (on `cli`, by default the scene model's) in a worker thread, under the concurrency semaphore. If
         the awaiting task is cancelled, the process gets SIGINT and the slot frees once it has exited, however many
-        more cancels arrive meanwhile (a seek's cancel, then the session's close)."""
+        more cancels arrive meanwhile (a Claude failure's cancel, then the engine stopping)."""
         cancel = threading.Event()
         async with self._sem:
             if deadline is not None and time.time() > deadline:

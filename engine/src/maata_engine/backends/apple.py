@@ -9,6 +9,7 @@ from typing import Sequence
 
 import numpy as np
 
+from ..separate import SEP_DTYPE
 from ..text import asr_guard
 from ..text.punct_transfer import transfer, unguess
 from ..types import TimedWord
@@ -49,6 +50,16 @@ class MLXWhisper:
             for seg in out.get("segments", []) for w in seg.get("words", []) if w["word"].strip()
         ]
         return [w for w, _ in got], out.get("language"), [q for _, q in got]
+
+    def release(self) -> None:
+        """Let go of the model: mlx_whisper keeps the last one it loaded (its `ModelHolder`) for the process's life. A
+        render calls this once its transcript is done, so the stages after it have that memory (OFFLINE-RENDER §7).
+        The next `transcribe` loads it again."""
+        import mlx.core as mx
+        from mlx_whisper.transcribe import ModelHolder
+
+        ModelHolder.model = ModelHolder.model_path = None
+        mx.clear_cache()
 
     def transcribe(self, audio: np.ndarray, language: str | None = None,
                    speech: Sequence[tuple[float, float]] = ()) -> Transcript:
@@ -94,6 +105,64 @@ class MLXWhisper:
                           edge_guesses=guesses)
 
 
+class MLXMelRoFormerSeparator:
+    """Mel-Band RoFormer "Kim Vocal 2" on MLX (OFFLINE-RENDER §2.14, ADR-020; the vendored `separation.mel_roformer`),
+    loaded from `model_dir` on first use (config.json and model.safetensors, nothing else). While it is loaded MLX's
+    buffer cache is bounded (`mx.set_cache_limit`), and it is cleared after each batch; `release()` drops the model and
+    restores the limit (the separate stage calls it when it ends)."""
+
+    sample_rate = 44_100
+    chunk = 352_800
+    CACHE_LIMIT = 1 << 30  # bytes of MLX's buffer cache while the separator runs (estimate, §2.14)
+    FILES = ("config.json", "model.safetensors")  # what `MelRoFormer.from_pretrained` reads (its CONFIG and WEIGHTS)
+
+    def __init__(self, model_dir: Path, dtype: str = SEP_DTYPE) -> None:
+        self.model_dir = Path(model_dir)
+        self.dtype = dtype
+        self._model = None
+        self._limit: int | None = None
+
+    def _load(self):
+        if self._model is None:
+            import mlx.core as mx
+
+            from ..separation.mel_roformer import MelRoFormer
+
+            model = MelRoFormer.from_pretrained(self.model_dir, getattr(mx, self.dtype))
+            c = model.config
+            if (c.sample_rate, c.chunk_size) != (self.sample_rate, self.chunk):
+                raise ValueError(f"{self.model_dir.name} works at {c.sample_rate} Hz in {c.chunk_size}-sample chunks, "
+                                 f"not {self.sample_rate} Hz in {self.chunk}")
+            self._limit = mx.set_cache_limit(self.CACHE_LIMIT)
+            self._model = model
+        return self._model
+
+    def vocals(self, batch: np.ndarray) -> np.ndarray:
+        import mlx.core as mx
+
+        model = self._load()
+        out = model(mx.array(np.ascontiguousarray(batch, np.float32)))
+        mx.eval(out)
+        got = np.array(out, np.float32)
+        del out
+        mx.clear_cache()
+        return got
+
+    def missing(self) -> list[str]:
+        return [name for name in self.FILES if not (self.model_dir / name).is_file()]
+
+    def release(self) -> None:
+        if self._model is None:
+            return
+        import mlx.core as mx
+
+        self._model = None
+        if self._limit is not None:
+            mx.set_cache_limit(self._limit)
+            self._limit = None
+        mx.clear_cache()
+
+
 def make_apple_backend(models_dir: Path) -> Backend:
     m = models_dir
     # MAATA_CFM_STEPS: a dev override for the S3Gen flow-matching steps (ADR-014).
@@ -106,4 +175,5 @@ def make_apple_backend(models_dir: Path) -> Backend:
         translator=ClaudeTranslator,
         tts=tts,
         models_dir=m,
+        separator=MLXMelRoFormerSeparator(m / "mel-roformer-kim-vocal-2-mlx"),
     )

@@ -227,9 +227,41 @@ def test_lint_leaves_ing_topics_and_adjectives_alone():
     assert lint_of("అది నిజంగా amazing అయిన చోటు.", "That is a truly amazing place.") == []
 
 
+def test_the_lint_version_follows_the_register_retarget():
+    assert t.LINT_VERSION == "lint-v4"
+
+
 def test_lint_flags_everyday_verbs_said_in_english():
     assert "everyday verbs said in English (use the Telugu verb): think" in flags_for("చాలామంది అలా think చేస్తారు.")
     assert "remember" in flags_for("ఆ రోజు నాకు బాగా remember అవుతుంది.")
+
+
+@pytest.mark.parametrize("line,verb", [
+    ("నిన్న ఆ movie see చేశా.", "see"), ("ఇప్పుడే lunch eat చేశా.", "eat"), ("రేపు office కి go అవుతా.", "go"),
+    ("ఆయన రేపు come అవుతారు.", "come"), ("ఆ విషయం నాకు know అవుతుంది.", "know"), ("ఏదో ఒకటి say చేయి.", "say"),
+    ("అమ్మకి ముందే tell చేశా.", "tell"), ("ఆ book నాకు give చేయి.", "give"), ("ఈ tablet రోజూ take చేయండి.", "take"),
+])
+def test_core_verbs_said_in_english_are_still_reported(line, verb):
+    assert f"everyday verbs said in English (use the Telugu verb): {verb}" in flags_for(line)
+
+
+@pytest.mark.parametrize("line,source", [
+    ("మా plan change చేశాం.", "We changed our plan."),
+    ("ముందు settings change చేయండి.", "First change the settings."),
+    ("పెట్రోల్ ధర మళ్ళీ increase అయింది.", "The price of petrol went up again."),
+    ("ఈ నెల traffic కొంచెం decrease అయింది.", "Traffic came down a little this month."),
+    ("ఇప్పుడు కొత్తగా coding learn అవుతున్నా.", "I'm learning coding now."),
+])
+def test_everyday_loans_said_in_english_with_a_light_verb_pass(line, source):
+    # ordinary Telugu people say these in English with చేయు/అవు (OFFLINE-RENDER §2.18)
+    assert lint_of(line, source) == []
+
+
+def test_an_irregular_past_before_a_light_verb_is_inflected():
+    assert "inflected English before చేయు/అవు (use a Telugu verb or the bare stem): learnt" in flags_for(
+        "కొత్త skill learnt అయ్యా.")
+    assert "sent" in flags_for("Mail ఇప్పుడే sent చేశా.")
+    assert lint_of("Mail ఇప్పుడే send చేశా.") == []
 
 
 def test_lint_flags_untranslated_phrases_but_not_numbers_or_verb_stems():

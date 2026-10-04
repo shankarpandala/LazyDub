@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Mapping, Protocol, Sequence
+from typing import Callable, Container, Mapping, Protocol, Sequence
 
 import numpy as np
 
@@ -13,6 +14,11 @@ from ..speakers import DiarBlock
 from ..types import TimedWord
 
 SR_ANALYSIS = 16_000
+COARSE_STEP = 0.2  # whole-file diarization's fallback segmentation step, as a share of its window (OFFLINE-RENDER §2.3)
+
+
+class Cancelled(RuntimeError):
+    """A long model call stopped early because its `cancel` event was set (a render paused: OFFLINE-RENDER §2.1)."""
 
 
 @dataclass(slots=True)
@@ -38,8 +44,14 @@ class Transcriber(Protocol):
 
 
 class Diarizer(Protocol):
-    def diarize_block(self, audio: np.ndarray, offset: float) -> DiarBlock:
-        """Diarize one block of 16 kHz audio that starts at video time `offset` (absolute times in the result)."""
+    def diarize(self, audio: np.ndarray, *, num_speakers: int | None = None, min_speakers: int | None = None,
+                max_speakers: int | None = None, step: float | None = None,
+                progress: Callable[[float], None] | None = None, cancel: threading.Event | None = None) -> DiarBlock:
+        """Diarize a whole file of 16 kHz audio at offset 0, in one clustering (OFFLINE-RENDER §2.3): `num_speakers`
+        exactly, or between `min_speakers` and `max_speakers`. `step`: the segmentation step as a share of the window
+        (None: the diarizer's own, with its fallbacks). `progress(fraction)` may be called from the worker thread; a set
+        `cancel` raises `Cancelled` at the diarizer's next check. The block's `step` says which step was used, and its
+        `embeddings` how many embeddings the clustering took, where the diarizer knows."""
         ...
 
 
@@ -80,7 +92,7 @@ class GlossaryEntry:
 
 @dataclass(frozen=True, slots=True)
 class LineSpec:
-    """One line to translate, as the session sizes it. The last five fields belong to one call type each."""
+    """One line to translate, as the job sizes it. The last five fields belong to one call type each."""
 
     id: int
     speaker: str
@@ -211,20 +223,25 @@ class SceneTranslator(Protocol):
     async def make_brief(self, meta: VideoMeta, transcript: Sequence[tuple[str, str]],
                          previous: Brief | None = None) -> Brief: ...
 
+    def cached(self, spec: LineSpec) -> LineResult | None:
+        """The line a scene call would serve from the line cache (with its coverage class), or None."""
+        ...
+
     async def translate(self, req: SceneRequest) -> SceneResult: ...
 
     def submit(self, req: SceneRequest) -> asyncio.Task[SceneResult]:
-        """`translate` as a task the caller need not await (a rephrase queued by the voicer)."""
+        """`translate` as a task the caller can cancel (a scene fix-up's rephrase, which a Claude failure drops)."""
         ...
 
     def cancel(self, match: Callable[[SceneRequest], bool] | None = None) -> int:
         """Cancel submitted requests (all, or those `match` picks); returns how many."""
         ...
 
-    async def review(self, req: SceneRequest, lines: Mapping[int, LineResult],
-                     chosen: Mapping[int, str]) -> SceneResult:
+    async def review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str],
+                     cache: Container[int] | None = None) -> SceneResult:
         """The coverage review of a scene's `lines` on the tiers `chosen` for them, with one re-translation of each line
-        classed P or E (§4.6): the lines to use, each with its class. `cancel` reaches it as it reaches `req`."""
+        classed P or E (§4.6): the lines to use, each with its class, stored in the line cache (with `cache`, only
+        those of the ids in it, each as the wording reviewed with its class). `cancel` reaches it as it reaches `req`."""
         ...
 
     async def aclose(self) -> None:
@@ -253,6 +270,26 @@ class VoiceCloningTTS(Protocol):
         ...
 
 
+class Separator(Protocol):
+    """The vocal separator under the background sound (OFFLINE-RENDER §2.14): `vocals` of a batch of `chunk`-sample
+    stereo chunks at `sample_rate`; the bed is the mixture minus them. Loaded on first use; `release()` lets go of the
+    model when the separate stage ends."""
+
+    sample_rate: int  # 44,100
+    chunk: int        # samples a chunk (352,800: 8 s)
+
+    def vocals(self, batch: np.ndarray) -> np.ndarray:
+        """[b, 2, chunk] float32 → [b, 2, chunk] float32, the vocals stem of each chunk."""
+        ...
+
+    def missing(self) -> list[str]:
+        """The model files its folder lacks (empty: it can load). A models folder filled before the separator was
+        pinned lacks them all, and a job that needs it fails at once saying how to fetch them."""
+        ...
+
+    def release(self) -> None: ...
+
+
 @dataclass(slots=True)
 class Backend:
     name: str
@@ -262,3 +299,4 @@ class Backend:
     translator: TranslatorFactory
     tts: VoiceCloningTTS
     models_dir: Path | None = None
+    separator: Separator | None = None  # None: the export has the Telugu voices only, and says so (§2.15)

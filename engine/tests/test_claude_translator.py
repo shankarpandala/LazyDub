@@ -471,6 +471,21 @@ async def test_a_rephrase_that_misses_its_deadline_is_dropped_and_its_usage_logg
     assert late.dropped and len(fake.calls()) == 1  # already late when it got a slot: never started
 
 
+async def test_rephrase_answers_are_not_stored(tmp_path):
+    """A rephrase is a wording shortened for one take (OFFLINE-RENDER §2.10): the reviewed scene line stays the cached
+    one, so a resume or a re-run never serves a shortened line, unreviewed, as the line."""
+    tr = MockSceneTranslator(tmp_path, "vid", brief_v0(META))
+    req = SceneRequest(1, specs((1,)))
+    line = (await tr.review(req, (await tr.translate(req)).lines, {1: "full"})).lines[1]
+    assert line.coverage is not None and set(line.tiers) == {"full"}
+    short = replace(req.lines[0], want=("full", "concise", "very_concise"), current=line.full.spoken,
+                    finding={"overrun_s": 1.2, "overrun_aksharas": 6})
+    res = await tr.translate(SceneRequest(1, (short,), "rephrase"))
+    assert set(res.lines[1].tiers) == {"full", "concise", "very_concise"} and res.lines[1].coverage is None
+    cached = tr._cached(req.lines[0])
+    assert cached.coverage == line.coverage and cached.tiers == line.tiers
+
+
 # ---- concurrency and cancellation ------------------------------------------------------------------------------------
 async def test_at_most_n_calls_run_at_once(fake):
     fake.env.setenv("FAKE_MODE", "pause")
@@ -691,6 +706,24 @@ async def test_p_and_e_lines_get_one_retranslation_from_the_english_with_the_mis
     assert ev["retranslated"] == [1, 2] and ev["replaced"] == [1, 2] and ev["calls"] == 2
     again = await fake.make().translate(req)  # a re-watch serves the kept wordings with their classes
     assert again.calls == 0 and again.lines[2].coverage.by == "validators"
+
+
+async def test_a_review_with_cache_stores_the_wording_reviewed_never_its_retranslation(fake):
+    """The render's review of the wordings voiced (OFFLINE-RENDER §2.10): the lines it answers still carry the
+    re-translation that replaced a P or E, but the line cache holds, for the ids in `cache` only, the wording reviewed
+    with the review's class; the re-translation isn't voiced yet, and its take may fail."""
+    tr = fake.make()
+    req = SceneRequest(3, specs((1, 2, 3)))
+    res = await tr.translate(req)
+    before = rows(fake)
+    fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["E", [], "negation"]}))
+    out = await tr.review(req, {i: replace(x, coverage=None) for i, x in res.lines.items()},
+                          {i: "full" for i in res.lines}, cache={1, 3})
+    assert out.lines[1].full.spoken.startswith("మళ్ళీ") and out.lines[1].coverage.by == "validators"
+    stored = {r["line"]["id"]: r for r in rows(fake).values()}
+    assert stored[1]["line"] == ct.line_json(res.lines[1]) and stored[1]["coverage"]["class"] == "P"
+    assert stored[1]["coverage"]["by"] == "review" and stored[3]["coverage"]["class"] == "C"
+    assert stored[2] == {r["line"]["id"]: r for r in before.values()}[2]  # not in `cache`: left as it was
 
 
 async def test_the_reviewed_wording_stays_unless_the_retranslation_classes_better(fake):

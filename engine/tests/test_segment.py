@@ -558,7 +558,7 @@ def test_sentence_rejoins_across_a_backchannel_in_a_longer_pause():
 def test_max_len_leaves_telugu_room_under_the_synth_cap():
     """Past the TTS cap the synthesizer stops and the line's tail is never spoken. A max_len unit's
     Telugu must be able to run to 2x its slot (1.6x of video after the 1.25x speed-up) under it."""
-    from maata_engine.session import MAX_LINE_SECONDS
+    from maata_engine.dubber import MAX_LINE_SECONDS
 
     assert (S.max_len + TimingSettings().borrow_max) * 2.0 <= MAX_LINE_SECONDS
 

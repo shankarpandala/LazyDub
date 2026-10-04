@@ -20,19 +20,21 @@ from ..backends.base import EMOTIONS, ENERGIES, Brief, GlossaryEntry, LineSpec, 
 
 # Bump SHOTS_VERSION whenever the prompt, an example or a schema changes; PROMPT_HASH follows the content and keys the
 # per-line cache, so a change never serves lines made under the old prompt.
-SHOTS_VERSION = "scene-v2"  # v2: a fit copies "current" into "full"
+SHOTS_VERSION = "scene-v3"  # v3: the everyday spoken Telugu of the general public (OFFLINE-RENDER §2.18)
 DESCRIPTION_MAX = 2000  # characters of the video description placed in the brief
 
 ROLE = (
-    "You dub English speech into spoken Telugu: the words a fluent, educated Telugu speaker says aloud on a Telugu "
-    "YouTube explainer or podcast. A Telugu text-to-speech voice says your Telugu over the original video, so every "
-    "line must be speakable exactly as written."
+    "You dub English speech into spoken Telugu: the words ordinary Telugu people say aloud in everyday talk, at home, "
+    "with friends, at work, in a shop or on the phone. Never bookish. A Telugu text-to-speech voice says your Telugu "
+    "over the original video, so every line must be speakable exactly as written."
 )
 
 STYLE = """STYLE (colloquial; the default)
-- Sishta vyavaharika: standard spoken Telugu of the central dialect, neutral between Andhra and Telangana. Never grandhika words such as యొక్క, తద్వారా, మరియు, కావున.
-- No English quota. Say a word in English only where educated Telugu speakers really say it in English: names, brands, technical and modern terms, and established loans (ఫోన్, టైం, జాబ్, ఫ్రెండ్). Many lines need no English at all; the topic decides.
-- An English verb is the bare English stem followed by చేయు or అవు (రీస్టార్ట్ చేయండి, లేట్ అయింది), never an -ed or -ing form. Everyday verbs stay Telugu.
+- Everyday spoken Telugu, the way ordinary people talk, in the central dialect, neutral between Andhra and Telangana. Never grandhika words such as యొక్క, తద్వారా, మరియు, కావున.
+- Prefer the simple everyday word to a Sanskrit-heavy or written one wherever people use the simple one (మొదలుపెట్టు, not ప్రారంభించు; కొను, not కొనుగోలు చేయు).
+- English wherever ordinary Telugu people say the word in English in everyday talk: not only names, brands and technical terms, but everyday loans too (ఫోన్, టైం, బైక్, టికెట్, ఆఫీస్, సారీ, ఓకే). Telugu wherever they say it in Telugu. No English quota either way: say each word the way people do. Never English grammar words (articles, pronouns, prepositions, auxiliaries, conjunctions) or a whole English clause, except a set phrase people say whole (థాంక్యూ, బై ద వే).
+- Verbs people say in Telugu stay Telugu (తిను, వెళ్ళు, చూడు, చెప్పు). A verb they commonly say in English is the bare English stem followed by చేయు or అవు (చేంజ్ చేయి, ట్రై చేయి, వెయిట్ చేయి, ఇంక్రీజ్ అయింది), never an -ed or -ing form.
+- The brief's register sets only politeness and how the speakers address each other and the audience, never how bookish the words are: a formal English lecture still comes out in everyday spoken Telugu. (The formal style below is chosen in the message, never by the video.)
 - Drop pronouns the verb already marks. Use spoken verb forms (చెప్తా, చేస్తున్నా, చేయొచ్చు, ఏంటి).
 - Translate fillers and discourse markers by their meaning (so → అంటే or అసలు, like → అంటే, you know → కదా); never carry them over in English.
 - Use the address forms the brief gives for each speaker and for the audience: మీరు to the audience and to anyone addressed politely, నువ్వు only between people the brief or the English shows to be close.
@@ -92,31 +94,33 @@ def _d(emotion: str = "neutral", energy: str = "mid", question: bool = False, *e
 # Original examples written for Maata (none from any video), from no English at all to technical lines; English words
 # are spelled the way Telugu speakers write them and listed in the english map. Each is (English, fields of the input
 # line besides id, want and en, the reply line without its id). Tests check every one against the validators.
-# MAINTAINER REVIEW: please read these as a native speaker (word choice, loan spellings, verb forms, the formal pair)
-# before the step-1 bake-off; SHOTS_VERSION goes up with any change.
+# MAINTAINER REVIEW: please read these as a native speaker (everyday word choice, loan spellings, verb forms, the formal
+# pair, the lecture line) before the step-1 bake-off; SHOTS_VERSION goes up with any change.
 SHOTS: list[tuple[str, dict, dict]] = [
     ("My father worked two jobs so that we could go to school.", {},
-     {"full": _w("మేము బడికి వెళ్ళాలని మా నాన్న రెండు ఉద్యోగాలు చేశారు."), "delivery": _d("serious")}),
+     {"full": _w("మేము స్కూల్ కి వెళ్ళాలని మా నాన్న రెండు జాబ్స్ చేసేవారు.", (1, "school"), (7, "jobs")),
+      "delivery": _d("serious")}),
     ("So, have you ever noticed how time just flies when you're, like, really enjoying something?", {},
      {"full": _w("అసలు ఎప్పుడైనా గమనించారా, అంటే ఏదైనా బాగా ఎంజాయ్ చేస్తున్నప్పుడు టైం ఎంత తొందరగా గడిచిపోతుందో?",
                  (6, "enjoy"), (8, "time")),
       "delivery": _d("happy", "mid", True)}),
     ("Bro, you promised you'd come. I waited for an hour!", {},
-     {"full": _w("రేయ్, వస్తానని మాటిచ్చావ్ కదా. గంటసేపు ఎదురుచూశా!"), "delivery": _d("angry", "high")}),
+     {"full": _w("రేయ్, వస్తానని మాటిచ్చావ్ కదా. గంటసేపు వెయిట్ చేశా!", (5, "wait")), "delivery": _d("angry", "high")}),
     ("Open the settings, turn off Wi-Fi, and restart the router.", {},
      {"full": _w("సెట్టింగ్స్ ఓపెన్ చేసి, వైఫై ఆఫ్ చేసి, రౌటర్ని రీస్టార్ట్ చేయండి.",
                  (0, "settings"), (1, "open"), (3, "Wi-Fi"), (4, "off"), (6, "router"), (7, "restart")),
       "delivery": _d()}),
     ("So basically what happened was, the bus was late, and then it started raining, and by the time I got there, the "
      "shop had already closed.", {},
-     {"full": _w("అంటే ఏమైందంటే, బస్సు లేట్ అయింది, తర్వాత వాన మొదలైంది, నేను అక్కడికి చేరేసరికి షాప్ అప్పటికే మూసేశారు.",
+     {"full": _w("అంటే ఏమైందంటే, బస్సు లేట్ అయింది, తర్వాత వాన మొదలైంది, నేను అక్కడికి వెళ్ళేసరికి షాప్ అప్పటికే మూసేశారు.",
                  (3, "late"), (11, "shop")),
-      "concise": _w("బస్సు లేట్ అయింది, వాన కూడా మొదలైంది, నేను చేరేసరికి షాప్ మూసేశారు.", (1, "late"), (8, "shop")),
+      "concise": _w("బస్సు లేట్ అయింది, వాన కూడా మొదలైంది, నేను వెళ్ళేసరికి షాప్ మూసేశారు.", (1, "late"), (8, "shop")),
       "very_concise": _w("బస్సు లేట్, పైగా వాన, వెళ్ళేసరికి షాప్ మూసేశారు.", (1, "late"), (5, "shop")),
       "delivery": _d("sad")}),
     ("Prices went up from 40 rupees to 65 in just two years. That's more than 60 percent.", {},
-     {"full": _w("కేవలం రెండేళ్ళలో ధర నలభై రూపాయల నుంచి అరవై ఐదుకి పెరిగింది. అంటే అరవై శాతం కంటే ఎక్కువ."),
-      "delivery": _d("surprised", "mid", False, 10, 11)}),
+     {"full": _w("రెండేళ్ళలోనే ధర నలభై రూపాయల నుంచి అరవై ఐదుకి పెరిగింది. అంటే అరవై పర్సెంట్ కంటే ఎక్కువ.",
+                 (10, "percent")),
+      "delivery": _d("surprised", "mid", False, 9, 10)}),
     ("AI models need a GPU with a lot of memory, which is why they're so expensive to run.", {},
      {"full": _w("ఏఐ మోడల్స్ కి చాలా మెమరీ ఉన్న జీపీయూ కావాలి, అందుకే వాటిని రన్ చేయడానికి అంత ఖర్చవుతుంది.",
                  (0, "AI"), (1, "models"), (4, "memory"), (6, "GPU"), (10, "run")),
@@ -127,7 +131,8 @@ SHOTS: list[tuple[str, dict, dict]] = [
     ("Don't worry, it's not rocket science.", {},
      {"full": _w("కంగారు పడకండి, ఇదేమీ బ్రహ్మవిద్య కాదు."), "delivery": _d("happy")}),
     ("If this video helped you, share it with a friend who needs it.", {},
-     {"full": _w("ఈ వీడియో మీకు ఉపయోగపడితే, ఇది అవసరమైన ఫ్రెండ్ కి షేర్ చేయండి.", (1, "video"), (6, "friend"), (8, "share")),
+     {"full": _w("ఈ వీడియో మీకు హెల్ప్ అయితే, అవసరం ఉన్న ఫ్రెండ్ కి షేర్ చేయండి.", (1, "video"), (3, "help"), (7, "friend"),
+                 (9, "share")),
       "delivery": _d("happy")}),
     ("Once the tests pass, push your code to GitHub and open a pull request.", {},
      {"full": _w("టెస్టులు పాస్ అయ్యాక, కోడ్ని గిట్హబ్ లోకి పుష్ చేసి, పుల్ రిక్వెస్ట్ ఓపెన్ చేయండి.",
@@ -141,8 +146,8 @@ SHOTS: list[tuple[str, dict, dict]] = [
     ("So what I was trying to say is that the", {"cut_off": True},
      {"full": _w("అంటే, నేను చెప్పాలనుకున్నది ఏంటంటే…"), "unfinished": True, "delivery": _d()}),
     ("Your brain is only about two percent of your body weight, but it uses around twenty percent of its energy.", {},
-     {"full": _w("మన మెదడు శరీర బరువులో దాదాపు రెండు శాతమే ఉంటుంది, కానీ మొత్తం ఎనర్జీలో ఇరవై శాతం దాకా అదే వాడుకుంటుంది.",
-                 (10, "energy")),
+     {"full": _w("మన మెదడు బాడీ వెయిట్ లో దాదాపు రెండు పర్సెంట్ ఉంటుంది అంతే, కానీ మొత్తం ఎనర్జీలో ఇరవై పర్సెంట్ దాకా అదే "
+                 "వాడేస్తుంది.", (2, "body"), (3, "weight"), (7, "percent"), (12, "energy"), (14, "percent")),
       "delivery": _d("surprised")}),
     ("When I moved to Hyderabad for my first job, I didn't know anyone, and honestly, it was really lonely.",
      {"start": 11.2, "end": 18.9, "breaks": [15.3]},
@@ -156,6 +161,10 @@ SHOTS: list[tuple[str, dict, dict]] = [
     ("Researchers found that people who slept less than six hours made more mistakes the next day.", {"style": "formal"},
      {"full": _w("ఆరు గంటల కంటే తక్కువ నిద్రపోయినవారు మరుసటి రోజు ఎక్కువ తప్పులు చేశారని పరిశోధకులు కనుగొన్నారు."),
       "delivery": _d("serious")}),
+    # A formal source in the colloquial style: a lecture still comes out in everyday Telugu.
+    ("In this lecture, we shall examine the principal factors contributing to the decline of soil fertility.", {},
+     {"full": _w("ఈ లెక్చర్ లో, నేల సారం తగ్గిపోవడానికి ముఖ్యమైన కారణాలు ఏంటో చూద్దాం.", (1, "lecture")),
+      "delivery": _d()}),
     ("Did you watch the new Marvel movie on Netflix last weekend?", {},
      {"full": _w("పోయిన వీకెండ్ నెట్ఫ్లిక్స్లో కొత్త మార్వెల్ సినిమా చూశారా?", (1, "weekend"), (2, "Netflix"), (4, "Marvel")),
       "delivery": _d("happy", "high", True)}),
@@ -223,7 +232,8 @@ SCENE_SCHEMA = {
 
 
 BRIEF_HEADER = ("VIDEO BRIEF (version {}). Follow its glossary spellings, each speaker's gender (for verb agreement) and "
-                "address forms, and its numbers convention. Apply its ASR fixes only to the words listed.")
+                "address forms, and its numbers convention. Apply its ASR fixes only to the words listed. In the formal "
+                "style, a term with a common Telugu word is said in Telugu even when its glossary entry keeps English.")
 
 
 def system_prompt(brief: Brief) -> str:
@@ -310,9 +320,9 @@ BRIEF_SYSTEM = f"""You prepare the brief that guides dubbing an English YouTube 
 The message is JSON: the video's metadata, each speaker's share of talk time, and the English transcript so far as {{"speaker", "en"}} lines. "previous", when present, is the brief so far: then return only what is new or has changed, and leave the rest out (an empty string or list means no change).
 Reply with one JSON object:
 - "topic": one sentence.
-- "register": how formal the video is and how the speakers talk to the audience and to each other.
+- "register": only the tone, and how the speakers address the audience and each other (polite or familiar). It never sets how bookish the words are: word choice follows the dubbing style, not the video's register.
 - "speakers": per speaker id, "name" (only if said), "gender" (male, female or unknown; Telugu verbs agree with it), "role", "audience" (polite for మీరు, familiar for నువ్వు) and "address" ({{"to", "form"}} for each other speaker they talk to).
-- "glossary": names, brands and terms that recur or could be spelled two ways. "term" as the English has it; "keep_english": true when Telugu speakers say it in English, and then "spoken" is how they write it in Telugu script; otherwise "spoken" is the fixed Telugu rendering. "spoken" is Telugu script only: no Latin, digits or zero-width characters. "note": how to say it, if not obvious.
+- "glossary": names, brands and terms that recur or could be spelled two ways. "term" as the English has it; "keep_english": true wherever ordinary Telugu people say the term in English, and then "spoken" is how they write it in Telugu script; false only when they say an everyday Telugu word for it, and then "spoken" is that word, never a coined or Sanskrit-heavy rendering. "spoken" is Telugu script only: no Latin, digits or zero-width characters. "note": how to say it, if not obvious.
 - "entities": other names of people, places and organisations.
 - "idioms": idioms, puns and jokes in the English, quoted, that need a Telugu equivalent.
 - "numbers": the convention for numbers, money and years (lakhs and crores or millions, and how years are said).

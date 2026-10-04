@@ -3,9 +3,13 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   engine:
+    # About 21 min on a hosted runner, and every change already runs the full suite on the reference Mac before it is
+    # pushed (CLAUDE.md), so PRs don't wait for it (maintainer, 2026-10-04): it runs after a merge to main, or on demand.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -13,7 +17,7 @@ jobs:
       - name: Test engine (pure core + demo pipeline; no models)
         working-directory: engine
         run: |
-          uv sync --group dev
+          uv sync --group dev --extra resolve
           uv run pytest -q
 
   ui:

@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from hypothesis import given, settings, strategies as st
 
-from maata_engine.speakers import DiarBlock, GlobalSpeaker, SpeakerRegistry
+from maata_engine.speakers import DiarBlock, GlobalSpeaker, SpeakerRegistry, activity, match_ids, settle
 from maata_engine.types import SpeakerTurn
 
 DIM = 256
@@ -704,3 +704,119 @@ def test_blocks_stitch_back_into_the_true_timeline(spec, block_len, overlap, see
     assert reg.covered_until() == pytest.approx(end, abs=1e-3) and reg.is_covered(0, end)  # ends on whole samples
     total = sum(g.talk_seconds for g in reg.speakers.values())
     assert total == pytest.approx(sum(x.end - x.start for x in truth), abs=0.05 * len(truth))
+
+
+# -- the whole-file render: settle, stable ids, activity (OFFLINE-RENDER §2.3) --------------------------------------------
+
+def whole(exclusive, centroids, end=None):
+    """A registry of one whole-file block, as the render registers a diarization."""
+    reg = SpeakerRegistry()
+    end = end if end is not None else max(t.end for t in exclusive)
+    reg.add_block(block(0, end, exclusive, centroids))
+    return reg
+
+
+def test_settle_merges_short_talk_into_nearest():
+    reg = whole([T("a", 0, 200), T("b", 200, 400), T("c", 400, 410), T("a", 410, 600)],
+                {"a": A, "b": B, "c": near(B, 0.6)})
+    assert settle(reg) == [("S3", "S2", "talk")]  # 10 s is under 30 s: into the nearer centroid, below SAME_COS
+    assert list(reg.speakers) == ["S1", "S2"]
+    assert spans(reg.turns_in(390, 420)) == spans([T("S2", 390, 410), T("S1", 410, 420)])
+    assert reg.speakers["S2"].talk_seconds == pytest.approx(210)
+    # With no centroid, into the speaker whose speech lies next to theirs.
+    reg = whole([T("a", 0, 100), T("d", 150, 155), T("b", 155, 250), T("a", 300, 400)], {"a": A, "b": B})
+    assert settle(reg) == [("S2", "S3", "talk")]
+    assert spans(reg.turns_in(150, 250)) == spans([T("S2", 150, 250)])  # S3 renumbered S2 (first speech 150)
+    # The floor is 1 % of all talk when that is more than 30 s.
+    reg = whole([T("a", 0, 3000), T("b", 3000, 6000), T("c", 6000, 6040)], {"a": A, "b": B, "c": near(A, 0.3)})
+    assert settle(reg) == [("S3", "S1", "talk")] and len(reg.speakers) == 2  # 40 s < 60 s
+
+
+def test_settle_merges_near_identical_centroids():
+    reg = whole([T("a", 0, 150), T("b", 150, 250), T("a2", 250, 350), T("c", 350, 450)],
+                {"a": A, "b": B, "a2": near(A, 0.9), "c": near(B, 0.8, seed=3)})
+    assert settle(reg) == [("S3", "S1", "same")]  # the one who talks less goes; b and c (0.8) stay apart
+    assert list(reg.speakers) == ["S1", "S2", "S3"]
+    assert [reg.speakers[s].talk_seconds for s in ("S1", "S2", "S3")] == pytest.approx([250, 100, 100])
+    assert reg.speaker_at(300) == "S1" and reg.speaker_at(400) == "S3"
+
+
+def test_settle_keeps_every_speaker_when_hinted():
+    reg = whole([T("a", 0, 150), T("b", 150, 250), T("a2", 250, 350), T("c", 350, 355)],
+                {"a": A, "b": B, "a2": near(A, 0.95), "c": near(A, 0.99)})
+    assert settle(reg, hinted=True) == []
+    assert list(reg.speakers) == ["S1", "S2", "S3", "S4"]
+
+
+def test_settle_renumbers_by_first_speech():
+    reg = whole([T("x", 0, 5), T("a", 5, 100), T("b", 100, 200), T("a", 200, 300)], {"x": near(B, 0.7), "a": A, "b": B})
+    assert list(reg.speakers) == ["S1", "S2", "S3"]  # x first, then a, then b
+    assert settle(reg) == [("S1", "S3", "talk")]
+    assert list(reg.speakers) == ["S1", "S2"]
+    s1, s2 = reg.speakers["S1"], reg.speakers["S2"]
+    assert (s1.first_at, s2.first_at) == (0, 5)       # b, with x folded in, spoke first
+    assert (s1.label, s2.label) == ("Speaker 1", "Speaker 2")
+    assert s1.talk_seconds == pytest.approx(105) and s2.talk_seconds == pytest.approx(195)
+    assert spans(reg.turns_in(0, 300)) == spans([T("S1", 0, 5), T("S2", 5, 100), T("S1", 100, 200), T("S2", 200, 300)])
+    assert reg.add_block(block(300, 400, [T("n", 300, 400)], {"n": C})) == {"n": "S4"}  # ids are never reused
+
+
+def test_settle_keeps_the_speakers_of_a_short_clip():
+    # Under 5 minutes of speech the floor is 10 % of it, not 30 s: two (or three) different people stay apart.
+    reg = whole([T("a", 0, 25), T("b", 25, 50)], {"a": A, "b": B})
+    assert settle(reg) == [] and list(reg.speakers) == ["S1", "S2"]
+    reg = whole([T("a", 0, 20), T("b", 20, 40), T("c", 40, 60)], {"a": A, "b": B, "c": C})
+    assert settle(reg) == [] and list(reg.speakers) == ["S1", "S2", "S3"]
+    # A short clip's blip still goes: 3 s is under 10 % of 60 s.
+    reg = whole([T("a", 0, 30), T("x", 30, 33), T("b", 33, 60)], {"a": A, "b": B, "x": near(A, 0.6)})
+    assert settle(reg) == [("S2", "S1", "talk")] and list(reg.speakers) == ["S1", "S2"]
+
+
+def test_match_ids_keeps_ids_across_reruns():
+    before = [("S1", 0, 100), ("S2", 100, 200), ("S1", 200, 300), ("S2", 300, 400)]
+    # The same count: whatever order the re-run numbers them in, every speaker gets back the id they had.
+    reg = whole([T("a", 0, 100), T("b", 100, 200), T("a", 200, 300), T("b", 300, 400)], {"a": A, "b": B})
+    assert match_ids(before, reg) == {"S1": "S1", "S2": "S2"}
+    reg.rename({"S1": "S2", "S2": "S1"})  # numbered the other way round this time
+    ids = match_ids(before, reg)
+    assert ids == {"S1": "S2", "S2": "S1"}
+    reg.rename(ids)
+    assert spans(reg.turns_in(0, 200)) == spans([T("S1", 0, 100), T("S2", 100, 200)])
+    # A count of 3 splits the second person: the first keeps S1, the larger part of the split keeps S2.
+    reg = whole([T("a", 0, 100), T("b", 100, 170), T("b2", 170, 200), T("a", 200, 300), T("b", 300, 400)],
+                {"a": A, "b": B, "b2": C})
+    assert match_ids(before, reg) == {"S1": "S1", "S2": "S2", "S3": "S3"}
+    reg = whole([T("a", 0, 100), T("b2", 100, 130), T("b", 130, 200), T("a", 200, 300), T("b", 300, 400)],
+                {"a": A, "b": B, "b2": C})
+    assert match_ids(before, reg) == {"S1": "S1", "S2": "S3", "S3": "S2"}  # b2 spoke first but shares less
+    # A new voice with no shared speech takes the next id no earlier speaker had.
+    reg = whole([T("a", 0, 400), T("n", 500, 600)], {"a": A, "n": C})
+    assert match_ids(before, reg) == {"S1": "S1", "S2": "S3"}
+
+
+def test_activity_bins_sum_to_talk():
+    reg = whole([T("a", 0, 7.3), T("b", 7.3, 25.1), T("a", 26, 61.7), T("b", 70, 119.9)], {"a": A, "b": B}, end=120)
+    for sid in ("S1", "S2"):
+        bins = activity(reg, sid, 120.0)
+        assert len(bins) == 120 and all(0 <= x <= 1 + 1e-9 for x in bins)
+        assert sum(bins) * 1.0 == pytest.approx(reg.speakers[sid].talk_seconds)
+    both = [x + y for x, y in zip(activity(reg, "S1", 120.0), activity(reg, "S2", 120.0))]
+    assert max(both) <= 1 + 1e-9 and both[7] == pytest.approx(1) and both[65] == pytest.approx(0)
+    assert sum(activity(reg, "S1", 120.0, bins=7)) * 120 / 7 == pytest.approx(reg.speakers["S1"].talk_seconds)
+
+
+def test_restore_rebuilds_the_registry_a_dump_came_from():
+    reg = whole([T("a", 0, 50), T("b", 50, 60), T("a", 60, 100), T("b", 100, 180)], {"a": A, "b": B}, end=200)
+    reg.add_block(block(0, 200, [], {}))  # nothing new: the whole file is covered
+    reg.rename({"S1": "S2", "S2": "S1"})
+    reg._stray.extend([T("", 185, 190)])
+    got = SpeakerRegistry.restore(reg.dump(), 0.0, 200.0)
+    assert list(got.speakers) == ["S1", "S2"] and got.speakers["S1"].label == "Speaker 1"
+    assert got.speakers["S1"].first_at == 50  # the ids it had, not the order of first speech
+    for sid in ("S1", "S2"):
+        g, w = got.speakers[sid], reg.speakers[sid]
+        assert (g.first_at, g.talk_seconds) == (w.first_at, pytest.approx(w.talk_seconds))
+        np.testing.assert_allclose(g.centroid, w.centroid)
+    assert spans(got.turns_in(0, 200)) == spans(reg.turns_in(0, 200))
+    assert spans(got._stray.turns) == spans(reg._stray.turns)
+    assert got.is_covered(0, 200)

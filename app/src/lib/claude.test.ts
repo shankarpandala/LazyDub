@@ -32,10 +32,10 @@ describe("the Claude banner", () => {
     expect(claudeNotice(at("failed", { message: "exit 3", retryIn: 240 }), 0, 0).detail).toContain("exit 3 Trying again in 4 min.");
   });
 
-  it("always says the dub goes on with what is translated", () => {
+  it("always says the dub goes on with the work on this Mac", () => {
     const kinds: ClaudeProblemKind[] = ["missing", "not_signed_in", "outdated", "usage_limit", "transient", "stalled", "timeout",
       "bad_output", "failed"];
-    for (const k of kinds) expect(claudeNotice(at(k)).detail).toContain("Lines already translated keep playing.");
+    for (const k of kinds) expect(claudeNotice(at(k)).detail).toContain("The dub goes on with the work on this Mac meanwhile.");
   });
 });
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 import time
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 torch = pytest.importorskip("torch")
@@ -159,3 +160,31 @@ def test_synthesize_takes_shares_one_decode_and_flows_only_the_take_vocoded(monk
 def test_a_take_with_no_speech_tokens_is_empty():
     take = MelTake(None, 0)
     assert take.seconds == 0.0 and not take.capped
+
+
+def test_a_take_is_packed_with_its_flowed_mel_and_unpacked_on_the_models_device():
+    """The render keeps a take on disk (OFFLINE-RENDER §2.9): `pack_take` flows it first if it hasn't been, and keeps its
+    mel as float16 and its token count; `unpack_take` gives back a flowed take (no second flow) with the mel on the
+    model's device, as long as it was."""
+    flows = []
+
+    def flow(speech, ref_dict, n_cfm_timesteps, finalize):
+        flows.append(int(speech.shape[-1]))
+        g = torch.Generator().manual_seed(5)
+        return torch.randn(1, 80, 2 * speech.shape[-1], generator=g)
+
+    tts = tiny_tts()
+    tts.model = SimpleNamespace(device="cpu", s3gen=SimpleNamespace(flow_inference=flow))
+    take = MelTake(None, 40, cfm_steps=6, speech=torch.arange(40), gen={"ref": 1})
+    packed = tts.pack_take(take)
+    assert flows == [40] and take.speech is None  # flowed once, for the pack
+    assert packed["mel"].dtype == np.float16 and packed["mel"].shape == (1, 80, 80) and int(packed["n_tokens"]) == 40
+    back = tts.unpack_take(packed)
+    assert back.n_tokens == 40 and back.seconds == take.seconds and back.speech is None
+    assert back.mel.device.type == "cpu" and back.mel.dtype == torch.float32
+    torch.testing.assert_close(back.mel, take.mel, atol=1e-2, rtol=1e-3)  # float16 on disk
+    tts._flow(back)
+    assert flows == [40]  # already flowed
+    assert tts.pack_take(back)["mel"].tobytes() == packed["mel"].tobytes()  # packs to the same bytes again
+    empty = tts.unpack_take(tts.pack_take(MelTake(None, 0)))
+    assert empty.mel is None and empty.seconds == 0.0

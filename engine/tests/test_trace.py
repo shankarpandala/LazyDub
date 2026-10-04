@@ -1,30 +1,34 @@
-"""units.jsonl (ARCHITECTURE §7 step 0): per-block diarization and ASR events, and per-unit cost and text fields, with a
-stable set of keys whether or not the TTS reports its internal timings."""
+"""units.jsonl (ARCHITECTURE §7 step 0, OFFLINE-RENDER §2.13): a render job's per-stage, per-chunk ASR and per-voice
+events, and per-line cost and text fields, with a stable set of keys whether or not the TTS reports its internal
+timings."""
 
 from __future__ import annotations
 
 import asyncio
-import json
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import pytest
 
-from maata_engine.backends.base import SR_ANALYSIS, Backend
-from maata_engine.backends.mock import MockDiarizer, MockSceneTranslator, MockTranscriber, MockTTS
-from maata_engine.gpu import BACKGROUND, FRONTIER, URGENT, VOICE, GpuScheduler
-from maata_engine.resolve import DemoResolver
-from maata_engine.session import Session, VoiceCost
-from maata_engine.text.scene_prompt import PROMPT_HASH
+sys.path.insert(0, str(Path(__file__).parent))
+from fakes import bare_job, trace  # noqa: E402
+
+from maata_engine.backends.base import SR_ANALYSIS  # noqa: E402
+from maata_engine.backends.mock import MockTTS  # noqa: E402
+from maata_engine.dubber import VoiceCost  # noqa: E402
+from maata_engine.gpu import BACKGROUND, URGENT, VOICE, GpuScheduler  # noqa: E402
+from maata_engine.text.scene_prompt import PROMPT_HASH  # noqa: E402
 
 UNIT_KEYS = {"lock_wait_s", "takes", "synth_s", "t3_s", "t3_tokens", "t3_steps", "t3_ms_per_token", "flow_s", "cfm_steps",
              "render_s", "retakes",
-             "translate_ready_at", "translate_s", "model", "prompt_hash", "cache_hit", "wall_s", "audio_s", "tier",
-             "tier_first", "tiers", "speech_s", "scene", "full_aksharas", "full_pred_aksharas", "flags", "provisional",
-             "breaks", "anchors", "cut_off", "music", "lint", "lint_version", "takes_n", "take_failures", "gpu_priority",
-             "lead_s", "r", "said", "parts", "rate_cap", "hard_breaks", "speech", "voiced", "anchor_errors",
-             "end_error_s", "overlap_speech"}  # the timing fields (§3.10)
+             "translate_ready_at", "translate_s", "model", "prompt_hash", "cache_hit", "audio_s", "tier", "wording",
+             "tiers", "speech_s", "scene", "full_aksharas", "full_pred_aksharas", "flags", "render_flags", "breaks",
+             "anchors", "cut_off", "music", "lint", "lint_version", "takes_n", "take_failures", "gpu_priority", "fixups",
+             "voice", "pcm", "samples", "pcm_made", "said", "parts", "rate_cap", "hard_breaks", "speech", "voiced",
+             "anchor_errors", "end_error_s", "overlap_speech"}  # the timing fields (§3.10)
 ASR_KEYS = {"redecoded", "recovered", "rejected", "punctuated", "edge_guesses", "uncovered", "low_confidence",
             "repeats"}  # the ASR guards (§3.4)
 
@@ -44,7 +48,8 @@ class FakeTake:
 
 
 class MelTTS(MockTTS):
-    """The mock voice, split into a mel take plus vocoding like Chatterbox, reporting fixed T3 and S3Gen timings."""
+    """The mock voice, split into a mel take plus vocoding like Chatterbox, reporting fixed T3 and S3Gen timings, and
+    kept in a take file as Chatterbox keeps one."""
 
     def synthesize_mel(self, text, voice, language="te", max_seconds=None) -> FakeTake:
         return FakeTake(self.synthesize(text, voice, language, max_seconds))
@@ -52,51 +57,42 @@ class MelTTS(MockTTS):
     def vocode(self, take: FakeTake, rate: float = 1.0) -> np.ndarray:
         return take.samples[: round(len(take.samples) / rate)]
 
+    def pack_take(self, take: FakeTake) -> dict[str, np.ndarray]:
+        return {"mel": take.samples}
 
-async def _dub(tmp_path, tts, units: int = 3) -> list[dict]:
-    async def sj(_: dict) -> None: ...
-
-    async def sb(_: bytes) -> None: ...
-
-    backend = Backend("mock", "cpu", MockTranscriber(), MockDiarizer(), MockSceneTranslator, tts)
-    s = Session(backend, DemoResolver(), tmp_path, sj, sb)
-    await s.open("https://youtu.be/dQw4w9WgXcQ")
-    trace = tmp_path / "dQw4w9WgXcQ" / "units.jsonl"
-    deadline = time.monotonic() + 20
-    try:
-        while time.monotonic() < deadline:
-            await asyncio.sleep(0.1)
-            if trace.exists() and trace.read_text().count('"event": "unit"') >= units:
-                break
-    finally:
-        await s.close()
-    return [json.loads(line) for line in trace.read_text().splitlines()]
+    def unpack_take(self, d: dict[str, np.ndarray]) -> FakeTake:
+        return FakeTake(np.asarray(d["mel"], np.float32))
 
 
 @pytest.mark.parametrize("tts", [MockTTS(), MelTTS()], ids=["samples", "mel"])
-async def test_units_jsonl_records_block_and_unit_costs(tmp_path, tts):
-    events = await _dub(tmp_path, tts)
-    by = {k: [e for e in events if e["event"] == k] for k in ("diar", "asr", "clone", "unit")}
+async def test_units_jsonl_records_stage_chunk_voice_and_line_costs(tmp_path, tts):
+    job = bare_job(tmp_path, tts)
+    assert await job.run() == "done"
+    by = {k: trace(job, k) for k in ("stage", "asr", "clone", "unit")}
     assert all(by.values()), {k: len(v) for k, v in by.items()}
-    for e in by["diar"] + by["asr"]:
-        assert e["b"] > e["a"] and e["run_s"] >= 0 and e["lock_wait_s"] >= 0 and e["priority"] in (FRONTIER, BACKGROUND)
-    assert all(e["turns"] > 0 and e["speakers"] > 0 for e in by["diar"])
+    (speakers,) = [e for e in by["stage"] if e["key"] == "speakers"]
+    assert speakers["seconds"] >= 0 and speakers["gpu_s"] >= 0 and not speakers["cached"]
+    assert job.registry.speakers and job.registry.turns_in(0.0, job.doc["duration"])
+    for e in by["asr"]:
+        assert e["b"] > e["a"] and e["run_s"] >= 0 and e["lock_wait_s"] >= 0 and e["priority"] == VOICE
     assert any(e["words"] > 0 for e in by["asr"])  # a short tail chunk may have none
     assert all(ASR_KEYS <= e.keys() for e in by["asr"])
     assert all(e["build_s"] >= 0 and e["calibrate_s"] >= 0 and e["lock_wait_s"] >= 0 for e in by["clone"])
     # the calibration (three sentences where the TTS gives mel takes; none for the plain mock) and the pace it set
     assert all(e["calibration_takes"] == (3 if isinstance(tts, MelTTS) else 0) and e["pace"] > 0 and e["overhead_s"] >= 0
                for e in by["clone"])
-    heard = set()
+    sources = [u["source"] for u in by["unit"]]
     for u in by["unit"]:
         assert UNIT_KEYS <= u.keys()
-        assert u["takes"] >= 1 and u["lock_wait_s"] >= 0 and u["synth_s"] >= 0 and u["render_s"] >= 0
-        assert u["takes_n"] == 1 and u["take_failures"] == [] and u["gpu_priority"] in (URGENT, VOICE)  # no batching TTS
+        assert u["lock_wait_s"] >= 0 and u["synth_s"] >= 0 and u["render_s"] >= 0 and u["take_failures"] == []
         assert u["translate_ready_at"] <= u["t"] and u["translate_s"] >= 0
         assert u["model"] == "mock" and u["prompt_hash"] == PROMPT_HASH
-        # The demo says six lines over and over: a line can be served from the line cache only once said before.
-        assert isinstance(u["cache_hit"], bool) and (not u["cache_hit"] or (u["source"], u["speaker"]) in heard)
-        heard.add((u["source"], u["speaker"]))
+        # The demo says six lines over and over: a line is served from the line cache only when said elsewhere too.
+        assert isinstance(u["cache_hit"], bool) and (not u["cache_hit"] or sources.count(u["source"]) > 1)
+        if not u["takes"]:  # every take of it from the take cache (the same words said before): nothing spent
+            assert u["synth_s"] == 0 and u["t3_s"] is u["t3_tokens"] is u["takes_n"] is u["gpu_priority"] is None
+            continue
+        assert u["takes_n"] == 1 and u["gpu_priority"] == VOICE  # one take: no batching TTS
         if isinstance(tts, MelTTS):
             assert u["t3_tokens"] == u["t3_steps"] == 40 * u["takes"] and u["t3_ms_per_token"] == 0.5
             assert u["cfm_steps"] == 6 and u["retakes"] == 0
@@ -104,6 +100,7 @@ async def test_units_jsonl_records_block_and_unit_costs(tmp_path, tts):
         else:  # the TTS doesn't say: null, not missing
             assert u["t3_s"] is u["t3_tokens"] is u["t3_steps"] is u["t3_ms_per_token"] is u["flow_s"] is None
             assert u["cfm_steps"] is None
+    assert any(u["takes"] for u in by["unit"])
 
 
 async def test_lock_wait_counts_only_the_wait():
@@ -121,31 +118,25 @@ async def test_lock_wait_counts_only_the_wait():
     assert 0.08 <= cost.lock_wait_s < 0.15
 
 
-async def test_a_clone_on_the_voicing_path_counts_its_lock_waits(tmp_path, monkeypatch):
-    """A speaker cloned when their first line is voiced: the unit waited for the GPU lock during the clone too."""
-    async def sj(_: dict) -> None: ...
-
-    async def sb(_: bytes) -> None: ...
-
-    backend = Backend("mock", "cpu", MockTranscriber(), MockDiarizer(), MockSceneTranslator, MelTTS())
-    s = Session(backend, DemoResolver(), tmp_path, sj, sb)
-    s._dir, s.audio = tmp_path, np.zeros(10 * SR_ANALYSIS, np.float32)
-    monkeypatch.setattr(s.registry, "best_span", lambda *a, **k: None)  # the stitched reference, from one 6 s clip
-    monkeypatch.setattr(s.registry, "reference_clips", lambda *a, **k: [(0.0, 6.0)])
+async def test_a_voice_built_while_another_holds_the_gpu_counts_its_lock_waits(tmp_path, monkeypatch):
+    """The voices stage builds a speaker's voice while something else has the GPU: its clone event counts the wait."""
+    job = bare_job(tmp_path, MelTTS())
+    job.audio = np.zeros(10 * SR_ANALYSIS, np.float32)
+    monkeypatch.setattr(job.registry, "best_span", lambda *a, **k: None)  # the stitched reference, from one 6 s clip
+    monkeypatch.setattr(job.registry, "reference_clips", lambda *a, **k: [(0.0, 6.0)])
 
     async def holder() -> None:
-        async with s.gpu.hold(BACKGROUND):
+        async with job.gpu.hold(BACKGROUND):
             await asyncio.sleep(0.1)
 
     task = asyncio.create_task(holder())
-    await asyncio.sleep(0)  # the diarizer, say, has the GPU
-    cost = VoiceCost()
-    _, kind, key = await s._voice_for("S1", cost)
+    await asyncio.sleep(0)  # the separator, say, has the GPU
+    entry = await job._make_voice("S1")
     await task
-    assert kind.value == "cloned" and key == s.voices["S1"].key and key.voice == "S1" and key.reference
-    assert 0.08 <= cost.lock_wait_s < 0.3 and cost.takes == 0  # the calibration take isn't one of the unit's
-    clone = [json.loads(line) for line in (tmp_path / "units.jsonl").read_text().splitlines()][-1]
-    assert clone["event"] == "clone" and clone["lock_wait_s"] == round(cost.lock_wait_s, 3)
+    key = job.voices["S1"].key
+    assert entry["how"] == "stitched" and key == job._key("S1") and key.voice == "S1" and key.reference
+    (clone,) = trace(job, "clone")
+    assert 0.08 <= clone["lock_wait_s"] < 0.3 and clone["calibration_takes"] == 3
 
 
 def test_chatterbox_take_times_t3_and_flow_separately():
@@ -188,14 +179,9 @@ async def test_the_flow_run_when_a_take_is_vocoded_counts_as_synthesis_not_rende
             time.sleep(0.01)     # the vocoder
             return take.samples
 
-    async def sj(_: dict) -> None: ...
-
-    async def sb(_: bytes) -> None: ...
-
-    s = Session(Backend("mock", "cpu", MockTranscriber(), MockDiarizer(), MockSceneTranslator, FlowTTS()), DemoResolver(),
-                tmp_path, sj, sb)
+    job = bare_job(tmp_path, FlowTTS())
     cost = VoiceCost(synth_s=0.2)
-    await s._render(FakeTake(np.zeros(10, np.float32), flow_s=0.0), 1.0, cost)
+    await job._render(FakeTake(np.zeros(10, np.float32), flow_s=0.0), 1.0, cost)
     assert cost.flow_s == pytest.approx(0.04) and cost.synth_s == pytest.approx(0.24)
     assert 0.005 <= cost.render_s < 0.035
 

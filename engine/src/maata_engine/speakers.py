@@ -1,14 +1,17 @@
-"""Global speaker registry for the speaker pre-pass (spec §6.2).
+"""Global speaker registry (spec §6.2), built for the streaming player's speaker pre-pass (gone with ADR-021).
 
-The pre-pass diarizes the audio in long, overlapping blocks. Each block comes back with its own
-labels (pyannote's SPEAKER_00, …), so one person can be SPEAKER_01 in one block and SPEAKER_00 in
-the next. This registry links block labels to stable session ids (S1, S2, …) by speaker-embedding
+The pre-pass diarized the audio in long, overlapping blocks. Each block came back with its own
+labels (pyannote's SPEAKER_00, …), so one person could be SPEAKER_01 in one block and SPEAKER_00 in
+the next. This registry links block labels to stable ids (S1, S2, …) by speaker-embedding
 similarity, so a speaker who is silent for a while comes back with the same id. The speech a label
 shares with known turns in the block overlap (the same audio, diarized twice) backs the embedding up,
 and stands in for it when there is none. Labels with too little speech to trust (a laugh, a split-off
 fragment) only follow a known speaker. The registry keeps one non-duplicated timeline of turns and
 picks clean reference audio for cloning: one contiguous span for the timbre prompt (best_span), and
 many clean clips to average a speaker embedding over (clean_clips).
+
+The offline render (OFFLINE-RENDER §2.3) diarizes the whole file at once instead: one `add_block` registers it, `settle`
+folds over-split speakers back, `match_ids` keeps a re-run's ids, and `activity` gives the UI's per-speaker strip.
 
 Pure logic (numpy only, ADR-005). Times are absolute video seconds.
 """
@@ -43,6 +46,15 @@ _BRIDGE = 0.6              # s: a pause this short between one speaker's turns k
 _CLEAN_MAX = 10.0          # s: clean_clips cuts longer spans into pieces no longer than this
 _SCORE_TOP = 8             # best_span asks the caller's score() about this many candidates at a time…
 _SCORE_TIE = 0.05          # …taking candidates whose built-in scores are this close as ties, spread over the timeline
+# Settling a whole-file diarization (OFFLINE-RENDER §2.3, decision M2): in auto mode a speaker with less exclusive talk
+# than max(MIN_TALK, MIN_SHARE x everyone's) is merged into the nearest one, and so is either of two speakers whose
+# centroids are at least SAME_COS alike. The floor is never more than FLOOR_CAP x everyone's talk, so a clip with under
+# 5 minutes of speech keeps a second speaker who talks less than MIN_TALK (from 5 minutes on, the cap changes nothing).
+MIN_TALK = 30.0            # s
+MIN_SHARE = 0.01
+SAME_COS = 0.85
+FLOOR_CAP = 0.1
+_ADJACENT = 1.0            # s either side of a speaker's turn in which another's speech counts as next to theirs
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +66,8 @@ class DiarBlock:
     turns: list[SpeakerTurn]           # may overlap (crosstalk)
     exclusive: list[SpeakerTurn]       # non-overlapping (pyannote exclusive diarization)
     centroids: dict[str, np.ndarray]   # label -> speaker embedding (may be missing/NaN for tiny speakers)
+    step: float | None = None          # whole-file diarization: the segmentation step used, as a share of its window
+    embeddings: int | None = None      # whole-file diarization: the embeddings its clustering kept (the guard's count)
 
 
 @dataclass
@@ -189,6 +203,45 @@ class SpeakerRegistry:
         g.first_at = min(g.first_at, old.first_at)
         for track in (self._ex, self._all):
             track.set([SpeakerTurn(into, t.start, t.end) if t.speaker == src else t for t in track.turns])
+
+    def rename(self, ids: dict[str, str]) -> None:
+        """Give speakers new ids (`ids`: current id -> new id; the others keep theirs), all at once, so ids may swap: to
+        renumber them, or to keep the ids an earlier diarization gave the same people. A default label ("Speaker 3")
+        follows its id. The new ids must not collide."""
+        ids = {a: b for a, b in ids.items() if a in self.speakers and a != b}
+        if not ids:
+            return
+        renamed = {ids.get(sid, sid): g for sid, g in self.speakers.items()}
+        if len(renamed) != len(self.speakers):
+            raise ValueError(f"speaker ids collide: {ids}")
+        for sid, g in renamed.items():
+            if g.label == f"Speaker {g.id[1:]}":
+                g.label = f"Speaker {sid[1:]}"
+            g.id = sid
+        self.speakers = {sid: renamed[sid] for sid in sorted(renamed, key=lambda s: (_id_number(s), s))}
+        self._weight = {ids.get(sid, sid): w for sid, w in self._weight.items()}
+        for track in (self._ex, self._all):
+            track.set([SpeakerTurn(ids.get(t.speaker, t.speaker), t.start, t.end) for t in track.turns])
+        self._issued = max([self._issued, *(_id_number(s) for s in self.speakers)])
+
+    def dump(self) -> dict:
+        """The speakers' turns (with crosstalk, and exclusive), the speech of labels that matched nobody and the
+        centroids, as JSON (exact floats), for `restore` (the render's diarization.json)."""
+        return {"turns": [[t.speaker, t.start, t.end] for t in self._all.turns],
+                "exclusive": [[t.speaker, t.start, t.end] for t in self._ex.turns],
+                "stray": [[t.start, t.end] for t in self._stray.turns],
+                "centroids": {sid: g.centroid.tolist() for sid, g in self.speakers.items() if g.centroid is not None}}
+
+    @classmethod
+    def restore(cls, doc: dict, start: float, end: float) -> SpeakerRegistry:
+        """The registry `dump` wrote for one block over [start, end], rebuilt with one `add_block` over it and renamed
+        to the ids it had: the same speakers, turns and clean speech, whatever order they were first found in."""
+        turns = [SpeakerTurn(s, a, b) for s, a, b in doc["turns"]] + [SpeakerTurn("", a, b) for a, b in doc["stray"]]
+        cents = {sid: np.asarray(c, dtype=np.float64) for sid, c in doc["centroids"].items()}
+        reg = cls()
+        mapping = reg.add_block(DiarBlock(start, end, turns, [SpeakerTurn(s, a, b) for s, a, b in doc["exclusive"]], cents))
+        reg.rename({sid: label for label, sid in mapping.items()})
+        return reg
 
     def _link(self, labels: list[str], cents: dict[str, np.ndarray | None], talk: dict[str, float],
               shared: dict[str, dict[str, float]]) -> dict[str, str]:
@@ -519,6 +572,115 @@ class SpeakerRegistry:
         span bridged across pauses is not rated by its silence."""
         voiced = sum(max(0.0, min(t.end, b) - max(t.start, a)) for t in self._ex.near(a, b) if t.speaker == speaker)
         return min(voiced, sat) / sat + _ISOLATION_WEIGHT * self._isolation(speaker, a, b) / _ISOLATION_CAP
+
+
+# -- the whole-file render (OFFLINE-RENDER §2.3) --------------------------------------------------------------------------
+
+def settle(registry: SpeakerRegistry, *, min_talk: float = MIN_TALK, min_share: float = MIN_SHARE,
+           same_cos: float = SAME_COS, floor_cap: float = FLOOR_CAP, hinted: bool = False) -> list[tuple[str, str, str]]:
+    """Settle a whole-file diarization (registered with one `add_block`) into the speakers the dub voices, in place.
+
+    Unless the user gave the count (`hinted`), fold over-split speakers back, with `SpeakerRegistry.merge`:
+    - a speaker with less exclusive talk than max(`min_talk`, `min_share` x everyone's), but never more than
+      `floor_cap` x everyone's (a short clip), goes into the speaker nearest by centroid cosine, or with no centroid on
+      either side, into the one whose speech lies most next to theirs (the least talkative first; `talk`);
+    - then the most similar pair with centroid cosine >= `same_cos`, the one who talks less into the other, until no
+      pair is left (`same`).
+    With a count nothing merges: the user's number wins. Then the ids are renumbered S1..Sk in order of first speech.
+    Returns the merges as (from, into, why), in the ids they had before renumbering."""
+    merged: list[tuple[str, str, str]] = []
+    if not hinted:
+        total = sum(g.talk_seconds for g in registry.speakers.values())
+        floor = min(max(min_talk, min_share * total), floor_cap * total)
+        while len(registry.speakers) > 1:
+            small = min((g for g in registry.speakers.values() if g.talk_seconds < floor),
+                        key=lambda g: (g.talk_seconds, _id_number(g.id)), default=None)
+            if small is None:
+                break
+            into = _nearest(registry, small.id)
+            registry.merge(small.id, into)
+            merged.append((small.id, into, "talk"))
+        while len(registry.speakers) > 1:
+            known = sorted((g for g in registry.speakers.values() if g.centroid is not None), key=lambda g: _id_number(g.id))
+            pairs = [(float(a.centroid @ b.centroid), a, b) for i, a in enumerate(known) for b in known[i + 1:]]
+            best = max((p for p in pairs if p[0] >= same_cos), key=lambda p: p[0], default=None)
+            if best is None:
+                break
+            src, into = sorted(best[1:], key=lambda g: (g.talk_seconds, -_id_number(g.id)))
+            registry.merge(src.id, into.id)
+            merged.append((src.id, into.id, "same"))
+    order = sorted(registry.speakers.values(), key=lambda g: (g.first_at, _id_number(g.id)))
+    registry.rename({g.id: f"S{k}" for k, g in enumerate(order, 1)})
+    return merged
+
+
+def _nearest(registry: SpeakerRegistry, sid: str) -> str:
+    """The speaker `sid` merges into: the nearest by centroid cosine; with no centroid on either side, the one with the
+    most exclusive speech within _ADJACENT s of theirs; else the most talkative."""
+    g = registry.speakers[sid]
+    others = sorted((o for o in registry.speakers.values() if o.id != sid), key=lambda o: _id_number(o.id))
+    if g.centroid is not None:
+        scored = [(float(g.centroid @ o.centroid), o.id) for o in others if o.centroid is not None]
+        if scored:
+            return max(scored, key=lambda x: x[0])[1]
+    near: dict[str, float] = {}
+    for t in registry._ex.turns:
+        if t.speaker == sid:
+            for o in registry.turns_in(t.start - _ADJACENT, t.end + _ADJACENT):
+                if o.speaker != sid:
+                    near[o.speaker] = near.get(o.speaker, 0.0) + o.end - o.start
+    if near:
+        return max(others, key=lambda o: near.get(o.id, 0.0)).id
+    return max(others, key=lambda o: o.talk_seconds).id
+
+
+def match_ids(previous_exclusive: list[tuple[str, float, float]], registry: SpeakerRegistry) -> dict[str, str]:
+    """The ids to give a re-run's speakers (current id -> id), so the same people keep their ids (OFFLINE-RENDER §2.3):
+    one to one, the assignment that maximises the exclusive speech each speaker shares with the id's previous turns
+    (`previous_exclusive`: (id, start, end)), by brute force (k <= 6). Only pairs that share speech are matched; ties
+    go to the earlier speaker and the lower id. A speaker left unmatched (a split, a new voice) takes the next id no
+    earlier speaker had."""
+    shared: dict[tuple[str, str], float] = {}
+    for old, a, b in previous_exclusive:
+        for t in registry.turns_in(a, b):
+            shared[t.speaker, old] = shared.get((t.speaker, old), 0.0) + t.end - t.start
+    new = sorted(registry.speakers.values(), key=lambda g: (g.first_at, _id_number(g.id)))
+    olds = sorted({old for old, _, _ in previous_exclusive}, key=_id_number)
+    best: list = [-1.0, ()]
+
+    def assign(i: int, used: frozenset, total: float, picks: tuple) -> None:
+        if i == len(new):
+            if total > best[0] + _EPS:
+                best[:] = [total, picks]
+            return
+        for old in olds:
+            if old not in used and (s := shared.get((new[i].id, old), 0.0)) > 0:
+                assign(i + 1, used | {old}, total + s, picks + (old,))
+        assign(i + 1, used, total, picks + (None,))
+
+    assign(0, frozenset(), 0.0, ())
+    ids = {g.id: old for g, old in zip(new, best[1]) if old is not None}
+    n = max([0, *(_id_number(s) for s in olds)])
+    for g in new:
+        if g.id not in ids:
+            n += 1
+            ids[g.id] = f"S{n}"
+    return ids
+
+
+def activity(registry: SpeakerRegistry, sid: str, duration: float, bins: int = 120) -> list[float]:
+    """`sid`'s share of each of `bins` equal slices of [0, `duration`]: seconds of their exclusive speech in the slice
+    over its length (the UI's activity strip)."""
+    out = [0.0] * bins
+    if duration <= 0:
+        return out
+    width = duration / bins
+    for t in registry.turns_in(0.0, duration):
+        if t.speaker != sid:
+            continue
+        for k in range(min(int(t.start // width), bins - 1), min(int(t.end // width), bins - 1) + 1):
+            out[k] += max(0.0, min(t.end, (k + 1) * width) - max(t.start, k * width))
+    return [x / width for x in out]
 
 
 def _unit(v: object) -> np.ndarray | None:

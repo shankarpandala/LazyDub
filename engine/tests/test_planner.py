@@ -231,9 +231,6 @@ def test_an_earlier_line_cannot_be_replaced_behind_later_ones():
     with pytest.raises(ValueError):
         pl.evaluate(slot(0, 0, 2, 2.3, None), 1.5)
     assert pl.stats()["lines"] == 2 and pl.place(slot(1, 2.3, 3, 8, 2, "b"), 1.0) == b
-    pl.reset(0.0)                                           # the way to re-place it: from its onset on
-    assert on_time(pl.place(slot(0, 0, 2, 2.3, None), 1.5))
-    assert pl.stats()["freezes"] == 0 and pl.stats()["lines"] == 1
 
 
 def test_evaluate_prices_a_duration_without_committing_it():
@@ -251,18 +248,9 @@ def test_evaluate_prices_a_duration_without_committing_it():
     assert alt == pl.place(slot(1, 12.0, 13, 13.4, 11.5), 1.0) and pl.stats()["lines"] == 2
 
 
-def test_reset_after_a_seek_frees_the_chain():
-    pl = TimelinePlanner()
-    pl.place(slot(0, 0, 2, 2.3, None), 8.0)
-    pl.place(slot(1, 2.3, 4, 30, 2), 1.0)
-    pl.reset(2.0)
-    p = pl.place(slot(1, 2.3, 4, 30, 2), 1.0)
-    assert p.lag <= 0.0 and pl.stats()["lines"] == 2
-
-
 def test_a_line_placed_behind_later_ones_is_planned_against_the_lines_before_it():
-    """A seek forward, then back into video dubbed only up to line 0: line 1 follows line 0, not the far lines placed
-    meanwhile, and line 6 then follows line 5 again (it runs late), not line 1."""
+    """Line 5 placed before line 1: line 1 follows line 0, not the far line placed meanwhile, and line 6 then follows
+    line 5 again (it runs late), not line 1."""
     l0, l1 = slot(0, 0, 2, 2.3, None), slot(1, 2.3, 4, 60, 2)
     l5, l6 = slot(5, 60, 62, 62.3, 4), slot(6, 62.3, 64, None, 62)
     near, far = TimelinePlanner(), TimelinePlanner()
@@ -270,10 +258,9 @@ def test_a_line_placed_behind_later_ones_is_planned_against_the_lines_before_it(
     in_order = (near.place(l1, 1.5), far.place(l5, 3.0), far.place(l6, 1.0))
     pl = TimelinePlanner()
     pl.place(l0, 2.6)
-    pl.reset(60.0)                                          # the seek forward
     assert pl.place(l5, 3.0) == in_order[1]
     assert pl.evaluate(l1, 1.5)[1] == in_order[0]           # priced the same way, and nothing committed
-    p1 = pl.place(l1, 1.5)                                  # the seek back: voiced behind line 5
+    p1 = pl.place(l1, 1.5)                                  # behind line 5
     assert p1 == in_order[0] and p1.lag > 0.0 and p1.lag < S.max_lag
     p6 = pl.place(l6, 1.0)
     assert p6 == in_order[2] and p6.lag > 0.0

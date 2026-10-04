@@ -44,8 +44,8 @@
 {/if}
 
 <style>
-  /* Lined up with the watch view below it (App.svelte .watch). */
-  .banners { display: flex; flex-direction: column; gap: 8px; max-width: 1500px; margin: 0 auto; padding: 10px 28px 0; }
+  /* Lined up with the job view below it (Job.svelte .jobview). */
+  .banners { display: flex; flex-direction: column; gap: 8px; max-width: 1180px; margin: 0 auto; padding: 10px 32px 0; }
   .banner {
     display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px;
     border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--border); backdrop-filter: var(--blur);

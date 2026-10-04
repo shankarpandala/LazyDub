@@ -1,4 +1,4 @@
-"""Pitch-preserving time-stretch (WSOLA) for the §6.6 speed-up and user playback speed.
+"""Pitch-preserving time-stretch (WSOLA) for the §6.6 speed-up of a TTS that gives samples, not mel takes.
 
 `rate` > 1 makes the audio shorter. Output length is round(len / rate) samples exactly, so
 placements computed from `duration / rate` hold.

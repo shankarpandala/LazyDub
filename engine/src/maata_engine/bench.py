@@ -1,14 +1,19 @@
-"""maata-bench (spec §11): fetch pinned models, and measure the pipeline on a local audio file.
+"""maata-bench (spec §11): fetch pinned models, and measure the pipeline on a local video file.
 
     maata-bench fetch [--backend apple]           download + verify the models for a backend
-    maata-bench pipeline FILE [--backend apple]   run the full dub pipeline, print JSON metrics
+    maata-bench pipeline FILE [--backend apple]   dub the whole video to an MP4 (a render job), print JSON metrics
+        [--out DIR]                               ...saving the MP4 in DIR (default: <cache>/out)
         [--translator mock]                       ...with the mock translator instead of the Claude CLI (offline)
         [--tts-script latin]                      ...with English words given to the TTS in Latin script (decision D6)
-        [--timing v1]                             ...timed as before timing v2: the baseline run (v2-whole: v2, no pieces)
         [--baseline JSON]                         ...with the timing targets measured against a committed run's JSON
 
 Every number printed comes from this machine; nothing is estimated. The pipeline translates through the backend's
-translator: the user's signed-in Claude CLI on apple and cuda (ADR-019), the mock one on the mock backend.
+translator: the user's signed-in Claude CLI on apple and cuda (ADR-019), the mock one on the mock backend. The input file
+is read in place and never changed (OFFLINE-RENDER §2.2: `LocalResolver`).
+
+The bench's job lives in its own cache (`--cache`, default ~/Library/Caches/Maata-bench), which Maata never scans: a bench
+job never shows in the Library, counts toward its retention, or is continued by the app after an interrupted run. Each run
+starts from a clean job, so every stage (translation included) is measured on this run's file.
 """
 
 from __future__ import annotations
@@ -18,7 +23,7 @@ import asyncio
 import json
 import os
 import platform
-import resource
+import shutil
 import statistics
 import sys
 import time
@@ -47,8 +52,17 @@ def _machine() -> dict:
 
 
 def _peak_rss_bytes() -> int:
+    import resource  # (not on Windows: the engine imports this module for its stats)
+
     r = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     return r if sys.platform == "darwin" else r * 1024
+
+
+def _mlx_peak_bytes() -> int | None:
+    """MLX's peak memory in this process (Whisper and the separator run on it), or None where no model ran on MLX."""
+    mx = sys.modules.get("mlx.core")
+    get = getattr(mx, "get_peak_memory", None) if mx is not None else None
+    return int(get()) if get is not None else None
 
 
 REQUIRED_RATE_BAND = (0.9, 1.2)  # Descript's natural window: 73-83 % of its lines need a rate inside it (§7 step 4)
@@ -60,7 +74,7 @@ def _shares(labels: list[str]) -> dict:
 
 
 def dub_metrics(units: Iterable) -> dict:
-    """The §7 step 4 yardsticks over the voiced lines (session `UnitState`s), as they were finally voiced:
+    """The §7 step 4 yardsticks over the voiced lines (`RenderJob.final_voiced`), as they were finally voiced:
     - `coverage`: the share of lines in each coverage class, counted only where the class is of the wording voiced
       (`qa.coverage.voiced_class`), with the lines whose class is of another of their wordings (`other_tier`) and those
       with none (`unreviewed`); `coverage_reviewed`: the same for the review's own classes, before any re-translation
@@ -83,20 +97,26 @@ def dub_metrics(units: Iterable) -> dict:
     }
 
 
-def realtime_metrics(events: Iterable[dict]) -> dict:
-    """The §7 step 5 yardsticks from units.jsonl's unit events: the voicer's waits for the GPU (`lock_wait_s`, p95 by
-    nearest rank; the target is 2 s or less), how many lines got each number of takes from the throughput governor
-    (`takes_n`), the retakes of batches that all failed, and why takes failed."""
-    units = [e for e in events if e.get("event") == "unit"]
-    waits = sorted(u["lock_wait_s"] for u in units if u.get("lock_wait_s") is not None)
-    failures = [f for u in units for f in u.get("take_failures") or ()]
-    return {
-        "voicer_lock_wait_p95_s": waits[max(0, -(-95 * len(waits) // 100) - 1)] if waits else None,
-        "takes_n": {str(n): sum(1 for u in units if u.get("takes_n") == n)
-                    for n in sorted({u["takes_n"] for u in units if u.get("takes_n") is not None})},
-        "retakes": sum(u.get("retakes") or 0 for u in units),
-        "take_failures": {f: failures.count(f) for f in sorted(set(failures))},
-    }
+def render_metrics(events: Iterable[dict], video_seconds: float) -> dict:
+    """The offline render's yardsticks (OFFLINE-RENDER §7) from units.jsonl's events of one run: each stage's seconds
+    and GPU seconds (its `stage` event; `cached` when it was served from disk; the separate stage's `blocks` made), the
+    GPU seconds per second of video, the engine's peak resident memory and MLX's peak memory, and the Claude calls and
+    tokens by call type (the CLI's `claude` events)."""
+    events = list(events)
+    stages = {e["key"]: {"seconds": e["seconds"], "gpu_s": e["gpu_s"], "cached": e["cached"],
+                         **({"blocks": e["blocks"]} if "blocks" in e else {})}
+              for e in events if e.get("event") == "stage"}
+    gpu = sum(x["gpu_s"] for x in stages.values())
+    claude: dict[str, dict] = {}
+    for e in events:
+        if e.get("event") == "claude":
+            c = claude.setdefault(e["call"], {"calls": 0, "input_tokens": 0, "cache_read_tokens": 0, "output_tokens": 0})
+            c["calls"] += 1
+            for k in ("input_tokens", "cache_read_tokens", "output_tokens"):
+                c[k] += e.get(k) or 0
+    return {"stages": stages, "gpu_s": round(gpu, 2),
+            "gpu_s_per_video_s": round(gpu / video_seconds, 4) if video_seconds else None,
+            "peak_rss_bytes": _peak_rss_bytes(), "mlx_peak_bytes": _mlx_peak_bytes(), "claude": claude}
 
 
 def timing_metrics(events: Iterable[dict], baseline: Mapping | None = None) -> dict:
@@ -164,100 +184,97 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
-async def _pipeline(args: argparse.Namespace) -> dict:
-    from .resolve import ResolvedVideo, decode_audio
-    from .session import Session
-    from .urls import VideoRef
+BENCH_ID = "localbench0"  # the bench's job folder in its cache (a video id's shape)
 
+
+def _fresh(job_dir: Path, mp4: Path) -> None:
+    """A clean job for each run: the bench's job folder goes (a job on another file, or one whose stages would be
+    served from disk), and the MP4 its last run saved at `mp4`, where this run saves (replaced, as a job replaces its
+    own earlier file, not saved beside it as " (2)")."""
+    from .render import _read_json
+
+    out = (_read_json(job_dir / "render" / "job.json") or {}).get("output") or {}
+    if out.get("path") == str(mp4) and mp4.is_file() and mp4.stat().st_size == out.get("bytes"):
+        mp4.unlink()
+    shutil.rmtree(job_dir, ignore_errors=True)
+
+
+async def _pipeline(args: argparse.Namespace) -> dict:
+    import av
+
+    from . import export
+    from .render import RenderJob, RenderSettings
+    from .resolve import LocalResolver
+    from .text.tenglish import latin_ratio
+
+    path = Path(args.file).expanduser().resolve()
+    try:  # before any model loads or Claude call: the MP4 copies the file's video stream
+        export.probe(path)
+    except (ValueError, OSError, av.FFmpegError) as e:
+        raise SystemExit(f"pipeline: {path.name} can't be dubbed to a video: {e}") from None
     t0 = time.perf_counter()
     backend = load_backend(args.backend, Path(args.models).expanduser())
     load_s = time.perf_counter() - t0
     if args.translator:
         backend.translator = MockSceneTranslator if args.translator == "mock" else ClaudeTranslator
-    audio = decode_audio(Path(args.file))
-    seconds = len(audio) / 16_000
+    cache = Path(args.cache).expanduser()
+    out_dir = Path(args.out).expanduser() if args.out else cache / "out"
+    _fresh(cache / BENCH_ID, out_dir / export.output_name(path.stem, BENCH_ID, None))
+    errors: list[dict] = []
 
-    class LocalResolver:
-        def resolve(self, ref: VideoRef, cache_dir: Path) -> ResolvedVideo:
-            return ResolvedVideo(ref.video_id, Path(args.file).name, seconds, "local", Path(args.file))
+    async def on_event(m: dict) -> None:
+        if m.get("type") == "claude_error":
+            errors.append(m)
 
-        def load_audio(self, video: ResolvedVideo):
-            return audio
-
-    events: list[dict] = []
-    first_audio: list[float] = []
-    started = [0.0]
-
-    async def sj(m: dict) -> None:
-        events.append(m)
-
-    async def sb(_: bytes) -> None:
-        if not first_audio:
-            first_audio.append(time.perf_counter() - started[0])
-
-    s = Session(backend, LocalResolver(), Path(args.cache).expanduser(), sj, sb, lookahead=seconds + 60, prepass=min(600.0, seconds),
-                tts_script=args.tts_script, timing=args.timing)
-    started[0], since = time.perf_counter(), time.time()
-    await s.open("https://youtu.be/localbench0")
-    prepass_s = None
-    while True:
-        await asyncio.sleep(0.2)
-        errors = [e for e in events if e["type"] in ("error", "claude_error")]
-        if errors:
-            await s.close()
-            raise SystemExit(f"pipeline failed: {errors[0]['message']}")
-        if prepass_s is None and any(e["type"] == "speaker_scan" and e["phase"] == "ready" for e in events):
-            prepass_s = time.perf_counter() - started[0]
-        if s.ready.covered(0.0, seconds - 0.5) or all(t.done() for t in s._tasks):
-            break
-    wall = time.perf_counter() - started[0]
-    await s.close()
-    # from this run's events only: units.jsonl keeps those of earlier runs on the same file
-    trace = [e for line in (s._dir / "units.jsonl").read_text(encoding="utf-8").splitlines()
-             if (e := json.loads(line)).get("t", 0) >= since]
+    job = RenderJob(backend, LocalResolver(path), cache, BENCH_ID, RenderSettings(tts_script=args.tts_script),
+                    on_event=on_event, output_dir=out_dir)
+    since = time.time()
+    started = time.perf_counter()
+    status = await job.run()
+    wall = time.perf_counter() - started
+    if status != "done":
+        raise SystemExit(f"pipeline {status}: {job.doc['error'] or (errors[0]['message'] if errors else '')}")
+    trace = [e for line in (job.cache_dir / BENCH_ID / "units.jsonl").read_text(encoding="utf-8").splitlines()
+             if (e := json.loads(line)).get("t", 0) >= since]  # (this run's: the job is a clean one)
     baseline = json.loads(Path(args.baseline).read_text(encoding="utf-8")).get("timing") if args.baseline else None
-    units = [e for e in events if e["type"] == "unit"]
-    rates = [u["audioRate"] for u in units]
-    added = sum(ed["added"] for u in units for ed in u["edits"])
-    from .text.tenglish import latin_ratio
-
+    seconds = float(job.doc["duration"])
+    lines = [e for e in trace if e.get("event") == "unit"]
+    out = job.doc["output"]
     return {
-        "machine": _machine(), "backend": backend.name, "device": backend.device, "file": Path(args.file).name,
-        "translator": backend.translator.__name__, "tts_script": args.tts_script, "timing_mode": s.timing,
+        "machine": _machine(), "backend": backend.name, "device": backend.device, "file": path.name,
+        "translator": backend.translator.__name__, "tts_script": args.tts_script,
         "audio_seconds": round(seconds, 2), "model_load_seconds": round(load_s, 2), "pipeline_seconds": round(wall, 2),
         "throughput_x_realtime": round(seconds / wall, 2) if wall else None,
-        "speaker_prepass_seconds": round(prepass_s, 2) if prepass_s is not None else None,
-        "calibration_seconds": round(s.calibrate_s, 2),  # of the voices' clones, most inside the pre-pass
-        "time_to_first_audio_seconds": round(first_audio[0], 2) if first_audio else None,
-        "speakers": len(s.registry.speakers),
-        "units": len(units), "skipped": sum(1 for e in events if e["type"] == "unit_skipped"),
-        "speedup_max": max(rates, default=None), "added_video_seconds_per_minute": round(added / (seconds / 60), 2) if seconds else None,
-        "latin_ratio": round(sum(latin_ratio(u["telugu"]) for u in units) / len(units), 3) if units else None,
-        "dub": dub_metrics(s.units.values()),
-        "realtime": realtime_metrics(trace),
+        "calibration_seconds": round(job.calibrate_s, 2), "speakers": len(job.registry.speakers),
+        "units": len(lines), "skipped": sum(1 for e in trace if e.get("event") == "skipped"),
+        "speedup_max": max((u["audio_rate"] for u in lines), default=None),
+        "latin_ratio": round(sum(latin_ratio(u["telugu"]) for u in lines) / len(lines), 3) if lines else None,
+        "render": render_metrics(trace, seconds),
+        "dub": dub_metrics(job.final_voiced()),
         "timing": timing_metrics(trace, baseline),
-        "planner": s.planner.stats(),
-        "peak_rss_bytes": _peak_rss_bytes(),
+        "planner": job._final.stats() if job._final is not None else None,
+        "export": {"path": out["path"], "bytes": out["bytes"], "seconds": job.doc["stages"]["export"]["seconds"],
+                   "video_seconds": job.doc["stages"]["export"]["total"], "loudness": out["loudness"],
+                   "warning": out["warning"], "video": {k: v for k, v in job.doc["source"]["video"].items()
+                                                         if k != "fingerprint"}},
     }
 
 
 def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="maata-bench")
     p.add_argument("--models", default="~/Library/Application Support/Maata/Models" if sys.platform == "darwin" else "~/.local/share/maata/models")
-    p.add_argument("--cache", default="~/Library/Caches/Maata" if sys.platform == "darwin" else "~/.cache/maata")
+    p.add_argument("--cache", help="the bench's own cache, which Maata never scans",
+                   default="~/Library/Caches/Maata-bench" if sys.platform == "darwin" else "~/.cache/maata-bench")
     sub = p.add_subparsers(dest="cmd", required=True)
     f = sub.add_parser("fetch")
     f.add_argument("--backend", choices=["apple", "cuda"])
     pl = sub.add_parser("pipeline")
-    pl.add_argument("file")
+    pl.add_argument("file", help="a local video file (it is read in place, never changed)")
     pl.add_argument("--backend", choices=["apple", "cuda", "mock"])
+    pl.add_argument("--out", help="the folder the MP4 is saved in (default: <cache>/out)")
     pl.add_argument("--translator", choices=["claude", "mock"], help="default: the backend's own")
     pl.add_argument("--tts-script", choices=["telugu", "latin"], default="telugu")
-    pl.add_argument("--timing", choices=["v2", "v2-whole", "v1"], default="v2",
-                    help="v1: timed as before timing v2, for the baseline run (ADR-017); v2-whole: v2 with every "
-                         "sentence said whole")
-    pl.add_argument("--baseline", help="a committed pipeline JSON (a --timing v1 run): the timing targets are measured "
-                                       "against its own")
+    pl.add_argument("--baseline", help="a committed pipeline JSON: the timing targets are measured against its own")
     args = p.parse_args(argv)
     if args.cmd == "fetch":
         raise SystemExit(cmd_fetch(args))

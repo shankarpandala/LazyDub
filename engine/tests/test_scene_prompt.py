@@ -26,7 +26,9 @@ BRIEF_V1 = Brief(1, META, "Kites and wind", "casual; the host says మీరు 
 def test_prompt_version_and_hash_are_pinned():
     # Changing the prompt, an example, the schema or the message layout moves the hash. When it does on purpose, bump
     # SHOTS_VERSION and update both pins here: the hash keys the line cache, so old lines are never served.
-    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v2", "d548212e604d")
+    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v3", "e174033dcbc5")
+    assert sp.BRIEF_HASH == "42afefc5b3f2"  # keys the brief cache: a new brief prompt makes new briefs
+    assert sp.REVIEW_HASH == "8daa0f76384f"  # the review is meaning-only: the register retarget leaves it alone
     assert sp.prompt_hash() == sp.PROMPT_HASH and sp.brief_hash() == sp.BRIEF_HASH
     assert sp.review_hash() == sp.REVIEW_HASH != sp.PROMPT_HASH  # the review's prompt is its own
 
@@ -74,6 +76,26 @@ def test_the_system_prompt_has_every_section_of_the_design():
         assert call in sp.SYSTEM_TAIL
 
 
+def test_the_register_is_the_everyday_telugu_of_ordinary_people():
+    # OFFLINE-RENDER §2.18: everyday words, English where ordinary people say it, never bookish, whatever the video
+    assert "ordinary Telugu people" in sp.ROLE and "educated" not in sp.ROLE and "YouTube" not in sp.ROLE
+    assert "speakable exactly as written" in sp.ROLE
+    colloquial, formal = sp.STYLE.split("STYLE (formal")
+    assert "Sishta" not in colloquial and "educated" not in colloquial
+    for word in ("యొక్క", "తద్వారా", "మరియు", "కావున", "ఫోన్", "టైం", "బైక్", "టికెట్", "ఆఫీస్", "సారీ", "ఓకే",
+                 "చేంజ్ చేయి", "ఇంక్రీజ్ అయింది", "Sanskrit-heavy", "No English quota", "never an -ed or -ing form",
+                 "a formal English lecture", "Keep every fact, name, number, negation and question"):
+        assert word in colloquial
+    assert "పరిశోధన, not రీసెర్చ్" in formal  # the formal style is unchanged
+    assert "బస్సు" in sp.SCRIPT and "బస్ " not in colloquial  # an absorbed word is never also an English loan
+    assert "never sets how bookish" in sp.BRIEF_SYSTEM and "Sanskrit-heavy" in sp.BRIEF_SYSTEM
+    assert "ordinary Telugu people say the term in English" in sp.BRIEF_SYSTEM
+    # one brief serves both styles (its message carries none): the brief names no style, and the formal style says
+    # how it reads a glossary entry that keeps English
+    assert "everyday" not in sp.BRIEF_SYSTEM.split("\n")[0] and "follows the dubbing style" in sp.BRIEF_SYSTEM
+    assert "In the formal style" in sp.BRIEF_HEADER
+
+
 def test_a_long_description_is_trimmed():
     long = VideoMeta("t", description="x" * 5000)
     assert len(sp.brief_dict(Brief(0, long))["video"]["description"]) == sp.DESCRIPTION_MAX
@@ -89,6 +111,8 @@ def test_about_sixteen_original_examples_cover_the_contract():
     assert any("fuller" in r for r in replies)
     assert any("pieces" in r for r in replies) and any(r.get("unfinished") for r in replies)
     assert any(style == "formal" for _, _, style in shots)
+    lecture = [(line, r) for line, r, style in shots if "lecture" in line["en"] and style == "colloquial"]
+    assert lecture and lecture[0][1]["full"]["english"] == [{"i": 1, "en": "lecture"}]  # into everyday Telugu, same noun
     assert any(r["delivery"].get("question") for r in replies)
 
 

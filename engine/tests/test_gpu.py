@@ -1,13 +1,20 @@
 """The GPU scheduler (ARCHITECTURE §5.3): one owner at a time, the most urgent waiter next, first come first served within
-a priority, no starvation, and cancellation that never loses or leaks the GPU."""
+a priority, no starvation, and cancellation that never loses or leaks the GPU, nor lets it go while a cancelled model
+call is still running (`Dubber._on_gpu`)."""
 
 from __future__ import annotations
 
 import asyncio
+import threading
 
 import pytest
 
+from maata_engine.backends.mock import make_mock_backend
+from maata_engine.dubber import Dubber, VoiceCost, VoiceState
 from maata_engine.gpu import BACKGROUND, FRONTIER, URGENT, VOICE, GpuScheduler
+from maata_engine.render import RenderJob
+from maata_engine.resolve import DemoResolver
+from maata_engine.types import VoiceKind
 
 
 class Clock:
@@ -139,3 +146,67 @@ async def test_a_free_gpu_is_taken_at_once_whatever_the_priority():
     async with gpu.hold(BACKGROUND):
         assert gpu.owned and gpu.waiting == 0
     assert not gpu.owned
+
+
+async def test_cancel_keeps_the_hold_until_the_call_returns():
+    """OFFLINE-RENDER §2.1: a model call runs in a worker thread, which a cancel can't stop, so the task awaiting it
+    keeps the GPU until the call has returned, through a second cancel too. A call asked for straight after the cancel,
+    however urgent, starts only then: two calls never run on the GPU side by side."""
+    gpu = GpuScheduler()
+    dubber = Dubber(make_mock_backend(), gpu)
+    lock, go = threading.Lock(), threading.Event()
+    inside, most, order = [0], [0], []
+
+    def call(name: str) -> str:
+        with lock:
+            inside[0] += 1
+            most[0] = max(most[0], inside[0])
+            order.append(f"{name} in")
+        go.wait(5.0)  # the first blocks until the test lets it go; the second finds it set
+        with lock:
+            inside[0] -= 1
+            order.append(f"{name} out")
+        return name
+
+    first = asyncio.create_task(dubber._on_gpu(call, "first", priority=BACKGROUND))
+    for _ in range(500):
+        if order:
+            break
+        await asyncio.sleep(0.01)
+    assert order == ["first in"]
+    first.cancel()
+    second = asyncio.create_task(dubber._on_gpu(call, "second", priority=URGENT))
+    await asyncio.sleep(0.2)
+    first.cancel()
+    await asyncio.sleep(0.05)
+    assert order == ["first in"] and not first.done() and gpu.owned and gpu.waiting == 1
+    go.set()
+    got, seconds = await second
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    assert got == "second" and seconds >= 0.0
+    assert most[0] == 1 and order == ["first in", "first out", "second in", "second out"]
+    assert not gpu.owned and gpu.waiting == 0
+
+
+async def test_a_preset_voice_is_made_holding_the_gpu(tmp_path):
+    """A preset may be the first thing to touch the TTS, which then loads its weights (Chatterbox loads on first use), and
+    a preset from a wav is conditioned on the GPU: made, it is a model call like any other, never beside another owner.
+    Asked for again, it is the TTS's cached copy: the dub loop doesn't queue for the GPU for it."""
+    gpu = GpuScheduler()
+    b = make_mock_backend()
+    held: list[bool] = []
+    preset = b.tts.preset_voice
+
+    def watched(name: str) -> dict:
+        held.append(gpu.owned)
+        return preset(name)
+
+    b.tts.preset_voice = watched
+    job = RenderJob(b, DemoResolver(), tmp_path, "https://youtu.be/dQw4w9WgXcQ", gpu=gpu)
+    job.voices["S1"] = VoiceState(use_preset=True)
+    _, kind, _ = await job._voice_for("S1", VoiceCost())
+    assert kind is VoiceKind.PRESET and held == [True] and not gpu.owned
+    async with gpu.hold(BACKGROUND):  # another owner has the GPU: the preset, made already, doesn't wait for it
+        _, kind, _ = await asyncio.wait_for(job._voice_for("S1", VoiceCost()), 1.0)
+    assert kind is VoiceKind.PRESET and held == [True, True]
