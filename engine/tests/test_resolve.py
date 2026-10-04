@@ -82,7 +82,7 @@ class FakeYDL:
 
 @pytest.fixture
 def ydl(monkeypatch):
-    import yt_dlp
+    yt_dlp = pytest.importorskip("yt_dlp")  # the `resolve` extra; CI installs it, a bare `uv sync --group dev` skips these
 
     FakeYDL.made, FakeYDL.refuse = [], []
     monkeypatch.setattr(yt_dlp, "YoutubeDL", FakeYDL)

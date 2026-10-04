@@ -8,7 +8,7 @@ import sys
 import pytest
 from websockets.asyncio.client import connect
 
-from maata_engine.server import Engine
+from maata_engine.server import Engine, _open_command
 from websockets.asyncio.server import serve
 
 
@@ -750,7 +750,10 @@ async def test_open_output_opens_only_the_jobs_own_file(eng, tmp_path):
         path.unlink()  # moved away by the user: its folder
         await w.send(type="open_output", videoId=VID_A, reveal=True)
         await until(lambda: len(ran) == 3)
-    tail = [str(path), str(path), str(path.parent)]
+    # open, reveal (Finder selects the file; Linux's xdg-open can only open its folder), then the folder of a moved file
+    tail = [_open_command(path, False)[-1], _open_command(path, True)[-1], _open_command(path.parent, False)[-1]]
+    if sys.platform == "darwin":
+        assert tail == [str(path), str(path), str(path.parent)]
     assert [r[-1] for r in ran] == tail and all("/etc/passwd" not in r for r in ran)
     if sys.platform == "darwin":
         assert ran == [["/usr/bin/open", str(path)], ["/usr/bin/open", "-R", str(path)], ["/usr/bin/open", str(path.parent)]]

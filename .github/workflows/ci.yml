@@ -13,7 +13,7 @@ jobs:
       - name: Test engine (pure core + demo pipeline; no models)
         working-directory: engine
         run: |
-          uv sync --group dev
+          uv sync --group dev --extra resolve
           uv run pytest -q
 
   ui:
