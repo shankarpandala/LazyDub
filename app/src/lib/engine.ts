@@ -24,6 +24,24 @@ export function engineUrl(loc: Location = location): string | null {
   return `ws://${host}/ws?token=${encodeURIComponent(token)}`;
 }
 
+/**
+ * A path the engine serves (a cached thumbnail, `/thumb/<id>?token=`) as the page can load it: same-origin for the
+ * engine-served UI; on the engine's host for a UI served elsewhere with ?engine= (development).
+ */
+export function engineAsset(path: string, loc: Location = location): string {
+  const host = new URLSearchParams(loc.search).get("engine");
+  return host && path.startsWith("/") ? `http://${host}${path}` : path;
+}
+
+/** Frame id of a speaker's Hear voice sample: this plus the speaker's index (S1: 0), the one frame the engine sends. */
+export const SAMPLE_ID = 0xffffff00;
+
+/** The speaker ("S2") whose Hear voice sample a frame is, or null for any other frame. */
+export function sampleSpeaker(id: number): string | null {
+  const k = id - SAMPLE_ID;
+  return k >= 0 && k < 255 ? `S${k + 1}` : null;
+}
+
 /** Binary frame (ADR-007): u32 id, u32 sample rate, u32 sample count, u32 reserved, then float32 PCM. */
 export function decodeAudioFrame(buf: ArrayBuffer): AudioFrame {
   const h = new DataView(buf, 0, 16);

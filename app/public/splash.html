@@ -36,6 +36,12 @@
       document.querySelector(".bar").style.display = "none";
       document.querySelector(".msg").textContent = "The engine couldn't start";
     };
+    // The shell comes back here with ?error= when the engine keeps stopping and isn't started again.
+    const again = new URLSearchParams(location.search).get("error");
+    if (again) {
+      window.maataSplashError(again);
+      document.querySelector(".msg").textContent = "The engine stopped";
+    }
   </script>
 </body>
 </html>

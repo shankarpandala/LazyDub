@@ -2,6 +2,8 @@
 
 Date: 2026-09-24. Author: architect pass over the verified research in this folder, written for the maintainer. Revised the same day after an independent review; Appendix C lists what changed and which review points were rejected.
 
+> **Superseded in part (2026-10-04, ADR-021).** Maata now dubs a whole video in the background and saves an MP4; nothing plays in the app. [`OFFLINE-RENDER.md`](OFFLINE-RENDER.md) replaces this document's real-time pipeline and playback: the streaming shape of §3.0 (pre-pass, blocks, lookahead), §3.12 Playback, the throughput governor and scheduling around a playhead in §5.2–§5.3, and the short first scenes and brief swap of §4.1–§4.2 (a render cuts the whole video's scenes once and makes the brief from the whole transcript first). The background audio (§3.2, §3.11, §6) is decided there and in ADR-020: the original music and effects, separated on the device, under the Telugu. The rest stands: the models, the Claude contract (§4), timing v2 (§3.10, with no freezes in a file), the voice lane (§3.7) and the watermark in `vocode` (§3.8). `session.py`, read for this pass, is deleted.
+
 **Scope and inputs.** This document builds on and corrects:
 - `../sota_ranking.md`, the model sweep;
 - the ten verified reports `01`–`10`;

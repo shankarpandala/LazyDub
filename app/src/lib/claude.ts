@@ -22,7 +22,8 @@ const LIMITS: Record<string, string> = {
   session: "5-hour", weekly: "weekly", opus: "weekly Opus", sonnet: "weekly Sonnet", overage: "extra-usage",
 };
 
-const KEEP = "Lines already translated keep playing.";
+// Nothing plays in the app: a job held back by Claude does the work it can on this Mac meanwhile (OFFLINE-RENDER §4).
+const KEEP = "The dub goes on with the work on this Mac meanwhile.";
 
 /** "3:05 PM", or "Tue 7 Oct, 2:00 AM" when it isn't today (the viewer's own locale and time zone). */
 export function fmtReset(resetsAt: number, now: Date = new Date()): string {

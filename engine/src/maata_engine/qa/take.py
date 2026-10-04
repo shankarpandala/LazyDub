@@ -6,7 +6,7 @@ words. Of the rest, the one whose duration is closest to the line's speech time 
 
 Step 6's take QA plugs in here: its verdicts (CER against `spoken`, the WeSpeaker similarity outlier guard at matched
 length) are more failure reasons per take, added to what `failure` finds before `pick` chooses. Similarity isn't
-scored yet: it needs every take vocoded, which the voicer now spares all but the chosen one.
+scored yet: it needs every take vocoded, which the dub loop spares all but the chosen one.
 """
 
 from __future__ import annotations

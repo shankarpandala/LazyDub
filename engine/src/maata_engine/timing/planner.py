@@ -21,9 +21,9 @@ break plausibility) and there is room before the next line.
 
 `place()` is a rolling horizon. It commits one line given the committed chain and a lookahead: the next onset, the next
 line's slot and predicted duration, and (windowed, §3.10 step 5) the lines after it, about 8 or 30 s, so slack flows
-across gaps. Lines normally come in onset order; one placed behind lines already placed further on (a seek back into
-video dubbed only in part) is planned against the lines placed before it, and the line after a run of such lines
-against those lines too. `evaluate()` prices a duration the same way without committing it, to choose between text
+across gaps. Lines normally come in onset order (the render job's always do); one placed behind lines already placed
+further on is planned against the lines placed before it, and the line after a run of such lines against those lines
+too. `evaluate()` prices a duration the same way without committing it, to choose between text
 candidates.
 """
 
@@ -84,9 +84,9 @@ class PlannerSettings:
 
 
 # The planner as it was before timing v2 (ADR-017's amendment of 2026-09-25), for the baseline run that v2's targets are
-# measured against (`maata-bench pipeline --timing v1`): early and late onsets cost the same, a one-line lookahead, no
-# akshara ceiling, uniform compression (no pause shortens first) and no soft anchors. The session also leaves out the
-# pieces at hard breaks and the diarized speech before a line's onset.
+# measured against (`Dubber(timing="v1")`; no flag selects it since the bench runs a render job): early and late onsets
+# cost the same, a one-line lookahead, no akshara ceiling, uniform compression (no pause shortens first) and no soft
+# anchors. Dubber also leaves out the pieces at hard breaks and the diarized speech before a line's onset.
 V1 = {"w_early": 1.0, "window_lines": 1, "akshara_ceiling": INF, "keep_pause": INF, "anchor_score": INF}
 
 
@@ -199,7 +199,7 @@ class _Chain:
 
     dubs: list[_Dub] = field(default_factory=list)   # committed dubs that may still bound a later start
     last_id: int | None = None
-    key: tuple[float, int] | None = None             # (onset, id) of the last line committed; None since a reset
+    key: tuple[float, int] | None = None             # (onset, id) of the last line committed; None before the first
     end_by_speaker: dict[str, float] = field(default_factory=dict)
     rate_by_speaker: dict[str, float] = field(default_factory=dict)
     freezes: list[tuple[float, float]] = field(default_factory=list)  # (video time of the hold, seconds)
@@ -261,7 +261,7 @@ class TimelinePlanner:
         aksharas: a pause near one is a plausible Telugu break. `pieces`: a line with hard breaks said as the
         translator's pieces, each piece's take as (seconds, pauses); `duration` is then their total.
         Calling again with the id just placed (say, after a shorter re-synthesis) replaces that plan.
-        Any other line already placed can't be re-placed until `reset()` drops it.
+        Any other line already placed can't be re-placed (a new planner places the lines again).
         """
         base = self._base(slot)
         _, plan = self._evaluate(base, slot, duration, _ahead(next_predicted, next_slot, ahead), pauses, marks, pieces)
@@ -282,13 +282,6 @@ class TimelinePlanner:
         """
         return self._evaluate(self._base(slot), slot, duration, _ahead(next_predicted, next_slot, ahead), pauses, marks,
                               pieces)
-
-    def reset(self, t: float) -> None:
-        """After a seek to video time `t`: forget the chain; lines from `t` on will be placed again."""
-        self._chain = _Chain(freezes=[(at, f) for at, f in self._chain.freezes if at < t])
-        self._undo = None
-        self._placed = {i: sp for i, sp in self._placed.items() if sp[0].start < t}
-        self._keys = [k for k in self._keys if k[1] in self._placed]
 
     def stats(self) -> dict:
         """Onset lag, rate, freeze and overdraft figures over every line placed so far, and the speech-level ones
@@ -355,7 +348,7 @@ class TimelinePlanner:
         if self._undo is not None and self._undo[0] == slot.id:
             return self._undo[1]
         if slot.id in self._placed:
-            raise ValueError(f"line {slot.id} was placed before the last line; reset({slot.start}) before placing it again")
+            raise ValueError(f"line {slot.id} was placed before the last line; a new planner places it again")
         key = (slot.start, slot.id)
         i = bisect.bisect_left(self._keys, key)
         if self._chain.key is not None and self._chain.key != (self._keys[i - 1] if i else None):

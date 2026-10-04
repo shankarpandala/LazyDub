@@ -64,7 +64,7 @@ Group = tuple[str, list[TimedWord]]
 class SegmenterSettings:
     min_len: float = 2.0          # a sentence end splits only once the unit is this long
     # Hard ceiling; over it, split at the best mark or pause. Kept so a max_len unit's Telugu
-    # (budget ≈ max_len + borrow) can run to 2x its slot under the TTS cap (session.MAX_LINE_SECONDS).
+    # (budget ≈ max_len + borrow) can run to 2x its slot under the TTS cap (dubber.MAX_LINE_SECONDS).
     max_len: float = 12.0
     backchannel_max: float = 0.6
     long_pause: float = 1.5       # s of pause that splits after complete speech (inside a sentence it is a break)

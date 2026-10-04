@@ -17,7 +17,7 @@ from collections.abc import Iterable, Sequence
 from .akshara import count_telugu, count_units
 
 # Bump whenever a lint rule changes; logged with the lint's flags.
-LINT_VERSION = "lint-v3"
+LINT_VERSION = "lint-v4"
 
 _L = "A-Za-zÀ-ÖØ-öø-ɏ"  # Latin letters, accented ones included (Pokémon, José)
 _LATIN = re.compile(rf"[{_L}][{_L}'’-]*")
@@ -108,14 +108,17 @@ _GRAMMAR = frozenset("""
 """.split())
 _PARTICLES = frozenset({"in", "on"})  # as part of a phrasal-verb stem before చేయు/అవు: log in చేయండి
 
-# Everyday verbs Telugu speakers say in Telugu (architecture §5), with their common English forms.
+# Core verbs ordinary Telugu people say in Telugu (OFFLINE-RENDER §2.18), with their common English forms. Verbs they
+# commonly say in English, as the bare stem before చేయు/అవు, are not listed: change, increase, decrease and learn
+# (చేంజ్ చేయి, ఇంక్రీజ్ అయింది, లెర్న్ అవుతున్నా).
 _BASIC_VERBS = frozenset("""
     think thinks thought understand understands understood see sees saw seen eat eats ate eaten drink drinks drank
-    go goes went gone come comes came learn learns learnt remember remembers forget forgets forgot forgotten
-    increase increases decrease decreases change changes know knows knew known say says said tell tells told
-    give gives gave given take takes took taken want wants believe believes speak speaks spoke spoken
-    sleep sleeps slept cry cries laugh laughs
+    go goes went gone come comes came remember remembers forget forgets forgot forgotten know knows knew known
+    say says said tell tells told give gives gave given take takes took taken want wants believe believes
+    speak speaks spoke spoken sleep sleeps slept cry cries laugh laughs
 """.split())
+# Irregular past forms of verbs said in English before చేయు/అవు, where the bare stem belongs (లెర్న్ అయ్యా, సెండ్ చేశా).
+_PAST = frozenset("learnt sent spent met felt built won chose".split())
 
 # -ed and -ing words that are fine before చేయు/అవు: states (excited అయ్యా) and nouns (shopping చేశాం, wedding అయింది).
 _ED_OK = frozenset("""
@@ -328,6 +331,8 @@ def _is_grammar(tok: str, nxt: Token, before_lv: bool) -> bool:
 
 
 def _inflected(low: str) -> bool:
+    if low in _PAST:
+        return True
     if low in _ED_OK or low in _ING_OK or low in _NUMBER_WORDS:  # hundred
         return False
     if low.endswith("ing"):

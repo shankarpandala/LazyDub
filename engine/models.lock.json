@@ -134,6 +134,30 @@
     }
    ],
    "total_bytes": 3209527556
+  },
+  {
+   "id": "mel-roformer-kim-vocal-2-mlx",
+   "role": "separation",
+   "repo": "mlx-community/mel-roformer-kim-vocal-2-mlx",
+   "revision": "64cbfcb004e39430e5f584552c05949440ec39ce",
+   "license": "MIT",
+   "gated": false,
+   "backends": [
+    "apple"
+   ],
+   "files": [
+    {
+     "path": "config.json",
+     "size": 833,
+     "git_oid": "4e7f9ed2cfcb2b3232166a5c803adf20d6816031"
+    },
+    {
+     "path": "model.safetensors",
+     "size": 456483463,
+     "sha256": "312c38e5b698f8dfaa4d6064e8f79010744825828917871a9d22673a43eb7fe5"
+    }
+   ],
+   "total_bytes": 456484296
   }
  ]
 }

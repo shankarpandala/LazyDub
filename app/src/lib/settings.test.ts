@@ -1,22 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  DEFAULTS, DEFAULT_CLONE_STRENGTH, SPEED_CAP_MAX, SPEED_CAP_MIN, STYLE_OPTIONS, TTS_SCRIPT_OPTIONS, clampSpeedCap, normalizeSettings,
-  openMessage,
+  DEFAULT_OPTIONS, PREVIEW_AT, SPEAKER_OPTIONS, SPEED_CAP_MAX, SPEED_CAP_MIN, STYLE_OPTIONS, TTS_SCRIPT_OPTIONS, clampSpeedCap,
+  jobOptions, newDubOptions,
 } from "./settings";
 
 describe("defaults", () => {
-  it("dub on the original timeline: a 1.2× speed-up cap and brief pauses allowed", () => {
-    expect(DEFAULTS.speedCap).toBe(1.2);
-    expect(DEFAULTS.allowFreeze).toBe(true);
-  });
-  it("the engine's voice match default, and everyday Telugu", () => {
-    // The engine's session falls back to "closest" when `open` carries no cloneStrength: both sides must agree.
-    expect(DEFAULT_CLONE_STRENGTH).toBe("closest");
-    expect(DEFAULTS.cloneStrength).toBe(DEFAULT_CLONE_STRENGTH);
-    expect(DEFAULTS.style).toBe("colloquial");
-  });
-  it("have no slow-down setting at all: the video is never slowed", () => {
-    expect(Object.keys(DEFAULTS)).not.toContain("allowSlowdown");
+  it("auto speakers, everyday Telugu, the whole video, a 1.2× speed-up cap and Telugu script", () => {
+    expect(DEFAULT_OPTIONS).toEqual({ speakers: "auto", style: "colloquial", stopAt: null, speedCap: 1.2, ttsScript: "telugu" });
+    expect(SPEAKER_OPTIONS).toEqual(["auto", 1, 2, 3, 4, 5, 6]);
+    expect(PREVIEW_AT).toBe(900);
   });
 });
 
@@ -42,101 +34,40 @@ describe("clampSpeedCap", () => {
   });
 });
 
-describe("normalizeSettings", () => {
-  it("gives the defaults for empty or broken storage", () => {
-    expect(normalizeSettings({})).toEqual(DEFAULTS);
-    expect(normalizeSettings(null)).toEqual(DEFAULTS);
-    expect(normalizeSettings("nonsense")).toEqual(DEFAULTS);
-    expect(normalizeSettings([1, 2])).toEqual(DEFAULTS);
+describe("a job's options", () => {
+  const saved = { speakers: 2, style: "formal" as const, stopAt: 900, speedCap: 1.1, ttsScript: "latin" as const, presets: ["S2"] };
+
+  it("are what continuing it sends, its speakers included", () => {
+    expect(jobOptions(saved)).toEqual({ speakers: 2, style: "formal", stopAt: 900, speedCap: 1.1, ttsScript: "latin" });
   });
 
-  it("migrates settings saved by an older build", () => {
-    const old = {
-      speedCap: 1.4, allowSlowdown: true, allowFreeze: false, maxPause: 2.5, style: "formal", voiceMode: "preset",
-      prepareAhead: 120, lookahead: 1200, updateCheck: false, hud: true, theme: "light",
-    };
-    const s = normalizeSettings(old);
-    expect(s).toEqual({
-      speedCap: 1.25, allowFreeze: false, style: "formal", cloneStrength: "closest", ttsScript: "telugu",
-      prepareAhead: 120, lookahead: 1200, updateCheck: false, hud: true, theme: "light",
-    });
-    for (const gone of ["allowSlowdown", "maxPause", "voiceMode"]) expect(s).not.toHaveProperty(gone);
+  it("start a new dub from the last job's, but for the speakers: they were that video's", () => {
+    expect(newDubOptions(saved)).toEqual({ speakers: "auto", style: "formal", stopAt: 900, speedCap: 1.1, ttsScript: "latin" });
+    expect(newDubOptions(null)).toEqual(DEFAULT_OPTIONS);
   });
 
-  it("keeps a saved voice match", () => {
-    for (const c of ["closest", "balanced", "natural"] as const) expect(normalizeSettings({ cloneStrength: c }).cloneStrength).toBe(c);
-  });
-
-  it("replaces values the UI can't show with defaults", () => {
-    const s = normalizeSettings({
-      cloneStrength: "strong", style: "poetic", prepareAhead: 45, lookahead: "600", allowFreeze: "yes", theme: "blue", hud: 1,
-      ttsScript: "roman",
-    });
-    expect(s.cloneStrength).toBe("closest");
-    expect(s.ttsScript).toBe("telugu");
-    expect(s.style).toBe("colloquial");
-    expect(s.prepareAhead).toBe(300);
-    expect(s.lookahead).toBe(600);
-    expect(s.allowFreeze).toBe(true);
-    expect(s.theme).toBe("dark");
-    expect(s.hud).toBe(false);
-  });
-
-  it("round-trips through storage unchanged", () => {
-    const s = normalizeSettings({ speedCap: 1.1, cloneStrength: "natural", allowFreeze: false });
-    expect(normalizeSettings(JSON.parse(JSON.stringify(s)))).toEqual(s);
-  });
-});
-
-describe("openMessage", () => {
-  it("sends voice match, speed-up cap and pauses with the video", () => {
-    const s = { ...DEFAULTS, cloneStrength: "closest" as const, speedCap: 1.1, allowFreeze: false, style: "formal" as const, lookahead: 300 };
-    expect(openMessage("https://youtu.be/abc", s)).toEqual({
-      type: "open", url: "https://youtu.be/abc", style: "formal", lookahead: 300,
-      cloneStrength: "closest", speedCap: 1.1, allowFreeze: false, ttsScript: "telugu",
-    });
-  });
-
-  it("sends the defaults when nothing was changed", () => {
-    const m = openMessage("abc", DEFAULTS);
-    expect(m.cloneStrength).toBe("closest");
-    expect(m.speedCap).toBe(1.2);
-    expect(m.allowFreeze).toBe(true);
-    expect(m.ttsScript).toBe("telugu");
-  });
-
-  it("never sends a speed-up outside the engine's range, nor a slow-down flag", () => {
-    const m = openMessage("abc", { ...DEFAULTS, speedCap: 1.4 });
-    expect(m.speedCap).toBe(1.25);
-    expect(m).not.toHaveProperty("allowSlowdown");
+  it("replace what the UI can't offer with the defaults", () => {
+    expect(jobOptions({ speakers: 9, style: "poetic" as never, stopAt: 60, speedCap: 1.4, ttsScript: "roman" as never }))
+      .toEqual({ speakers: "auto", style: "colloquial", stopAt: null, speedCap: 1.25, ttsScript: "telugu" });
   });
 });
 
 describe("translation style options", () => {
   it("offer the engine's two styles, everyday first", () => {
     expect(STYLE_OPTIONS.map((o) => o.id)).toEqual(["colloquial", "formal"]);
-    expect(STYLE_OPTIONS.map((o) => o.label)).toEqual(["Everyday spoken Telugu", "More formal Telugu"]);
+    expect(STYLE_OPTIONS.map((o) => o.label)).toEqual(["Everyday spoken", "More formal"]);
   });
   it("are named by register, never by an amount of English", () => {
     for (const o of STYLE_OPTIONS) {
       expect(o.label).not.toMatch(/english/i);
-      expect(o.hint).not.toMatch(/(fewer|more|less) English|English words|stay as they are/i);
+      expect(o.hint).not.toMatch(/(fewer|more|less) English|stay as they are/i);
     }
-  });
-  it("keep a saved style", () => {
-    for (const o of STYLE_OPTIONS) expect(normalizeSettings({ style: o.id }).style).toBe(o.id);
   });
 });
 
 describe("TTS script (decision D6)", () => {
   it("defaults to Telugu script, what the voice was trained on", () => {
-    expect(DEFAULTS.ttsScript).toBe("telugu");
     expect(TTS_SCRIPT_OPTIONS.map((o) => o.id)).toEqual(["telugu", "latin"]);
-  });
-  it("keeps a saved choice and sends it when a video opens", () => {
-    const s = normalizeSettings({ ttsScript: "latin" });
-    expect(s.ttsScript).toBe("latin");
-    expect(openMessage("abc", s).ttsScript).toBe("latin");
   });
   it("names the Latin option as the A/B test it is", () => {
     expect(TTS_SCRIPT_OPTIONS.find((o) => o.id === "latin")!.label).toMatch(/A\/B/);

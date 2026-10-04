@@ -10,33 +10,40 @@ import json
 import logging
 import math
 import tempfile
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 
 from ..speakers import DiarBlock
 from ..types import SpeakerTurn
-from .base import SR_ANALYSIS, Diarizer
+from .base import COARSE_STEP, SR_ANALYSIS, Cancelled, Diarizer
 
 log = logging.getLogger("maata.backends")
 
 S3_TOKEN_RATE = 25  # Chatterbox speech tokens per second of audio
 EOS_CHECK = 8       # T3 decode steps between checks that every take has ended: each check waits for the GPU (§3.8)
+# Whole-file diarization's memory guard (OFFLINE-RENDER §2.3, §7): pyannote's VBx runs scipy's centroid linkage over every
+# embedding it keeps, which peaks at about 2.1x the condensed distance matrix (measured on scipy 1.18.1): 8.4 n^2 bytes.
+DIAR_CLUSTER_BUDGET = 3e9  # bytes the clustering may take
+LINKAGE_BYTES = 8.4
+MIN_ACTIVE = 0.2           # share of a window's frames a speaker must talk alone in for VBx to keep its embedding
 
 
 class SingleSpeakerDiarizer:
     """Everyone is speaker S1, one voice for the whole video (spec §12 Phase 1: no diarization).
 
-    Used while pyannote's gated model isn't installed. One turn spans the block, so every word keeps
-    the same voice; with no centroid the registry links blocks by their overlap.
+    Used while pyannote's gated model isn't installed. One turn spans the whole file, so every word keeps
+    the same voice.
     """
 
-    def diarize_block(self, audio: np.ndarray, offset: float) -> DiarBlock:
-        end = offset + len(audio) / SR_ANALYSIS
-        turns = [SpeakerTurn("S1", offset, end)] if len(audio) else []
-        return DiarBlock(offset, end, turns, list(turns), {})
+    def diarize(self, audio: np.ndarray, **_: object) -> DiarBlock:
+        end = len(audio) / SR_ANALYSIS
+        turns = [SpeakerTurn("S1", 0.0, end)] if len(audio) else []
+        return DiarBlock(0.0, end, turns, list(turns), {})
 
 
 def make_diarizer(model_dir: Path, device: str) -> Diarizer:
@@ -48,7 +55,7 @@ def make_diarizer(model_dir: Path, device: str) -> Diarizer:
 
 class PyannoteDiarizer:
     """pyannote community-1. Keeps what the speaker registry needs: exclusive turns (one speaker per
-    instant, for assigning words) and per-speaker centroid embeddings (for linking blocks)."""
+    instant, for assigning words) and per-speaker centroid embeddings (for settling the speakers found)."""
 
     def __init__(self, model_dir: Path, device: str) -> None:
         import torch
@@ -58,25 +65,102 @@ class PyannoteDiarizer:
         self.pipeline = Pipeline.from_pretrained(str(model_dir))
         self.pipeline.to(torch.device(device))
 
-    def diarize_block(self, audio: np.ndarray, offset: float) -> DiarBlock:
-        end = offset + len(audio) / SR_ANALYSIS
-        if len(audio) < SR_ANALYSIS:  # under a second: nothing to diarize
-            return DiarBlock(offset, end, [], [], {})
-        out = self.pipeline({"waveform": self._torch.from_numpy(np.ascontiguousarray(audio)).unsqueeze(0), "sample_rate": SR_ANALYSIS})
-        ann = out.speaker_diarization
-        excl = getattr(out, "exclusive_speaker_diarization", None) or ann
+    def diarize(self, audio: np.ndarray, *, num_speakers: int | None = None, min_speakers: int | None = None,
+                max_speakers: int | None = None, step: float | None = None,
+                progress: Callable[[float], None] | None = None, cancel: threading.Event | None = None) -> DiarBlock:
+        """The whole file in one pipeline call, so one clustering sees every speaker (OFFLINE-RENDER §2.3). Its hook
+        reports segmentation as 0-40 % and embeddings as 40-90 % (clustering has no hook), raises `Cancelled` once
+        `cancel` is set (until clustering starts: a pause during it lets the run finish), and runs the memory guard: if the clustering of the embeddings VBx would keep is predicted
+        over DIAR_CLUSTER_BUDGET, the run stops before any embedding is computed and starts again at COARSE_STEP (half
+        the windows, a quarter of the matrix). `step` forces a step from the start. The pipeline's own step is put
+        back afterwards."""
+        end = len(audio) / SR_ANALYSIS
+        seg = self.pipeline._segmentation
+        default = seg.step
+        ratio = default / seg.duration if step is None else step
+        if len(audio) < SR_ANALYSIS:
+            return DiarBlock(0.0, end, [], [], {}, step=round(ratio, 3))
+        # A copy: the job's audio is memory-mapped read-only, which torch won't take.
+        wave = {"waveform": self._torch.from_numpy(np.array(audio, np.float32)).unsqueeze(0), "sample_rate": SR_ANALYSIS}
+        count = {"num_speakers": num_speakers, "min_speakers": min_speakers, "max_speakers": max_speakers}
+        kept: list[int] = []  # the guard's count of the embeddings each run clusters
+        try:
+            while True:
+                seg.step = ratio * seg.duration
+                try:
+                    out = self.pipeline(wave, hook=_hook(progress, cancel, guard=ratio < COARSE_STEP, kept=kept), **count)
+                    break
+                except _TooMany as e:
+                    log.warning("diarization would cluster %d embeddings (about %.1f GB); again at a %.1f s step", e.n,
+                                LINKAGE_BYTES * e.n ** 2 / 1e9, COARSE_STEP * seg.duration)
+                    ratio = COARSE_STEP
+        finally:
+            seg.step = default
+        return replace(_block(out, 0.0, end), step=round(ratio, 3), embeddings=kept[-1] if kept else None)
 
-        def shifted(a) -> list[SpeakerTurn]:
-            return [SpeakerTurn(str(spk), offset + float(seg.start), offset + float(seg.end)) for seg, _, spk in a.itertracks(yield_label=True)]
 
-        # speaker_embeddings[i] belongs to ann.labels()[i]; speakers without a cluster get all-zero rows.
-        centroids: dict[str, np.ndarray] = {}
-        emb = getattr(out, "speaker_embeddings", None)
-        if emb is not None:
-            for label, row in zip(ann.labels(), np.asarray(emb, dtype=np.float32)):
-                if np.isfinite(row).all() and np.linalg.norm(row) > 1e-6:
-                    centroids[str(label)] = row
-        return DiarBlock(offset, end, shifted(ann), shifted(excl), centroids)
+class _TooMany(Exception):
+    """The memory guard's stop: `n` embeddings would be clustered."""
+
+    def __init__(self, n: int) -> None:
+        super().__init__(n)
+        self.n = n
+
+
+def _retained(data: np.ndarray) -> int:
+    """How many (window, local speaker) embeddings VBx will cluster: pyannote's `filter_embeddings` keeps a pair whose
+    speaker talks alone for at least MIN_ACTIVE of the window's frames (NaN embeddings aside, so this is an upper
+    bound). community-1's segmentation is powerset, so `data` is already 0/1."""
+    active = np.asarray(data) > 0.5
+    alone = active & (active.sum(axis=2, keepdims=True) == 1)
+    return int((alone.sum(axis=1) >= MIN_ACTIVE * active.shape[1]).sum())
+
+
+# The steps whose hook calls a set cancel event stops at: up to the start of clustering. pyannote's clustering has no
+# hook, and its next call ("discrete_diarization") comes after it: a run that far returns its result, not to be thrown
+# away and redone on resume.
+_CANCELLABLE = ("segmentation", "speaker_counting", "embeddings")
+
+
+def _hook(progress: Callable[[float], None] | None, cancel: threading.Event | None, guard: bool,
+          kept: list[int]) -> Callable[..., None]:
+    """pyannote's `hook(step, artifact, file=, completed=, total=)`: progress, cancellation and the memory guard (see
+    `PyannoteDiarizer.diarize`), which appends its count to `kept`."""
+    def hook(name: str, artifact: object = None, *, completed: int | None = None, total: int | None = None,
+             **_: object) -> None:
+        if cancel is not None and cancel.is_set() and name in _CANCELLABLE:
+            raise Cancelled("diarization cancelled")
+        if name == "segmentation" and artifact is not None:
+            n = _retained(artifact.data)
+            kept.append(n)
+            log.info("diarization: %d embeddings to cluster (about %.1f GB at its peak)", n, LINKAGE_BYTES * n ** 2 / 1e9)
+            if guard and LINKAGE_BYTES * n ** 2 > DIAR_CLUSTER_BUDGET:
+                raise _TooMany(n)
+        if progress is not None and completed is not None and total:
+            share = min(completed / total, 1.0)
+            if name == "segmentation":
+                progress(0.4 * share)
+            elif name == "embeddings":
+                progress(0.4 + 0.5 * share)
+    return hook
+
+
+def _block(out, offset: float, end: float) -> DiarBlock:
+    """A pipeline output as a block: its turns and exclusive turns shifted by `offset`, and its centroids."""
+    ann = out.speaker_diarization
+    excl = getattr(out, "exclusive_speaker_diarization", None) or ann
+
+    def shifted(a) -> list[SpeakerTurn]:
+        return [SpeakerTurn(str(spk), offset + float(seg.start), offset + float(seg.end)) for seg, _, spk in a.itertracks(yield_label=True)]
+
+    # speaker_embeddings[i] belongs to ann.labels()[i]; speakers without a cluster get all-zero rows.
+    centroids: dict[str, np.ndarray] = {}
+    emb = getattr(out, "speaker_embeddings", None)
+    if emb is not None:
+        for label, row in zip(ann.labels(), np.asarray(emb, dtype=np.float32)):
+            if np.isfinite(row).all() and np.linalg.norm(row) > 1e-6:
+                centroids[str(label)] = row
+    return DiarBlock(offset, end, shifted(ann), shifted(excl), centroids)
 
 
 @dataclass
@@ -130,29 +214,78 @@ class ChatterboxTeluguTTS:
     three speed changes measured on the M5 Pro (docs/DECISIONS.md ADR-014): the T3 transformer runs in
     bf16 (sampling stays fp32), generation is capped by the line's time budget instead of a fixed
     1000 tokens (40 s), and the S3Gen flow-matching step count is configurable.
+
+    The weights load on first use, not at engine start, so they aren't resident while a render
+    diarizes the whole file (OFFLINE-RENDER §2.3, §7).
     """
 
     def __init__(self, ckpt_dir: Path, device: str, presets_dir: Path | None = None,
                  exaggeration: float = 0.5, cfg_weight: float = 0.5, t3_bf16: bool = True, cfm_steps: int = 10) -> None:
         import torch
-        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+        from chatterbox.models.s3gen import S3GEN_SR
 
         self._torch = torch
-        # The checkpoint names its fine-tuned T3 weights (t3_mtl_te.safetensors); the loader's
-        # default is the base multilingual model's file, which this checkpoint doesn't ship.
-        cfg = ckpt_dir / "config.json"
-        t3_model = json.loads(cfg.read_text()).get("t3_model") if cfg.is_file() else None
-        self.model = ChatterboxMultilingualTTS.from_local(str(ckpt_dir), device, t3_model=t3_model)
-        self.sample_rate = int(self.model.sr)
-        self.builtin = self.model.conds  # conds.pt: the checkpoint's own voice, the preset of last resort
+        self._ckpt_dir, self._device = ckpt_dir, device
+        self._model = None
+        self._builtin = None
+        self._load_lock = threading.Lock()
+        self.sample_rate = int(S3GEN_SR)
         self.presets_dir = presets_dir
         self._presets: dict[str, ChatterboxVoice] = {}
         self.exaggeration, self.cfg_weight = exaggeration, cfg_weight
         self.cfm_steps = cfm_steps
         self._t3_dtype = torch.bfloat16 if t3_bf16 and device in ("mps", "cuda") else None
-        if self._t3_dtype is not None:
-            self.model.t3.tfmr.to(self._t3_dtype)
         self._backend = None
+
+    @property
+    def model(self):
+        """The Chatterbox pipeline, loaded on first use (from whichever worker thread asks first)."""
+        if self._model is None:
+            with self._load_lock:
+                if self._model is None:
+                    self._load()
+        return self._model
+
+    @model.setter
+    def model(self, model) -> None:
+        self._model = model
+
+    @property
+    def builtin(self):
+        """conds.pt: the checkpoint's own voice, the preset of last resort."""
+        self.model  # noqa: B018  (loads it)
+        return self._builtin
+
+    def _load(self) -> None:
+        from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+
+        # The checkpoint names its fine-tuned T3 weights (t3_mtl_te.safetensors); the loader's
+        # default is the base multilingual model's file, which this checkpoint doesn't ship.
+        cfg = self._ckpt_dir / "config.json"
+        t3_model = json.loads(cfg.read_text()).get("t3_model") if cfg.is_file() else None
+        t0 = time.perf_counter()
+        model = ChatterboxMultilingualTTS.from_local(str(self._ckpt_dir), self._device, t3_model=t3_model)
+        self.sample_rate = int(model.sr)
+        self._builtin = model.conds
+        if self._t3_dtype is not None:
+            model.t3.tfmr.to(self._t3_dtype)
+        self._model = model
+        log.info("Chatterbox loaded in %.1f s", time.perf_counter() - t0)
+
+    def release(self) -> None:
+        """Let go of the model, its built-in voice, the presets made from it and its T3 backend, and empty the MPS (or
+        CUDA) cache: a render calls this once its dub is final, so the export runs without Chatterbox's 2.2-3.2 GB
+        resident (OFFLINE-RENDER §2.13, §7). The next synthesis loads it again."""
+        import gc
+
+        with self._load_lock:
+            self._model = self._builtin = self._backend = None
+            self._presets.clear()
+        gc.collect()
+        if self._device == "mps" and self._torch.backends.mps.is_available():
+            self._torch.mps.empty_cache()
+        elif self._device == "cuda" and self._torch.cuda.is_available():
+            self._torch.cuda.empty_cache()
 
     def _conds_from_wav(self, audio: np.ndarray, sr: int) -> ChatterboxVoice:
         import soundfile as sf
@@ -201,7 +334,7 @@ class ChatterboxTeluguTTS:
         return ChatterboxVoice(Conditionals(t3, gen), cfg_weight)
 
     def preset_voice(self, name: str) -> ChatterboxVoice:
-        if name not in self._presets:  # computed once: the session asks for a preset every unit
+        if name not in self._presets:  # computed once: the dub loop asks for a preset every line
             wav = self.presets_dir / f"{name}.wav" if self.presets_dir else None
             if wav is not None and wav.is_file():
                 import soundfile as sf
@@ -314,6 +447,20 @@ class ChatterboxTeluguTTS:
             self._sync()
             take.flow_s = time.perf_counter() - t0
         take.speech = None
+
+    def pack_take(self, take: MelTake) -> dict[str, np.ndarray]:
+        """A take as the render keeps it on disk (OFFLINE-RENDER §2.9): its mel, flowed first if it wasn't yet (S3Gen's
+        flow: hold the GPU), as float16, and its speech-token count, which sets its length."""
+        self._flow(take)
+        mel = (np.zeros((1, 80, 0), np.float16) if take.mel is None
+               else take.mel.detach().to("cpu", self._torch.float32).numpy().astype(np.float16))
+        return {"mel": mel, "n_tokens": np.array(take.n_tokens, np.int64)}
+
+    def unpack_take(self, d: dict[str, np.ndarray]) -> MelTake:
+        """A take `pack_take` kept, back as a flowed take with its mel on the model's device, for `vocode`."""
+        mel = np.asarray(d["mel"])
+        mel = self._torch.from_numpy(mel.astype(np.float32)).to(self.model.device) if mel.shape[-1] else None
+        return MelTake(mel, int(d["n_tokens"]), cfm_steps=self.cfm_steps)
 
     def _sync(self) -> None:
         """Wait for queued GPU work, so a stage's time is its own (MPS and CUDA run asynchronously). The vocoder would wait

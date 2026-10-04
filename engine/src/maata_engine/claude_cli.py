@@ -14,7 +14,8 @@ Hardening (docs/research/dubbing-2026-09/ARCHITECTURE.md §4.4, §4.9):
 - a watchdog: no stream event at start (#91987: an interactive session on the same version holds a lock) or no answer in
   time -> SIGINT, then SIGTERM, then SIGKILL; transient failures and stalls are retried after an exponential back-off,
   never at once;
-- a cancel event stops a call (SIGINT first), also while it waits to retry, so a seek can drop calls it no longer needs;
+- a cancel event stops a call (SIGINT first), also while it waits to retry, so a job that is removed or stops, or a
+  rephrase dropped while a failure holds translation, doesn't wait the call out;
 - a schema-bound reply counts only if it validates, whether it came as `structured_output` or was recovered from text;
 - one fixed working directory under the engine's cache dir: the CLI puts the working directory in the prompt prefix, so
   separate calls share the prompt cache.

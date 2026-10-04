@@ -19,7 +19,7 @@ from ..claude_cli import ClaudeCLIError, ClaudeReply, validate
 from ..speakers import DiarBlock
 from ..text.akshara import mixed_units
 from ..types import SpeakerTurn, TimedWord
-from .base import Backend, Brief, Transcript
+from .base import Backend, Brief, Cancelled, Transcript
 from .claude_translator import ClaudeTranslator
 
 # The demo's English lines, and how the mock translator says them: Telugu script, with the English words listed (the
@@ -54,21 +54,46 @@ class MockTranscriber:
 
 
 class MockDiarizer:
-    """Two speakers taking 14 s turns on a fixed video-time grid, with stable fake embeddings."""
+    """Two speakers taking 14 s turns on a fixed video-time grid, with stable fake embeddings.
 
-    _EMB = {"A": np.eye(8, dtype=np.float32)[0], "B": np.eye(8, dtype=np.float32)[1]}
+    `diarize` (the whole file) takes `num_speakers` turns on the same grid. In auto mode it also finds a 4 s third
+    speaker 'C' at 100 s whose embedding is close to A's: the maintainer's over-split, which the render's settle step
+    must merge back. It counts its calls and keeps the step it was asked for."""
 
-    def diarize_block(self, audio: np.ndarray, offset: float) -> DiarBlock:
-        end = offset + len(audio) / 16_000
+    BLIP = (100.0, 104.0)
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.step: float | None = None
+
+    def diarize(self, audio: np.ndarray, *, num_speakers: int | None = None, min_speakers: int | None = None,
+                max_speakers: int | None = None, step: float | None = None, progress=None,
+                cancel: threading.Event | None = None) -> DiarBlock:
+        self.calls += 1
+        self.step = step
+        if cancel is not None and cancel.is_set():
+            raise Cancelled("diarization cancelled")
+        end = len(audio) / 16_000
+        names = "ABCDEF"[:num_speakers] if num_speakers else "AB"
         turns: list[SpeakerTurn] = []
-        t = offset
-        while t < end:
-            k = int(t // 14.0)
-            nxt = min((k + 1) * 14.0, end)
-            turns.append(SpeakerTurn("A" if k % 2 == 0 else "B", t, nxt))
-            t = nxt
-        labels = {x.speaker for x in turns}
-        return DiarBlock(offset, end, turns, list(turns), {k: v for k, v in self._EMB.items() if k in labels})
+        for k in range(math.ceil(end / 14.0)):
+            turns.append(SpeakerTurn(names[k % len(names)], k * 14.0, min((k + 1) * 14.0, end)))
+        emb = {n: np.eye(8, dtype=np.float32)[i] for i, n in enumerate(names)}
+        a, b = self.BLIP
+        if num_speakers is None and end > b:
+            cut = []
+            for t in turns:
+                if t.start < b and a < t.end:
+                    cut += [SpeakerTurn(t.speaker, t.start, a), SpeakerTurn("C", a, b), SpeakerTurn(t.speaker, b, t.end)]
+                else:
+                    cut.append(t)
+            turns = [t for t in cut if t.end > t.start]
+            c = 0.95 * emb["A"] + 0.31 * np.eye(8, dtype=np.float32)[7]
+            emb["C"] = (c / np.linalg.norm(c)).astype(np.float32)
+        if progress is not None:
+            progress(0.4)
+            progress(0.9)
+        return DiarBlock(0.0, end, turns, list(turns), emb, step=step or 0.1)
 
 
 _SPOKEN = {en: (spoken, english) for en, spoken, english in _LINES}
@@ -157,6 +182,9 @@ class MockSceneTranslator(ClaudeTranslator):
 class MockTTS:
     sample_rate = 24_000
 
+    def release(self) -> None:
+        """Nothing is resident (the real TTS lets go of its model here)."""
+
     def prepare_voice(self, reference: np.ndarray, sample_rate: int) -> dict:
         f0 = 110 + 40 * (float(np.abs(reference).mean()) * 50 % 1) if reference.size else 140
         return {"f0": f0}
@@ -177,5 +205,30 @@ class MockTTS:
         return (0.12 * wave * env).astype(np.float32)
 
 
+class MockSeparator:
+    """The separator with no model: the vocals are exactly half of each chunk, so the bed is the mixture's other half
+    and any error in the chunking or the overlap-add shows. It counts its calls and the chunks it was given."""
+
+    sample_rate = 44_100
+    chunk = 352_800
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.chunks = 0
+        self.released = 0
+
+    def vocals(self, batch: np.ndarray) -> np.ndarray:
+        self.calls += 1
+        self.chunks += len(batch)
+        return (np.asarray(batch, np.float32) * 0.5).astype(np.float32)
+
+    def missing(self) -> list[str]:
+        return []
+
+    def release(self) -> None:
+        self.released += 1
+
+
 def make_mock_backend() -> Backend:
-    return Backend("mock", "cpu", MockTranscriber(), MockDiarizer(), MockSceneTranslator, MockTTS())
+    return Backend("mock", "cpu", MockTranscriber(), MockDiarizer(), MockSceneTranslator, MockTTS(),
+                   separator=MockSeparator())
