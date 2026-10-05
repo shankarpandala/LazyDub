@@ -50,7 +50,9 @@ class PacedTTS(MockTTS):
         return Take(min(seconds, max_seconds) if max_seconds else seconds)
 
     def vocode(self, take: Take, rate: float = 1.0) -> np.ndarray:
-        return np.zeros(int(take.seconds / rate * self.sample_rate), np.float32)
+        # Valid, audible output at the controlled duration; silence is now a synthesis failure, not a timing fixture.
+        t = np.arange(int(take.seconds / rate * self.sample_rate), dtype=np.float32) / self.sample_rate
+        return 0.1 * np.sin(2 * np.pi * 140 * t)
 
     def pack_take(self, take: Take) -> dict[str, np.ndarray]:
         return {"mel": np.zeros(1, np.float16)}

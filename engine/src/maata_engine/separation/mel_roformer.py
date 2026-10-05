@@ -14,6 +14,7 @@ Changes from upstream:
 - precision (§2.14): the STFT, the mask's application and the inverse STFT run in float32, and the band-split input is
   cast to the model's `dtype` (bf16 by default), so the transformer and the mask estimator run in it, with the RoPE
   tables cast to it too (a float32 table would promote every attention to float32);
+- each band's mask is merged in one indexed scatter, preserving the order of overlapping bands;
 - `MelRoFormerResult` (unused) is left out.
 
 mlx-audio is MIT-licensed: Copyright (c) 2024 Prince Canuma and contributors (https://github.com/Blaizzy/mlx-audio).
@@ -283,8 +284,9 @@ class BandSplit(nn.Module):
         for indices, mask in zip(self.filterbank.freq_indices, band_masks):
             n_freqs = len(indices)
             mask = mask.reshape(B, T, n_freqs, 2).transpose(0, 2, 1, 3)
-            for j, idx in enumerate(indices):
-                output = output.at[:, idx, :, :].add(mask[:, j, :, :])
+            # A band's indices are unique: scatter them together instead of dispatching one GPU operation per bin.
+            # Keep bands in their original order so overlapping bins accumulate in the same float32 order.
+            output = output.at[:, indices, :, :].add(mask)
         return output / mx.array(self.filterbank.num_bands_per_freq).reshape(1, -1, 1, 1)
 
 

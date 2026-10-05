@@ -20,7 +20,7 @@ from ..backends.base import EMOTIONS, ENERGIES, Brief, GlossaryEntry, LineSpec, 
 
 # Bump SHOTS_VERSION whenever the prompt, an example or a schema changes; PROMPT_HASH follows the content and keys the
 # per-line cache, so a change never serves lines made under the old prompt.
-SHOTS_VERSION = "scene-v3"  # v3: the everyday spoken Telugu of the general public (OFFLINE-RENDER §2.18)
+SHOTS_VERSION = "scene-v4"  # v4: a complete first wording aimed at the available speech time, with meaning first
 DESCRIPTION_MAX = 2000  # characters of the video description placed in the brief
 
 ROLE = (
@@ -55,11 +55,12 @@ SCRIPT = """SCRIPT CONTRACT
 - Never write Telugu words in Latin script."""
 
 LENGTH = """LENGTH CONTRACT
-- Each line's "target_aksharas" is computed locally from the speaker's speech time and the voice's pace. Use it only to judge how much the shorter wordings must cut; don't count aksharas yourself.
-- "full" is the natural, complete line, with no length pressure. It is always given.
+- Each line's "speech_s" is the available speech time; "target_aksharas" is computed locally from that time and the voice's pace. They guide wording, not a hard length limit. Don't count aksharas yourself: the local duration predictor measures the result.
+- "full" is always given: a natural, complete spoken translation aimed at that speech time on the first attempt. Prefer compact everyday phrasing and spoken verb forms over roundabout wording, while keeping every fact, name, number, negation, question, relationship and meaningful qualifier, including uncertainty, cause and comparison. Preserve the speaker's intent and emphasis.
+- If all the meaning cannot fit naturally, return the complete longer wording: the local fitter handles overflow. Never summarize, drop a clause, alter a number or weaken a qualification to meet the target. Never pad a short line or invent content to fill time. If the timing guidance is missing or nonpositive, use the natural complete wording.
 - Give the other wordings only when "want" names them.
-- "concise" and "very_concise" say the same thing in fewer aksharas. They cut only fillers, hedges, repetitions and pronouns the verb marks, and use shorter spoken forms; every fact, name, number, negation and question stays. "concise" is clearly shorter than "full", and "very_concise" clearly shorter than "concise".
-- "fuller" restores what the speaker actually said that "full" smoothed away: hedges, repetitions, discourse markers, full verb forms, pronouns. It adds no fact and no filler the speaker didn't say, and is longer than "full"."""
+- "concise" and "very_concise" say the same thing in fewer aksharas. They cut only non-semantic fillers, redundant repetitions and pronouns the verb marks, and use shorter spoken forms; every fact, name, number, negation, question and meaningful qualifier stays. Never remove a hedge that expresses uncertainty. "concise" is clearly shorter than "full", and "very_concise" clearly shorter than "concise".
+- "fuller" restores source delivery details that "full" smoothed away: non-semantic repetitions, discourse markers, full verb forms and pronouns. It adds no fact and no filler the speaker didn't say, and is longer than "full". Facts and meaningful qualifiers already belong in "full"."""
 
 CONTRACT = """JSON CONTRACT
 The message is JSON; "call" says what to do.
@@ -97,7 +98,8 @@ def _d(emotion: str = "neutral", energy: str = "mid", question: bool = False, *e
 # MAINTAINER REVIEW: please read these as a native speaker (everyday word choice, loan spellings, verb forms, the formal
 # pair, the lecture line) before the step-1 bake-off; SHOTS_VERSION goes up with any change.
 SHOTS: list[tuple[str, dict, dict]] = [
-    ("My father worked two jobs so that we could go to school.", {},
+    ("My father worked two jobs so that we could go to school.",
+     {"start": 0.0, "end": 6.5, "speech_s": 6.0, "target_aksharas": 35},
      {"full": _w("మేము స్కూల్ కి వెళ్ళాలని మా నాన్న రెండు జాబ్స్ చేసేవారు.", (1, "school"), (7, "jobs")),
       "delivery": _d("serious")}),
     ("So, have you ever noticed how time just flies when you're, like, really enjoying something?", {},

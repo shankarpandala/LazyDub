@@ -72,6 +72,12 @@ async def test_units_jsonl_records_stage_chunk_voice_and_line_costs(tmp_path, tt
     assert all(by.values()), {k: len(v) for k, v in by.items()}
     (speakers,) = [e for e in by["stage"] if e["key"] == "speakers"]
     assert speakers["seconds"] >= 0 and speakers["gpu_s"] >= 0 and not speakers["cached"]
+    (export,) = [e for e in by["stage"] if e["key"] == "export"]
+    assert export["seconds"] == job.doc["stages"]["export"]["seconds"]
+    assert export["media_seconds"] == pytest.approx(job.doc["stages"]["export"]["total"], abs=0.1)
+    from maata_engine.bench import render_metrics
+
+    assert render_metrics(by["stage"], job.doc["duration"])["stages"]["export"]["seconds"] == export["seconds"]
     assert job.registry.speakers and job.registry.turns_in(0.0, job.doc["duration"])
     for e in by["asr"]:
         assert e["b"] > e["a"] and e["run_s"] >= 0 and e["lock_wait_s"] >= 0 and e["priority"] == VOICE

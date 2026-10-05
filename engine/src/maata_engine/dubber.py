@@ -810,6 +810,13 @@ class Dubber:
         their cap when none passed: a voice faster than its estimate is still learned; None if all ran away), and why
         the take voiced failed, or None). `speech`: the speech time the take is picked against, for a piece of the line;
         by default the line's."""
+        got, failed = await self._take_candidates(w, voice, key, seconds, cost, n)
+        k = take_qa.pick([secs for _, secs, _ in got], failed, st.speech_s if speech is None else speech)
+        return got[k][0], got[k][1], self._take_pace(got, failed), failed[k]
+
+    async def _take_candidates(self, w: Wording, voice: object, key: VoiceKey, seconds: float, cost: VoiceCost,
+                               n: int) -> tuple[list[tuple[object, float, bool]], list[str | None]]:
+        """Keep a batch's candidates until the chosen waveform passes QA; flow still runs only for candidates tried."""
         batched = hasattr(self.b.tts, "synthesize_takes")
         n = max(n, 1) if batched else 1
         cost.takes_n = n if cost.takes_n is None else cost.takes_n
@@ -825,10 +832,14 @@ class Dubber:
             got += more
             failed += [take_qa.failure(secs, capped, estimate) for _, secs, capped in more]
         cost.failures += [f for f in failed if f]
-        k = take_qa.pick([secs for _, secs, _ in got], failed, st.speech_s if speech is None else speech)
+        return got, failed
+
+    @staticmethod
+    def _take_pace(got: list[tuple[object, float, bool]], failed: list[str | None]) -> float | None:
+        # Duration-only "short" failures can teach a newly calibrated voice's true pace. Broken waveforms cannot.
         usable = ([secs for (_, secs, _), f in zip(got, failed) if f is None]
-                  or [secs for _, secs, capped in got if not capped])
-        return got[k][0], got[k][1], (sum(usable) / len(usable) if usable else None), failed[k]
+                  or [secs for (_, secs, capped), f in zip(got, failed) if not capped and f == "short"])
+        return sum(usable) / len(usable) if usable else None
 
     async def _render(self, take: object, rate: float, cost: VoiceCost) -> np.ndarray:
         """The take voiced, rendered at the planned rate: vocoded (after its S3Gen flow, which counts as synthesis), or
@@ -869,12 +880,41 @@ class Dubber:
                          cost: VoiceCost, n: int, speech: float
                          ) -> tuple[object, float, np.ndarray | None, tuple[tuple[float, float], ...], float | None,
                                     str | None]:
-        """One wording of `_say`: its take (`_take`, picked against `speech` s), rendered at its natural pace, where its
-        pauses are found. Returns (the take, its natural seconds, that audio, its pauses, the pace the estimator learns
-        from, why it failed)."""
-        take, dur, pace, failed = await self._take(st, w, voice, key, seconds, cost, n, speech=speech)
-        natural = await self._render(take, 1.0, cost)
-        return take, dur, natural, pz.pauses(natural, self.b.tts.sample_rate), pace, failed
+        """One wording of `_say`: select against `speech` s, render at its natural pace, and check its waveform before
+        finding pauses. Only broken audio tries other candidates, then at most one fresh batched take. Returns (take,
+        natural seconds, audio, pauses, the pace learned, duration failure); no usable audio raises UnusableAudioError.
+        """
+        got, failed = await self._take_candidates(w, voice, key, seconds, cost, n)
+        pending = list(range(len(got)))
+        retried = False
+        while pending:
+            k = pending.pop(take_qa.pick([got[i][1] for i in pending], [failed[i] for i in pending], speech))
+            take, dur, _ = got[k]
+            natural = await self._render(take, 1.0, cost)
+            reason = take_qa.audio_failure(natural)
+            if reason is None:
+                return (take, dur, natural, pz.pauses(natural, self.b.tts.sample_rate),
+                        self._take_pace(got, failed), failed[k])
+            failed[k] = reason
+            cost.failures.append(reason)
+            log.warning("unit %d: rejected a take (%s)", st.unit.id, reason)
+            # Exhaust the existing candidates first. Only stochastic/batched engines get one fresh retry;
+            # deterministic engines would return the same broken output. Never loop indefinitely on a bad model.
+            if not pending and not retried and hasattr(self.b.tts, "synthesize_takes"):
+                retried = True
+                self._retakes += 1
+                cost.retakes += 1
+                cap = min(MAX_LINE_SECONDS, max(4.0, seconds * self.speed_cap * 2.0))
+                more = await self._synth(self._tts_text(w), voice, cap, 1, cost)
+                pending.extend(range(len(got), len(got) + len(more)))
+                got += more
+                reasons = [take_qa.failure(secs, capped, self.estimator.estimate(w.spoken, key))
+                           for _, secs, capped in more]
+                failed += reasons
+                cost.failures += [f for f in reasons if f]
+        raise take_qa.UnusableAudioError(
+            f"Could not generate usable audio for line {st.unit.id + 1}. Resume to retry this line. "
+            f"Audio checks: {', '.join(sorted(set(f for f in failed if f)))}.")
 
     def _learn(self, said: Said, key: VoiceKey) -> None:
         for w, pace in zip(said.wordings, said.paces):

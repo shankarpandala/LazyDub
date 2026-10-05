@@ -969,6 +969,27 @@ async def test_a_second_run_makes_no_scene_calls(tmp_path):
     assert again.doc["coverage"] == first.doc["coverage"]
 
 
+async def test_translation_priority_follows_the_next_unvoiced_scene_and_its_completion_calls(tmp_path, monkeypatch):
+    monkeypatch.setattr(dubber, "SCENE_MAX_S", 20.0)
+    job = job_for(tmp_path, backend())
+    assert await job.run() == "done"
+    assert len(job.scenes) >= 3
+    for sc in job.scenes:
+        for st in sc.lines:
+            st.voiced = False
+    priority = job._translation_priority
+    assert priority("review", 1) < priority("fit", 1) < priority("scene", 1) < priority("review", 2)
+    distant = priority("review", 3)
+    for sc in job.scenes[:2]:
+        for st in sc.lines:
+            st.voiced = True
+    assert priority("review", 3) < distant
+    assert priority("review", 1) <= priority("review", 3)  # earlier fix-ups can unblock the final plan
+    assert priority("fit", 3) < priority("scene", 4)
+    if hasattr(job.tr, "call_priority"):
+        assert job.tr.call_priority == job._translation_priority
+
+
 class HeldClaude(MockClaude):
     """Claude held (not signed in) once for each (call, scene) in `fail`; scene None for the brief."""
 
@@ -1463,6 +1484,120 @@ async def test_cancel_during_the_dub_then_resume_voices_only_the_lines_without_r
     assert all(st.take is not None for st in again.units.values())
 
 
+@pytest.mark.parametrize("change", ["cfm", "batch", "version", "backend", "model", "device", "dtype", "sample_rate", "script", "legacy"])
+async def test_changed_synthesis_identity_invalidates_take_rows_and_estimator_replay(tmp_path, monkeypatch, change):
+    """A quality/backend change must not report a cache hit or learn durations from the previous synthesis. These
+    rows come from the real render path, including its effective batch policy and per-voice identities."""
+    job = job_for(tmp_path, backend(UniqueTranscriber(), MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    st = next(st for st in job.units.values() if st.take is not None)
+    assert list(job._rows_for(st))
+    assert stored and any(pace is not None for row in stored for _, _, pace in row["made"])
+    tts = job.b.tts
+    if change == "cfm":
+        tts.cfm_steps += 1
+    elif change == "batch":
+        monkeypatch.setattr(render, "TAKES_N", render.TAKES_N + 1)
+        monkeypatch.setattr(render, "TAKES_N_SHORT", render.TAKES_N_SHORT + 1)
+    elif change == "version":
+        monkeypatch.setattr(render, "TAKES_VERSION", render.TAKES_VERSION + 1)
+    elif change == "backend":
+        job.b.name = "another-backend"
+    elif change == "model":
+        monkeypatch.setattr(render, "_model_rev", lambda backend, role: "another-model-revision")
+    elif change == "device":
+        job.b.device = "another-device"
+    elif change == "dtype":
+        tts._t3_dtype = "another-dtype"
+    elif change == "sample_rate":
+        tts.sample_rate += 1
+    elif change == "script":
+        job.tts_script = "latin"
+    else:
+        for row in stored:
+            row.pop("synthesis")
+        job._take_rows = {}
+        for row in stored:
+            job._take_rows.setdefault(row["line"], []).append(row)
+    assert not list(job._rows_for(st))
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    job._load_takes(stored, [])
+    assert not job._take_rows and not job._made and learned == []
+
+
+async def test_resuming_after_cfm_change_synthesizes_new_takes_and_then_reuses_them(tmp_path):
+    b = backend(UniqueTranscriber(), MelTTS())
+    settings = RenderSettings(stop_at=12.0)
+    first = job_for(tmp_path, b, settings)
+    assert await first.run() == "done"
+    old_keys = {t["key"] for st in first.units.values() if st.take for t in st.take["takes"]}
+    b.tts = MelTTS()
+    b.tts.cfm_steps += 1
+    changed = job_for(tmp_path, b, settings)
+    assert await changed.run() == "done"
+    new_keys = {t["key"] for st in changed.units.values() if st.take for t in st.take["takes"]}
+    assert b.tts.batches and changed._voiced_now and old_keys.isdisjoint(new_keys)
+    b.tts = MelTTS()
+    b.tts.cfm_steps += 1
+    resumed = job_for(tmp_path, b, settings)
+    assert await resumed.run() == "done"
+    assert not b.tts.batches and not resumed._voiced_now
+    assert {t["key"] for st in resumed.units.values() if st.take for t in st.take["takes"]} == new_keys
+
+
+async def test_restore_rejects_a_row_whose_take_keys_do_not_match_its_synthesis_identity(tmp_path):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    st = next(st for st in job.units.values() if st.take is not None)
+    for row in job._take_rows[job._line_key(st)]:
+        row["takes"][0]["key"] = "old-key-with-current-metadata"
+    assert not list(job._rows_for(st))
+
+
+@pytest.mark.parametrize("samples,usable", [([], False), ([np.nan], False), ([np.inf], False), ([0.0], False),
+                                           ([0.0001, -0.0001], True)])
+def test_read_take_rejects_unusable_cached_pcm_and_preserves_quiet_speech(tmp_path, samples, usable):
+    job = job_for(tmp_path, backend())
+    render._save_npz(job.render_dir / "takes" / "pcm.npz", {
+        "samples": np.asarray(samples, np.float32), "seconds": np.float64(len(samples) / 24000),
+        "pauses": np.empty((0, 2)), "failed": np.str_(""), "spoken": np.str_("test"), "pace": np.float64(1.0),
+    })
+    assert (job._read_take("pcm") is not None) is usable
+
+
+async def test_estimator_replays_each_matching_take_once(tmp_path, monkeypatch):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    job._load_takes(stored + stored, [])  # duplicated append log entries must not skew the pace
+    expected = {tk for row in stored for tk, _, pace in row["made"] if pace is not None}
+    assert len(learned) == len(expected) > 0
+
+
+async def test_unusable_synthesis_stops_the_job_without_caching_or_skipping_the_line(tmp_path, monkeypatch):
+    from maata_engine.qa.take import UnusableAudioError
+
+    b = backend(tts=MelTTS())
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0))
+    original = Dubber._said_take
+
+    async def unusable(*args, **kwargs):
+        raise UnusableAudioError("all candidates are silent")
+
+    monkeypatch.setattr(Dubber, "_said_take", unusable)
+    assert await job.run() == "failed"
+    assert "no usable speech" in job.doc["error"]
+    assert not take_rows(tmp_path) and not job.skipped
+    assert not list((job.render_dir / "takes").glob("*.npz"))
+    monkeypatch.setattr(Dubber, "_said_take", original)
+    assert await job.run() == "done"
+    assert take_rows(tmp_path) and not job.skipped
+
+
 class PausingMockTTS(MockTTS):
     """MockTTS (no mel takes: its voices aren't calibrated, their pace is learned from their lines), pausing `job` from
     inside synthesis number `at`."""
@@ -1684,6 +1819,58 @@ async def test_fixups_stay_within_their_share_of_the_lines(tmp_path, monkeypatch
     again = job_for(tmp_path, b)
     assert await again.run() == "done" and b.tts.batches == []
     assert again.flags == job.flags  # ...and flagged again when they come back from their rows
+
+
+@pytest.mark.parametrize("optional", ["shorter", "rephrase"])
+async def test_silent_optional_takes_keep_original_speech_and_spend_the_fixup_budget(tmp_path, monkeypatch, optional):
+    job, b, tts = rephrase_job(tmp_path, ShortenableClaude(), monkeypatch)
+    monkeypatch.setattr(render, "FIXUP_SHARE", 0.0)  # the three-attempt floor: failed audio must not get free retries
+    if optional == "rephrase":
+        monkeypatch.setattr(job, "_shorter_tier", lambda *args: None)
+    silent, originals, attempts = set(), {}, []
+    say, vocode = job._say, tts.vocode
+
+    def broken_alternative(take, rate=1.0):
+        audio = vocode(take, rate)
+        return np.zeros_like(audio) if take.text in silent else audio
+
+    async def watched(st, words, voice, key, seconds, cost, n=1):
+        if st.unit.id in originals:
+            # Each original is usable. Only optional synthesis emits actual silence, exercising the waveform QA,
+            # all existing candidates and its single fresh retry before the render decides to retain the original.
+            assert (st.take is None) == (optional == "shorter")
+            silent.update(job._tts_text(w) for w in words)
+            attempts.append((st.unit.id, [job._take_key(job._tts_text(w), job._voice_row(key), n) for w in words], n))
+        said = await say(st, words, voice, key, seconds, cost, n)
+        originals.setdefault(st.unit.id, (said, st.line.coverage, st.tier))
+        return said
+
+    monkeypatch.setattr(tts, "vocode", broken_alternative)
+    monkeypatch.setattr(job, "_say", watched)
+    assert await job.run() == "done"
+    assert len(attempts) == job._resynths == 3 and not job._budget_left()
+    assert job.skipped == {} and all(st.take is not None for st in job.units.values())
+    for uid, rejected_keys, n in attempts:
+        st = job.units[uid]
+        said, coverage, tier = originals[uid]
+        assert st.take_s == said.total and [t["spoken"] for t in st.take["takes"]] == [w.spoken for w in said.wordings]
+        assert st.tier == tier and st.take["wording"] not in render.FIXUP_WORDINGS
+        # A later voiced-wording review may update st.line.coverage. Rejecting the alternative itself preserves the
+        # original row's class (including an unclassed tier), rather than borrowing the rejected wording's class.
+        expected_coverage = render.coverage_json(coverage) if render.voiced_class(coverage, tier) in render.CLASSES else None
+        assert st.take["coverage"] == expected_coverage
+        assert st.plan.needs_shorter and "long" in job.flags[uid]
+        assert st.take["fixups"] == 1 and st.take["cost"]["retakes"] == 1
+        assert st.take["cost"]["takes"] >= n + 1
+        assert st.take["cost"]["take_failures"].count("audio_silent") == n + 1
+        assert not any((job.render_dir / "takes" / f"{key}.npz").exists() for key in rejected_keys)
+    assert all(sum(text == rejected for text, _ in tts.batches) == 2 for rejected in silent)
+    # Restored originals retain the consumed budget and their long/coverage flags; rejected alternatives are not
+    # synthesized again merely because no audio file was saved for them.
+    b.tts = resumed_tts = MelTTS(rate=1.0)
+    again = job_for(tmp_path, b)
+    assert await again.run() == "done"
+    assert resumed_tts.batches == [] and again._resynths == 3 and again.flags == job.flags
 
 
 class SlowPauseOnBatch(PauseOnBatch):

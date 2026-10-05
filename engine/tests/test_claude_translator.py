@@ -487,6 +487,64 @@ async def test_rephrase_answers_are_not_stored(tmp_path):
 
 
 # ---- concurrency and cancellation ------------------------------------------------------------------------------------
+async def test_call_slots_recompute_priority_and_keep_equal_priorities_fifo():
+    priorities = {1: 0, 2: 5, 3: 0}
+    slots = ct._CallSlots(1, lambda call, scene: priorities[scene])
+    order = []
+
+    async def work(scene):
+        async with slots.hold("scene", scene):
+            order.append(scene)
+
+    async with slots.hold("scene", 1):
+        tasks = [asyncio.create_task(work(scene)) for scene in (1, 2, 3)]
+        await asyncio.sleep(0)  # all three are queued behind the running call
+        priorities[2] = -1     # the voicer's frontier changed while the calls were waiting
+    await asyncio.gather(*tasks)
+    assert order == [2, 1, 3] and slots.active == 0
+
+
+async def test_cancelling_a_just_granted_call_hands_its_slot_to_the_next_waiter():
+    slots = ct._CallSlots(1, lambda call, scene: 0)
+    await slots.acquire("scene", 0)
+    first = asyncio.create_task(slots.acquire("scene", 1))
+    next_one = asyncio.create_task(slots.acquire("scene", 2))
+    await asyncio.sleep(0)
+    slots.release()  # grants first, whose task has not resumed yet
+    first.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    await asyncio.wait_for(next_one, 1)
+    assert slots.active == 1
+    slots.release()
+    async with slots.hold("review", 3):
+        assert slots.active == 1
+    assert slots.active == 0
+
+
+async def test_reviews_and_fits_can_pass_future_scene_calls_without_preempting_a_process(fake):
+    fake.env.setenv("FAKE_MODE", "ok,slow,ok")
+    tr = fake.make(concurrency=1)
+    req = SceneRequest(1, specs((1,)))
+    lines = (await tr.translate(req)).lines
+    running = tr.submit(SceneRequest(99, specs((99,))))
+    await fake.started(2)
+    tr.call_priority = lambda call, scene: {"review": 0, "fit": 1}.get(call, 2)
+    future = tr.submit(SceneRequest(20, specs((20,))))
+    fit = tr.submit(SceneRequest(2, (replace(specs((2,), want=("concise",))[0],
+                                          current="వాక్యం గము ఇది.", overflow=2.0),), "fit"))
+    review = asyncio.create_task(tr.review(req, lines, {1: "full"}))
+    for _ in range(5):
+        await asyncio.sleep(0)  # each public request reaches the shared admission queue
+    assert len(fake.calls()) == 2 and not running.done()  # priority never cancels an in-flight call
+    running.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await running
+    await asyncio.gather(future, fit, review)
+    assert [(c["msg"]["call"], c["msg"]["scene"]) for c in fake.calls()[2:]] == [
+        ("review", 1), ("fit", 2), ("scene", 20)]
+
+
 async def test_at_most_n_calls_run_at_once(fake):
     fake.env.setenv("FAKE_MODE", "pause")
     fake.env.setenv("FAKE_PAUSE", "0.6")

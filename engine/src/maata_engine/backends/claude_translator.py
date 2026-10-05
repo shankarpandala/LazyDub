@@ -29,10 +29,11 @@ import functools
 import hashlib
 import json
 import logging
+import math
 import threading
 import time
-from collections.abc import Callable, Container, Mapping, Sequence
-from dataclasses import replace
+from collections.abc import AsyncIterator, Callable, Container, Mapping, Sequence
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Coroutine
 
@@ -60,6 +61,70 @@ LINES_FILE, BRIEFS_FILE = "lines.jsonl", "briefs.jsonl"
 
 class _Late(Exception):
     """A rephrase whose deadline passed before it could start or before its answer came back."""
+
+
+@dataclass(eq=False)
+class _CallWaiter:
+    call: str
+    scene: int | None
+    seq: int
+    ready: asyncio.Future[None]
+
+
+class _CallSlots:
+    """Bounded CLI admission with priorities re-evaluated when a slot is released; equal priorities are FIFO.
+
+    Only queued calls can move: a running process owns its slot until it exits, including cancellation cleanup.
+    """
+
+    def __init__(self, capacity: int, priority: Callable[[str, int | None], float]) -> None:
+        if capacity < 1:
+            raise ValueError("translation concurrency must be at least 1")
+        self.capacity, self.priority = capacity, priority
+        self.active, self._seq = 0, 0
+        self._waiting: list[_CallWaiter] = []
+
+    def _rank(self, waiter: _CallWaiter) -> tuple[float, int]:
+        try:
+            priority = float(self.priority(waiter.call, waiter.scene))
+        except Exception:
+            log.warning("could not prioritize a Claude call; using FIFO", exc_info=True)
+            priority = 0.0
+        return priority if math.isfinite(priority) else 0.0, waiter.seq
+
+    def _wake(self) -> None:
+        self._waiting = [w for w in self._waiting if not w.ready.done()]
+        while self.active < self.capacity and self._waiting:
+            waiter = min(self._waiting, key=self._rank)
+            self._waiting.remove(waiter)
+            self.active += 1
+            waiter.ready.set_result(None)
+
+    async def acquire(self, call: str, scene: int | None) -> None:
+        waiter = _CallWaiter(call, scene, self._seq, asyncio.get_running_loop().create_future())
+        self._seq += 1
+        self._waiting.append(waiter)
+        self._wake()
+        try:
+            await waiter.ready
+        except asyncio.CancelledError:
+            if waiter.ready.done() and not waiter.ready.cancelled():
+                self.release()  # a granted slot cancelled before its owner resumed must be handed on
+            elif waiter in self._waiting:
+                self._waiting.remove(waiter)
+            raise
+
+    def release(self) -> None:
+        self.active -= 1
+        self._wake()
+
+    @contextlib.asynccontextmanager
+    async def hold(self, call: str, scene: int | None) -> AsyncIterator[None]:
+        await self.acquire(call, scene)
+        try:
+            yield
+        finally:
+            self.release()
 
 
 def brief_v0(meta: VideoMeta) -> Brief:
@@ -135,7 +200,11 @@ class ClaudeTranslator:
         self._system = system_prompt(brief)
         self.glossary_recent: dict[str, GlossaryEntry] = {}  # scene additions since the last brief swap, by term
         self._additions: dict[str, GlossaryEntry] = {}       # every scene addition, folded into each brief swapped in
-        self._sem = asyncio.Semaphore(concurrency)
+        # The render may supply its current playback-order frontier. Read it at admission, not submission, since
+        # queued reviews/fits can become the next work the voicer needs. Other callers keep FIFO behavior.
+        self.call_priority: Callable[[str, int | None], float] | None = None
+        self._slots = _CallSlots(concurrency, lambda call, scene: self.call_priority(call, scene)
+                                 if self.call_priority is not None else 0.0)
         self._tasks: dict[asyncio.Task, SceneRequest] = {}
         video_dir = cache_dir / video_id
         video_dir.mkdir(parents=True, exist_ok=True)
@@ -467,11 +536,11 @@ class ClaudeTranslator:
     # ---- plumbing ------------------------------------------------------------------------------------------------
     async def _ask(self, call: str, system: str, prompt: str, schema: dict, effort: str, deadline: float | None = None,
                    tags: dict | None = None, cli: ClaudeCLI | None = None) -> ClaudeReply:
-        """One CLI call (on `cli`, by default the scene model's) in a worker thread, under the concurrency semaphore. If
+        """One CLI call (on `cli`, by default the scene model's) in a worker thread, under bounded priority slots. If
         the awaiting task is cancelled, the process gets SIGINT and the slot frees once it has exited, however many
         more cancels arrive meanwhile (a Claude failure's cancel, then the engine stopping)."""
         cancel = threading.Event()
-        async with self._sem:
+        async with self._slots.hold(call, (tags or {}).get("scene")):
             if deadline is not None and time.time() > deadline:
                 raise _Late
             fut = asyncio.get_running_loop().run_in_executor(None, functools.partial(

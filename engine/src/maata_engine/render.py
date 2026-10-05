@@ -66,6 +66,7 @@ from .dubber import (BAND, BRIEF_TRIES, CALIBRATION_TE, CHUNK, CHUNK_PAD, CONTEX
                      _preset_name, _save_pcm, scene_cut)
 from .gpu import GpuScheduler
 from .models import load_lock
+from .qa import take as take_qa
 from .qa.coverage import CLASSES, coverage_from, coverage_json, voiced_class
 from .qa.validators import check_line
 from .resolve import VIDEO_FORMAT, ResolveError, ResolvedVideo, Resolver, audio_start, decode_audio_to, decode_stereo
@@ -99,7 +100,7 @@ SERIES = ("separate", ("voice_lines", "finish"))  # in that group the GPU runs `
 DIAR_VERSION = 1
 ASR_VERSION = 1
 VOICE_VERSION = "v1"     # in every voice key's reference, f"{VOICE_VERSION}:{hash of the reference audio}" (§2.1)
-TAKES_VERSION = 1        # in every take key: how a take is made and kept (§2.1)
+TAKES_VERSION = 2        # synthesis identity and selected-waveform QA: old takes must be checked again (§2.1)
 MIX_VERSION = 1          # in every PCM key: how a line's audio is made from its takes and its final plan (§2.12)
 BRIEF_PART_WORDS = 8000  # words of transcript per brief call, about 45 min of talk (the CLI's 240 s timeout, §2.7)
 LANES = 3                # translation lanes: the translator's concurrency (§2.8)
@@ -168,6 +169,10 @@ class RenderSettings:
 
 class RenderError(RuntimeError):
     """A render stopped for a reason the user can act on; the message says what."""
+
+
+class UnusableSpeechError(RenderError):
+    """Synthesis exhausted its candidates: required speech stops the job, optional alternatives keep the original."""
 
 
 class _Paused(Exception):
@@ -494,8 +499,8 @@ class RenderJob(Dubber):
         st["span"] = round(_span(key, float(self.doc["duration"] or 0.0), self.settings.stop_at), 1)  # (`_prior_left`)
         # (A stage finishing while a pause stops the others, the video download, leaves the job where they stopped.)
         self.doc["stage"] = self._first_active() or (self.doc["stage"] if self._stop.is_set() else key)
-        self._trace({"event": "stage", "key": key, "cached": not acct.worked, "seconds": st["seconds"],
-                     "gpu_s": st["gpu_s"], "done": st["done"], "total": st["total"], **acct.extra})
+        self._trace({**acct.extra, "event": "stage", "key": key, "cached": not acct.worked, "seconds": st["seconds"],
+                     "gpu_s": st["gpu_s"], "done": st["done"], "total": st["total"]})
         await self._save(force=True)
 
     def _first_active(self) -> str | None:
@@ -1030,6 +1035,8 @@ class RenderJob(Dubber):
         meta = VideoMeta(v.title, v.channel, v.description, v.chapters, v.tags,
                          talk_shares=tuple(sorted(self.registry.talk_share().items())))
         self.tr = self.b.translator(self.cache_dir, self.video_id, brief_v0(meta), style=self.style, trace=self._trace)
+        if hasattr(self.tr, "call_priority"):
+            self.tr.call_priority = self._translation_priority
         parts = self._brief_parts()
         brief, made, gave_up = self.tr.brief, 0, None
         for k, part in enumerate(parts):
@@ -1084,6 +1091,18 @@ class RenderJob(Dubber):
         return parts + [part] if part else parts
 
     # ---- translate (§2.8) -----------------------------------------------------------------------------------------
+    def _translation_priority(self, call: str, scene: int | None) -> float:
+        """Queued Claude work closest to the dub's cursor goes first. Completing the next scene's review or fit
+        feeds the GPU sooner than starting distant scenes. Earlier scenes' fix-ups keep the final plan moving too.
+        The translator re-evaluates this at each free slot; running calls keep their slot and the three lanes retain
+        their existing context boundaries. Unknown/no-scene work keeps a neutral priority."""
+        if scene is None or not self.scenes:
+            return 0.0
+        front = next((sc.no for sc in self.scenes if any(not st.voiced and self._voiced_here(st) for st in sc.lines)),
+                     self.scenes[-1].no + 1)
+        phase = {"review": 0, "retranslate": 1, "fit": 2, "rephrase": 3, "scene": 4}.get(call, 5)
+        return 10.0 * max(scene - front, 0) + phase
+
     async def _translate(self) -> None:
         """Every scene of the range, once the brief and every voice are ready, so each line is sized at its voice's
         calibrated pace. The whole video's units are cut into scenes once. The scenes of the range the line cache serves
@@ -1409,15 +1428,22 @@ class RenderJob(Dubber):
         # Too long: the most complete shorter wording the line has that fits, else its shortest (no Claude call).
         if plan.needs_shorter and self._budget_left() and (alt := self._shorter_tier(st, key, seconds)) is not None:
             alt_mark = len(self._new)
-            alt_said = await self._say(st, [st.line.tiers[alt]], voice, key, seconds, cost, n)
-            if 0 < alt_said.total < said.total and alt_said.failed is None:  # a failed take is shorter for the wrong reason
-                st.tier, said, wording = alt, alt_said, alt
-                self._learn(alt_said, key)
-                plan = self._plan(st, said)  # replaces the plan just placed for this line
+            try:
+                alt_said = await self._say(st, [st.line.tiers[alt]], voice, key, seconds, cost, n)
+            except UnusableSpeechError:
+                # The original already has usable speech. The failed alternative wrote no take, but spent a
+                # synthesis attempt (including its bounded waveform retry); charge it so failures exhaust the budget.
+                fixups = 1
+                log.warning("unit %d: the %s take had no usable speech; keeping %s", u.id, alt, first)
             else:
-                for m in self._new[alt_mark:]:
-                    m[2] = None  # made, but not learned from: a failed take is shorter for the wrong reason
-            fixups = int(len(self._new) > alt_mark)  # a fix-up synthesis: a take no line of the render had made
+                if 0 < alt_said.total < said.total and alt_said.failed is None:
+                    st.tier, said, wording = alt, alt_said, alt
+                    self._learn(alt_said, key)
+                    plan = self._plan(st, said)  # replaces the plan just placed for this line
+                else:
+                    for m in self._new[alt_mark:]:
+                        m[2] = None  # made, but not learned from: a failed take is shorter for the wrong reason
+                fixups = int(len(self._new) > alt_mark)  # a fix-up synthesis: a take no line of the render had made
             self._resynths += fixups
         self._keep(st, said, plan, wording, key, n, cost, fixups=fixups, made=self._new[mark:])
         if plan.needs_shorter:
@@ -1453,7 +1479,7 @@ class RenderJob(Dubber):
             "line": self._line_key(st), "at": round(st.unit.start, 3), "wording": wording, **extra,
             # the class of the wording voiced, where it has one: the line cache's is the last occurrence's to be classed
             "coverage": coverage_json(c) if voiced_class(c, st.tier) in CLASSES else None,
-            "tts": _tts_hash(texts), "voice": voice,
+            "tts": _tts_hash(texts), "voice": voice, "synthesis": self._take_inputs(n),
             "takes": [{"key": self._take_key(text, voice, n), "spoken": w.spoken, "seconds": secs,
                        "pauses": [list(p) for p in pauses], "pace": pace, "failed": failed}
                       for text, w, secs, pauses, pace, failed in zip(texts, said.wordings, said.seconds, said.pauses,
@@ -1490,10 +1516,15 @@ class RenderJob(Dubber):
             return
         voice, at = self._voice_row(self._key(st.unit.speaker)), round(st.unit.start, 3)
         for row in reversed(self._take_rows.get(self._line_key(st), ())):
-            if row["at"] != at or row["voice"] != voice:
+            n = _takes_n(st)
+            if row["at"] != at or row["voice"] != voice or row.get("synthesis") != self._take_inputs(n):
                 continue
             got = self._row_wording(st, row)
-            if got is not None and _tts_hash([self._tts_text(w) for w in got[2]]) == row["tts"]:
+            if got is None:
+                continue
+            texts = [self._tts_text(w) for w in got[2]]
+            if (_tts_hash(texts) == row["tts"]
+                    and [t["key"] for t in row["takes"]] == [self._take_key(text, voice, n) for text in texts]):
                 yield (row, *got)
 
     def _row_wording(self, st: UnitState, row: dict) -> tuple[LineResult, str, list[Wording]] | None:
@@ -1527,9 +1558,9 @@ class RenderJob(Dubber):
     async def _voice_fix(self, fix: _Fix) -> None:
         """Voice a fix-up take (§2.10) and keep it if it passes (a rephrase: and is shorter than the take it would
         replace), placed where that take was (`_shortened`: the lines after it keep their places on W), and flagged long
-        while it still runs long. A rephrase that makes a take (one no line of the render had made) counts in the
-        budget. One not kept that made a take restates the line's row with what it cost and taught, so a resume spends
-        and learns as this run did."""
+        while it still runs long. A rephrase that makes a take (one no line of the render had made), or exhausts its
+        candidates without usable audio, counts in the budget. An attempted replacement not kept restates the line's
+        row with what it cost and taught, so a resume spends and learns as this run did."""
         st, kept = fix.st, False
         try:
             cost = VoiceCost()
@@ -1557,6 +1588,14 @@ class RenderJob(Dubber):
             elif made:
                 self._put_row(st, {**st.take, "fixups": spent, "made": made, "cost": cost.fields()})
             log.info("unit %d: %s voiced, %s", st.unit.id, fix.kind, "kept" if kept else "not kept")
+        except UnusableSpeechError:
+            # Keep the current take, its timing/coverage and flags. There is no new take to learn from or cache,
+            # but persist the failed attempt's cost and budget charge so a resume does not get free retries.
+            charged = int(fix.kind == "rephrase")
+            self._resynths += charged
+            self._put_row(st, {**st.take, "fixups": st.take["fixups"] + charged,
+                               "made": self._new[mark:], "cost": cost.fields()})
+            log.warning("unit %d: the %s take had no usable speech; keeping its take", st.unit.id, fix.kind)
         except (_Paused, RenderError):
             raise
         except Exception:
@@ -2344,7 +2383,7 @@ class RenderJob(Dubber):
                               "loudness": got["loudness"], "warning": got["warning"], "bed": bed is not None}
         st = self.doc["stages"]["export"]
         st["done"] = st["total"] = round(got["seconds"], 1)
-        _STAGE.get().extra = {"bytes": got["bytes"], "seconds": got["seconds"], "bedGain": got["bedGain"],
+        _STAGE.get().extra = {"bytes": got["bytes"], "media_seconds": got["seconds"], "bedGain": got["bedGain"],
                               **got["loudness"]}
         log.info("render %s saved %s (%.1f MB; %s)", self.video_id, dest, got["bytes"] / 1e6, got["loudness"])
 
@@ -2428,7 +2467,13 @@ class RenderJob(Dubber):
         left out), then what the takes made before taught the estimator (§2.6) back into it, in the order they were
         made (each row's `made`: a take a shorter tier or a fix-up replaced, or one not kept, too), for each voice a
         speaker has now: a take of a voice since built again says nothing about the new one."""
-        rows = [r for r in rows if _take_row(r)]
+        # A row written before the synthesis identity existed, or under another model/quality setting, cannot
+        # restore a take or teach this run's duration estimator. Looking up the current occurrence also applies its
+        # current short-line batch policy; merely accepting either batch size would keep old short/long choices.
+        current = {(self._line_key(st), round(st.unit.start, 3)): _takes_n(st) for st in self.units.values()}
+        rows = [r for r in rows if _take_row(r)
+                and (n := current.get((r["line"], r["at"]))) is not None
+                and r.get("synthesis") == self._take_inputs(n)]
         self._take_rows = {}
         for r in rows:
             self._take_rows.setdefault(r["line"], []).append(r)
@@ -2438,6 +2483,8 @@ class RenderJob(Dubber):
         for r in rows:
             if (key := keys.get(tuple(r["voice"]))) is not None:
                 for tk, spoken, pace in r["made"]:
+                    if tk in self._made:
+                        continue
                     self._made.add(tk)
                     if pace is not None:
                         self.estimator.observe(spoken, key, pace)
@@ -2452,10 +2499,21 @@ class RenderJob(Dubber):
         """The takes a synthesis gives: `n` where the TTS batches them, else one."""
         return n if hasattr(self.b.tts, "synthesize_takes") else 1
 
+    def _take_inputs(self, n: int) -> dict:
+        """Cheap synthesis identity for both files and rows: no model loading or weight hashing. The model revision
+        comes from the process-cached lock manifest. The storage kind separates mel takes from sample-only backends;
+        wrapper subclasses with the same backend/model and protocol remain compatible. Script is included so the
+        estimator never learns Latin-input timings when this run synthesizes Telugu-script text, or vice versa."""
+        tts = self.b.tts
+        return {"backend": self.b.name, "model": _model_rev(self.b.name, "tts"), "device": self.b.device,
+                "t3Dtype": str(getattr(tts, "_t3_dtype", None)), "sampleRate": tts.sample_rate,
+                "format": "mel" if hasattr(tts, "synthesize_mel") else "pcm", "batch": self._batch(n),
+                "cfmSteps": getattr(tts, "cfm_steps", None), "ttsScript": self.tts_script, "version": TAKES_VERSION}
+
     def _take_key(self, text: str, voice: list, n: int) -> str:
-        """A take file's key (§2.1): what the TTS says, the voice, how many takes it was picked from and the flow's
-        steps, so the same wording said by the same voice is the same file, whichever line says it."""
-        return _key20([text, voice, self._batch(n), getattr(self.b.tts, "cfm_steps", None), TAKES_VERSION])
+        """A take file's key (§2.1): text, voice and the complete synthesis identity. The same wording said with the
+        same model, voice and settings shares one take wherever it occurs; changing them misses both file and row."""
+        return _key20([text, voice, self._take_inputs(n)])
 
     def _line_key(self, st: UnitState) -> str:
         return line_key(self._line_spec(st, ("full",)), self.style)
@@ -2468,7 +2526,11 @@ class RenderJob(Dubber):
                 d = {k: z[k] for k in z.files}
         except (OSError, ValueError, EOFError, KeyError, zipfile.BadZipFile):
             return None
-        return d if {"seconds", "pauses", "failed", "spoken", "pace"} < d.keys() else None
+        if not {"seconds", "pauses", "failed", "spoken", "pace"} < d.keys():
+            return None
+        if "samples" in d and take_qa.audio_failure(d["samples"]) is not None:
+            return None
+        return d
 
     def _claim_take(self, key: str) -> dict[str, np.ndarray] | None:
         """`_read_take` for the dub loop, which is about to use that take (restore a row with it, take it from the take
@@ -2618,7 +2680,10 @@ class RenderJob(Dubber):
             out = (take, float(d["seconds"]), take if isinstance(take, np.ndarray) else None, _spans(d["pauses"]),
                    float(d["pace"]) if np.isfinite(d["pace"]) else None, str(d["failed"]) or None)
         else:
-            out = await super()._said_take(st, w, voice, key, seconds, cost, n, speech)
+            try:
+                out = await super()._said_take(st, w, voice, key, seconds, cost, n, speech)
+            except take_qa.UnusableAudioError as err:
+                raise UnusableSpeechError(f"Line {st.unit.id + 1} produced no usable speech. Resume to try it again.") from err
             take, dur, _, pauses, pace, failed = out
             await self._write_take(tk, take, dur, pauses, failed, w.spoken, pace)
         if tk in self._made:

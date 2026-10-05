@@ -26,7 +26,7 @@ BRIEF_V1 = Brief(1, META, "Kites and wind", "casual; the host says మీరు 
 def test_prompt_version_and_hash_are_pinned():
     # Changing the prompt, an example, the schema or the message layout moves the hash. When it does on purpose, bump
     # SHOTS_VERSION and update both pins here: the hash keys the line cache, so old lines are never served.
-    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v3", "e174033dcbc5")
+    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v4", "f5430ea43db1")
     assert sp.BRIEF_HASH == "42afefc5b3f2"  # keys the brief cache: a new brief prompt makes new briefs
     assert sp.REVIEW_HASH == "8daa0f76384f"  # the review is meaning-only: the register retarget leaves it alone
     assert sp.prompt_hash() == sp.PROMPT_HASH and sp.brief_hash() == sp.BRIEF_HASH
@@ -94,6 +94,17 @@ def test_the_register_is_the_everyday_telugu_of_ordinary_people():
     # how it reads a glossary entry that keeps English
     assert "everyday" not in sp.BRIEF_SYSTEM.split("\n")[0] and "follows the dubbing style" in sp.BRIEF_SYSTEM
     assert "In the formal style" in sp.BRIEF_HEADER
+
+
+def test_full_targets_speech_time_but_meaning_wins_over_duration():
+    # A timing hint must improve the first wording, never become permission to omit facts or change uncertainty.
+    assert "no length pressure" not in sp.LENGTH
+    for contract in ('"speech_s"', '"target_aksharas"', "on the first attempt", "Don't count aksharas yourself",
+                     "return the complete longer wording", "Never summarize, drop a clause",
+                     "uncertainty, cause and comparison", "Never pad a short line",
+                     "Never remove a hedge that expresses uncertainty", 'only when "want" names them'):
+        assert contract in sp.LENGTH
+    assert any("speech_s" in line and "target_aksharas" in line for line, _, _ in sp.shot_lines())
 
 
 def test_a_long_description_is_trimmed():
