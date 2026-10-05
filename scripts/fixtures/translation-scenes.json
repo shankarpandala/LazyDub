@@ -1,0 +1,1211 @@
+{
+  "version": 1,
+  "scope": "Original generated-video transcript, exact segmentation and initial calibration",
+  "provenance": {
+    "source_cache": "/tmp/maata-quality-CWNtmF/bench/localbench0",
+    "files_sha256": {
+      "units.jsonl": "4a51d2fab7cdd6012592f1b5b16cde645e39d9b6a4dbc57e4411503d8fb0b41c",
+      "briefs.jsonl": "c7556665e72a0cb1a4ff0635d050ba24e66da08d4aa4f01e0982488631ea79f0",
+      "render/voices.json": "e10c8173bbec0f156777b1f09acb652a26b48ad463b985f661b680533eda29c2",
+      "render/transcript.jsonl": "eff1995a8d2619cd9186cfc9964dbaad20db6c1b4d09f7d91cd232bb8c0c4474",
+      "render/diarization.json": "43107e822aa91f345a2edbd32df04a2521479ee6e49c8ad8ed88238960fe315f"
+    },
+    "audio_models": {
+      "audio": {
+        "size": 1064962,
+        "sha256": "21dc927893ed57000bc50ae8af34f6ad2f4f134fe1531ee39622a8e046a6318a"
+      },
+      "tts": "ChatterboxTeluguTTS",
+      "model": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+      "cfg": 0.5,
+      "exaggeration": 0.5,
+      "cfmSteps": 10,
+      "ttsScript": "telugu",
+      "calibration": "f17035c300ee",
+      "version": "v1"
+    },
+    "unit_equivalence_checked": true
+  },
+  "duration": 60.0,
+  "settings": {
+    "speakers": null,
+    "style": "colloquial",
+    "stopAt": null,
+    "speedCap": 1.2,
+    "ttsScript": "telugu",
+    "presets": []
+  },
+  "registry": {
+    "turns": [
+      [
+        "S1",
+        0.99284375,
+        5.6334687500000005
+      ],
+      [
+        "S2",
+        11.505968750000001,
+        16.72034375
+      ],
+      [
+        "S1",
+        17.63159375,
+        21.816593750000003
+      ],
+      [
+        "S2",
+        22.69409375,
+        27.92534375
+      ],
+      [
+        "S1",
+        31.06409375,
+        35.924093750000004
+      ],
+      [
+        "S2",
+        36.75096875,
+        41.32409375
+      ],
+      [
+        "S1",
+        42.18471875,
+        46.80846875
+      ],
+      [
+        "S2",
+        47.66909375,
+        53.03534375
+      ]
+    ],
+    "exclusive": [
+      [
+        "S1",
+        0.99284375,
+        5.6334687500000005
+      ],
+      [
+        "S2",
+        11.505968750000001,
+        16.72034375
+      ],
+      [
+        "S1",
+        17.63159375,
+        21.816593750000003
+      ],
+      [
+        "S2",
+        22.69409375,
+        27.92534375
+      ],
+      [
+        "S1",
+        31.06409375,
+        35.924093750000004
+      ],
+      [
+        "S2",
+        36.75096875,
+        41.32409375
+      ],
+      [
+        "S1",
+        42.18471875,
+        46.80846875
+      ],
+      [
+        "S2",
+        47.66909375,
+        53.03534375
+      ]
+    ],
+    "stray": [],
+    "centroids": {}
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "test",
+      "channel": "local",
+      "description": "",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": [
+        [
+          "S1",
+          0.4731792411687746
+        ],
+        [
+          "S2",
+          0.5268207588312255
+        ]
+      ]
+    },
+    "topic": "Two presenters build a small machine learning project on a laptop and explain why separate training and test data matter.",
+    "register": "Friendly and instructional. The speakers talk to the audience politely and to each other in a familiar, conversational way.",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "",
+        "gender": "unknown",
+        "role": "host who leads the project walkthrough",
+        "audience": "polite",
+        "address": [
+          [
+            "S2",
+            "familiar"
+          ]
+        ]
+      },
+      {
+        "id": "S2",
+        "name": "",
+        "gender": "unknown",
+        "role": "co-host who asks questions and gives practical tips",
+        "audience": "polite",
+        "address": [
+          [
+            "S1",
+            "familiar"
+          ]
+        ]
+      }
+    ],
+    "glossary": [
+      {
+        "term": "machine learning",
+        "spoken": "మెషిన్ లెర్నింగ్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "project",
+        "spoken": "ప్రాజెక్ట్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "data",
+        "spoken": "డేటా",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "file",
+        "spoken": "ఫైల్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "training",
+        "spoken": "ట్రైనింగ్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "test set",
+        "spoken": "టెస్ట్ సెట్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "testing",
+        "spoken": "టెస్టింగ్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "examples",
+        "spoken": "ఉదాహరణలు",
+        "keep_english": false,
+        "note": ""
+      },
+      {
+        "term": "labels",
+        "spoken": "లేబుల్స్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "setting",
+        "spoken": "సెట్టింగ్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "result",
+        "spoken": "రిజల్ట్",
+        "keep_english": true,
+        "note": ""
+      }
+    ],
+    "entities": [],
+    "idioms": [],
+    "numbers": "Say small counts as Telugu number words (20 = ఇరవై, 5 = ఐదు). Use lakhs and crores for large numbers. Say years in English style, e.g. \"twenty twenty-six\".",
+    "asr_fixes": []
+  },
+  "models": {
+    "scene": "claude-opus-5-5",
+    "review": "claude-sonnet-5",
+    "effort": "medium",
+    "review_effort": "high",
+    "light_effort": "low"
+  },
+  "voices": {
+    "S2": {
+      "key": {
+        "voice": "S2",
+        "cfg": 0.5,
+        "exaggeration": 0.5,
+        "reference": "v1:2c234badd7aa7361"
+      },
+      "calibration": [
+        [
+          "నిజం చెప్పాలంటే, ఈ టాపిక్ చాలా ఇంట్రెస్టింగ్.",
+          2.48
+        ],
+        [
+          "మన ఛానెల్లో ఇంతకు ముందు ఇలాంటి వీడియో ఒకటి చేశాం, లింక్ కింద ఇస్తాను.",
+          4.92
+        ],
+        [
+          "ఆఫీస్ నుంచి ఇంటికి వచ్చాక కూడా మెయిల్స్ చెక్ చేస్తూ ఉంటే, మన మైండ్కి అసలు రెస్ట్ దొరకదు, అందుకే ఫోన్ పక్కన పెట్టేయాలి.",
+          6.08
+        ]
+      ]
+    },
+    "S1": {
+      "key": {
+        "voice": "S1",
+        "cfg": 0.5,
+        "exaggeration": 0.5,
+        "reference": "v1:c31853daa64aab4d"
+      },
+      "calibration": [
+        [
+          "నిజం చెప్పాలంటే, ఈ టాపిక్ చాలా ఇంట్రెస్టింగ్.",
+          2.24
+        ],
+        [
+          "మన ఛానెల్లో ఇంతకు ముందు ఇలాంటి వీడియో ఒకటి చేశాం, లింక్ కింద ఇస్తాను.",
+          3.72
+        ],
+        [
+          "ఆఫీస్ నుంచి ఇంటికి వచ్చాక కూడా మెయిల్స్ చెక్ చేస్తూ ఉంటే, మన మైండ్కి అసలు రెస్ట్ దొరకదు, అందుకే ఫోన్ పక్కన పెట్టేయాలి.",
+          5.28
+        ]
+      ]
+    }
+  },
+  "units": [
+    {
+      "unit": {
+        "id": 0,
+        "speaker": "S1",
+        "start": 0.6400000000000012,
+        "end": 5.28,
+        "text": "Welcome back. Today we will build a small machine learning project on this laptop.",
+        "words": [
+          {
+            "text": "Welcome",
+            "start": 0.6400000000000012,
+            "end": 1.28,
+            "confidence": 0.791015625
+          },
+          {
+            "text": "back.",
+            "start": 1.28,
+            "end": 1.68,
+            "confidence": 0.96484375
+          },
+          {
+            "text": "Today",
+            "start": 1.88,
+            "end": 2.28,
+            "confidence": 0.98828125
+          },
+          {
+            "text": "we",
+            "start": 2.28,
+            "end": 2.44,
+            "confidence": 0.94970703125
+          },
+          {
+            "text": "will",
+            "start": 2.44,
+            "end": 2.6,
+            "confidence": 0.99658203125
+          },
+          {
+            "text": "build",
+            "start": 2.6,
+            "end": 2.84,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "a",
+            "start": 2.84,
+            "end": 2.96,
+            "confidence": 0.99658203125
+          },
+          {
+            "text": "small",
+            "start": 2.96,
+            "end": 3.24,
+            "confidence": 0.97021484375
+          },
+          {
+            "text": "machine",
+            "start": 3.24,
+            "end": 3.62,
+            "confidence": 0.978515625
+          },
+          {
+            "text": "learning",
+            "start": 3.62,
+            "end": 3.96,
+            "confidence": 0.9833984375
+          },
+          {
+            "text": "project",
+            "start": 3.96,
+            "end": 4.42,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "on",
+            "start": 4.42,
+            "end": 4.7,
+            "confidence": 0.99658203125
+          },
+          {
+            "text": "this",
+            "start": 4.7,
+            "end": 4.88,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "laptop.",
+            "start": 4.88,
+            "end": 5.28,
+            "confidence": 0.98583984375
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 11.100000000000001,
+      "speech_s": 4.4399999999999995,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 1,
+        "speaker": "S2",
+        "start": 11.100000000000001,
+        "end": 16.54,
+        "text": "Before we start, please save a copy of the data. Do not delete the original file.",
+        "words": [
+          {
+            "text": "Before",
+            "start": 11.100000000000001,
+            "end": 11.74,
+            "confidence": 0.822265625
+          },
+          {
+            "text": "we",
+            "start": 11.74,
+            "end": 12.0,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "start,",
+            "start": 12.0,
+            "end": 12.36,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "please",
+            "start": 12.72,
+            "end": 13.04,
+            "confidence": 0.9677734375
+          },
+          {
+            "text": "save",
+            "start": 13.04,
+            "end": 13.34,
+            "confidence": 0.99755859375
+          },
+          {
+            "text": "a",
+            "start": 13.34,
+            "end": 13.48,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "copy",
+            "start": 13.48,
+            "end": 13.74,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "of",
+            "start": 13.74,
+            "end": 13.96,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "the",
+            "start": 13.96,
+            "end": 14.06,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "data.",
+            "start": 14.06,
+            "end": 14.42,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "Do",
+            "start": 14.76,
+            "end": 14.9,
+            "confidence": 0.9912109375
+          },
+          {
+            "text": "not",
+            "start": 14.9,
+            "end": 15.14,
+            "confidence": 0.99755859375
+          },
+          {
+            "text": "delete",
+            "start": 15.14,
+            "end": 15.44,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "the",
+            "start": 15.44,
+            "end": 15.64,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "original",
+            "start": 15.64,
+            "end": 16.04,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "file.",
+            "start": 16.04,
+            "end": 16.54,
+            "confidence": 0.9990234375
+          }
+        ],
+        "breaks": [],
+        "anchors": [
+          3,
+          10
+        ],
+        "cut_off": false
+      },
+      "next_start": 17.26,
+      "speech_s": 5.034031249999998,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 2,
+        "speaker": "S1",
+        "start": 17.26,
+        "end": 21.62,
+        "text": "We have 20 examples for training and 5 separate examples for testing.",
+        "words": [
+          {
+            "text": "We",
+            "start": 17.26,
+            "end": 17.74,
+            "confidence": 0.99072265625
+          },
+          {
+            "text": "have",
+            "start": 17.74,
+            "end": 17.96,
+            "confidence": 1.0
+          },
+          {
+            "text": "20",
+            "start": 17.96,
+            "end": 18.26,
+            "confidence": 0.95751953125
+          },
+          {
+            "text": "examples",
+            "start": 18.26,
+            "end": 18.82,
+            "confidence": 0.99609375
+          },
+          {
+            "text": "for",
+            "start": 18.82,
+            "end": 19.12,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "training",
+            "start": 19.12,
+            "end": 19.46,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "and",
+            "start": 19.46,
+            "end": 19.7,
+            "confidence": 0.9931640625
+          },
+          {
+            "text": "5",
+            "start": 19.7,
+            "end": 19.94,
+            "confidence": 0.67138671875
+          },
+          {
+            "text": "separate",
+            "start": 19.94,
+            "end": 20.36,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "examples",
+            "start": 20.36,
+            "end": 20.9,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "for",
+            "start": 20.9,
+            "end": 21.22,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "testing.",
+            "start": 21.22,
+            "end": 21.62,
+            "confidence": 0.99951171875
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 22.4,
+      "speech_s": 4.359999999999999,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 3,
+        "speaker": "S2",
+        "start": 22.4,
+        "end": 24.86,
+        "text": "Why do we need a separate test set?",
+        "words": [
+          {
+            "text": "Why",
+            "start": 22.4,
+            "end": 22.92,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "do",
+            "start": 22.92,
+            "end": 23.1,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "we",
+            "start": 23.1,
+            "end": 23.3,
+            "confidence": 1.0
+          },
+          {
+            "text": "need",
+            "start": 23.3,
+            "end": 23.48,
+            "confidence": 1.0
+          },
+          {
+            "text": "a",
+            "start": 23.48,
+            "end": 23.64,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "separate",
+            "start": 23.64,
+            "end": 24.02,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "test",
+            "start": 24.02,
+            "end": 24.42,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "set?",
+            "start": 24.42,
+            "end": 24.86,
+            "confidence": 0.9951171875
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 25.04,
+      "speech_s": 2.460000000000001,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 4,
+        "speaker": "S2",
+        "start": 25.04,
+        "end": 27.74,
+        "text": "Because memorizing the training data is not enough.",
+        "words": [
+          {
+            "text": "Because",
+            "start": 25.04,
+            "end": 25.52,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "memorizing",
+            "start": 25.52,
+            "end": 26.12,
+            "confidence": 0.9833984375
+          },
+          {
+            "text": "the",
+            "start": 26.12,
+            "end": 26.34,
+            "confidence": 1.0
+          },
+          {
+            "text": "training",
+            "start": 26.34,
+            "end": 26.64,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "data",
+            "start": 26.64,
+            "end": 26.96,
+            "confidence": 1.0
+          },
+          {
+            "text": "is",
+            "start": 26.96,
+            "end": 27.18,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "not",
+            "start": 27.18,
+            "end": 27.36,
+            "confidence": 1.0
+          },
+          {
+            "text": "enough.",
+            "start": 27.36,
+            "end": 27.74,
+            "confidence": 1.0
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 30.619999999999997,
+      "speech_s": 2.6999999999999993,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 5,
+        "speaker": "S1",
+        "start": 30.619999999999997,
+        "end": 35.78,
+        "text": "If the result is wrong, check the labels first, then change one setting at a time.",
+        "words": [
+          {
+            "text": "If",
+            "start": 30.619999999999997,
+            "end": 31.22,
+            "confidence": 0.77001953125
+          },
+          {
+            "text": "the",
+            "start": 31.22,
+            "end": 31.36,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "result",
+            "start": 31.36,
+            "end": 31.68,
+            "confidence": 0.9892578125
+          },
+          {
+            "text": "is",
+            "start": 31.68,
+            "end": 31.86,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "wrong,",
+            "start": 31.86,
+            "end": 32.12,
+            "confidence": 0.99658203125
+          },
+          {
+            "text": "check",
+            "start": 32.36,
+            "end": 32.66,
+            "confidence": 0.9921875
+          },
+          {
+            "text": "the",
+            "start": 32.66,
+            "end": 32.84,
+            "confidence": 0.99755859375
+          },
+          {
+            "text": "labels",
+            "start": 32.84,
+            "end": 33.2,
+            "confidence": 0.9794921875
+          },
+          {
+            "text": "first,",
+            "start": 33.2,
+            "end": 33.64,
+            "confidence": 0.99462890625
+          },
+          {
+            "text": "then",
+            "start": 33.86,
+            "end": 34.12,
+            "confidence": 0.98681640625
+          },
+          {
+            "text": "change",
+            "start": 34.12,
+            "end": 34.5,
+            "confidence": 0.9921875
+          },
+          {
+            "text": "one",
+            "start": 34.5,
+            "end": 34.72,
+            "confidence": 0.98828125
+          },
+          {
+            "text": "setting",
+            "start": 34.72,
+            "end": 35.08,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "at",
+            "start": 35.08,
+            "end": 35.3,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "a",
+            "start": 35.3,
+            "end": 35.38,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "time.",
+            "start": 35.38,
+            "end": 35.78,
+            "confidence": 0.99951171875
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 36.38,
+      "speech_s": 4.71590625,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 6,
+        "speaker": "S2",
+        "start": 36.38,
+        "end": 41.16,
+        "text": "That makes sense. Let us compare the results and explain what changed.",
+        "words": [
+          {
+            "text": "That",
+            "start": 36.38,
+            "end": 36.98,
+            "confidence": 0.95703125
+          },
+          {
+            "text": "makes",
+            "start": 36.98,
+            "end": 37.24,
+            "confidence": 0.99609375
+          },
+          {
+            "text": "sense.",
+            "start": 37.24,
+            "end": 37.66,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "Let",
+            "start": 38.06,
+            "end": 38.34,
+            "confidence": 0.99609375
+          },
+          {
+            "text": "us",
+            "start": 38.34,
+            "end": 38.54,
+            "confidence": 0.99072265625
+          },
+          {
+            "text": "compare",
+            "start": 38.54,
+            "end": 38.9,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "the",
+            "start": 38.9,
+            "end": 39.1,
+            "confidence": 0.9970703125
+          },
+          {
+            "text": "results",
+            "start": 39.1,
+            "end": 39.46,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "and",
+            "start": 39.46,
+            "end": 39.7,
+            "confidence": 0.986328125
+          },
+          {
+            "text": "explain",
+            "start": 39.7,
+            "end": 40.16,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "what",
+            "start": 40.16,
+            "end": 40.46,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "changed.",
+            "start": 40.46,
+            "end": 41.16,
+            "confidence": 0.99462890625
+          }
+        ],
+        "breaks": [],
+        "anchors": [
+          3
+        ],
+        "cut_off": false
+      },
+      "next_start": 41.98,
+      "speech_s": 4.409031249999998,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 7,
+        "speaker": "S1",
+        "start": 41.98,
+        "end": 46.52,
+        "text": "Welcome back. Today we will build a small machine learning project on this laptop.",
+        "words": [
+          {
+            "text": "Welcome",
+            "start": 41.98,
+            "end": 42.5,
+            "confidence": 0.9658203125
+          },
+          {
+            "text": "back.",
+            "start": 42.5,
+            "end": 42.88,
+            "confidence": 0.99365234375
+          },
+          {
+            "text": "Today",
+            "start": 43.14,
+            "end": 43.5,
+            "confidence": 0.99755859375
+          },
+          {
+            "text": "we",
+            "start": 43.5,
+            "end": 43.66,
+            "confidence": 0.9619140625
+          },
+          {
+            "text": "will",
+            "start": 43.66,
+            "end": 43.82,
+            "confidence": 0.998046875
+          },
+          {
+            "text": "build",
+            "start": 43.82,
+            "end": 44.04,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "a",
+            "start": 44.04,
+            "end": 44.18,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "small",
+            "start": 44.18,
+            "end": 44.46,
+            "confidence": 0.97265625
+          },
+          {
+            "text": "machine",
+            "start": 44.46,
+            "end": 44.82,
+            "confidence": 0.98486328125
+          },
+          {
+            "text": "learning",
+            "start": 44.82,
+            "end": 45.18,
+            "confidence": 0.98974609375
+          },
+          {
+            "text": "project",
+            "start": 45.18,
+            "end": 45.66,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "on",
+            "start": 45.66,
+            "end": 45.92,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "this",
+            "start": 45.92,
+            "end": 46.1,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "laptop.",
+            "start": 46.1,
+            "end": 46.52,
+            "confidence": 0.9912109375
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 47.38,
+      "speech_s": 4.335281250000001,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 8,
+        "speaker": "S2",
+        "start": 47.38,
+        "end": 52.74,
+        "text": "Before we start, please save a copy of the data. Do not delete the original file.",
+        "words": [
+          {
+            "text": "Before",
+            "start": 47.38,
+            "end": 47.98,
+            "confidence": 0.9931640625
+          },
+          {
+            "text": "we",
+            "start": 47.98,
+            "end": 48.18,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "start,",
+            "start": 48.18,
+            "end": 48.54,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "please",
+            "start": 49.08,
+            "end": 49.22,
+            "confidence": 0.98779296875
+          },
+          {
+            "text": "save",
+            "start": 49.22,
+            "end": 49.52,
+            "confidence": 0.99853515625
+          },
+          {
+            "text": "a",
+            "start": 49.52,
+            "end": 49.64,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "copy",
+            "start": 49.64,
+            "end": 49.92,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "of",
+            "start": 49.92,
+            "end": 50.14,
+            "confidence": 1.0
+          },
+          {
+            "text": "the",
+            "start": 50.14,
+            "end": 50.24,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "data.",
+            "start": 50.24,
+            "end": 50.58,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "Do",
+            "start": 50.86,
+            "end": 51.08,
+            "confidence": 0.99755859375
+          },
+          {
+            "text": "not",
+            "start": 51.08,
+            "end": 51.32,
+            "confidence": 0.9990234375
+          },
+          {
+            "text": "delete",
+            "start": 51.32,
+            "end": 51.64,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "the",
+            "start": 51.64,
+            "end": 51.82,
+            "confidence": 1.0
+          },
+          {
+            "text": "original",
+            "start": 51.82,
+            "end": 52.22,
+            "confidence": 0.99951171875
+          },
+          {
+            "text": "file.",
+            "start": 52.22,
+            "end": 52.74,
+            "confidence": 0.9990234375
+          }
+        ],
+        "breaks": [],
+        "anchors": [
+          3
+        ],
+        "cut_off": false
+      },
+      "next_start": 58.0,
+      "speech_s": 5.07090625,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 9,
+        "speaker": "S2",
+        "start": 58.0,
+        "end": 58.18,
+        "text": "Thank you.",
+        "words": [
+          {
+            "text": "Thank",
+            "start": 58.0,
+            "end": 58.16,
+            "confidence": 0.2802734375
+          },
+          {
+            "text": "you.",
+            "start": 58.16,
+            "end": 58.18,
+            "confidence": 0.9990234375
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": 58.38,
+      "speech_s": 0.17999999999999972,
+      "music": false
+    },
+    {
+      "unit": {
+        "id": 10,
+        "speaker": "S1",
+        "start": 58.38,
+        "end": 58.580000000000005,
+        "text": "you.",
+        "words": [
+          {
+            "text": "you.",
+            "start": 58.38,
+            "end": 58.580000000000005,
+            "confidence": 0.9990234375
+          }
+        ],
+        "breaks": [],
+        "anchors": [],
+        "cut_off": false
+      },
+      "next_start": null,
+      "speech_s": 0.20000000000000284,
+      "music": false
+    }
+  ]
+}

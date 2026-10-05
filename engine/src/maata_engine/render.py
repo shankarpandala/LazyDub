@@ -1172,14 +1172,16 @@ class RenderJob(Dubber):
         return {**got["coverage"], "otherTier": got["other_tier"], "unreviewed": got["unreviewed"],
                 "skipped": sum(1 for st in lines if st.unit.id in self.skipped), "lines": len(lines)}
 
-    def _cut_scenes(self) -> list[Scene]:
+    def _cut_scenes(self, *, max_seconds: float | None = None, max_units: int | None = None) -> list[Scene]:
         """The whole video's scenes (§2.8), cut once from the first line to the last with `scene_cut`'s full scenes (up to
-        150 s and 30 lines, at a speaker turn or a pause): the same list for the same transcript and diarization."""
+        30 s and 6 lines, at a speaker turn or a pause): the same list for the same transcript and diarization.
+        Explicit caps are an internal benchmark hook; preview range and cache contents never change the boundaries."""
         scenes: list[Scene] = []
-        k = 0
+        k, limit = 0, SCENE_MAX_UNITS if max_units is None else max_units
         while k < len(self._order):
             # scene_cut reads at most one line past its limit of lines: this slice cuts as the whole rest would
-            n = scene_cut([st.unit for st in self._order[k:k + SCENE_MAX_UNITS + 1]])
+            n = scene_cut([st.unit for st in self._order[k:k + limit + 1]],
+                          max_seconds=max_seconds, max_units=max_units)
             scenes.append(Scene(len(scenes) + 1, self._order[k:k + n], k))
             k += n
         return scenes
@@ -1563,6 +1565,10 @@ class RenderJob(Dubber):
         row with what it cost and taught, so a resume spends and learns as this run did."""
         st, kept = fix.st, False
         try:
+            # Different scenes can queue rephrases while a budget slot is still free. The dub loop owns spending,
+            # so check again when the queued work actually executes. Meaning corrections keep their separate path.
+            if fix.kind == "rephrase" and not self._budget_left():
+                return
             cost = VoiceCost()
             seconds = target_seconds(self._slot(st), self.planner.s)
             voice, _, key = await self._voice_for(st.unit.speaker, cost)
@@ -1754,12 +1760,15 @@ class RenderJob(Dubber):
         for st in sc.lines:
             if st.take is None:
                 continue
-            why = (["long"] if st.unit.id in self._long else []) + \
-                  (["unreviewed"] if voiced_class(st.line.coverage, st.tier) not in CLASSES else [])
-            if why:
-                self.flags[st.unit.id] = why
-            else:
-                self.flags.pop(st.unit.id, None)
+            self._flag_line(st, st.unit.id in self._long)
+
+    def _flag_line(self, st: UnitState, long: bool) -> None:
+        why = (["long"] if long else []) + \
+              (["unreviewed"] if voiced_class(st.line.coverage, st.tier) not in CLASSES else [])
+        if why:
+            self.flags[st.unit.id] = why
+        else:
+            self.flags.pop(st.unit.id, None)
 
     def _held(self) -> bool:
         return time.monotonic() < self._claude_hold
@@ -1871,6 +1880,10 @@ class RenderJob(Dubber):
         u = st.unit
         path = self.render_dir / "pcm" / f"{key}.npy"
         frames = await asyncio.to_thread(_pcm_frames, path)
+        # W chose fix-ups with the lookahead available then; F now knows every take in the window. Display the final
+        # plan's result so fresh and resumed renders of identical PCM cannot disagree about a line still running long.
+        # Keep W and _long unchanged: this reports the finished audio and never schedules more synthesis.
+        self._flag_line(st, plan.needs_shorter)
         event = self._unit_event(st, plan)
         cost, made = VoiceCost(), frames is None
         if made:

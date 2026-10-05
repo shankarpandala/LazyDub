@@ -53,8 +53,8 @@ REF_TARGET = 10.0        # s of reference audio per cloned voice (S3Gen uses 10 
 REF_MIN = 4.0            # s: below this a speaker keeps a preset voice until more clean speech appears
 MAX_LINE_SECONDS = 30.0
 SINGLE_CLIP_MIN = 8.0   # s: a speaker's best single clean clip must be this long to be the timbre reference (ADR-017)
-# Scenes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): at most 150 s and 30 lines, cut at a speaker turn or a pause >= 1 s.
-SCENE_MAX_S, SCENE_MAX_UNITS, SCENE_PAUSE = 150.0, 30, 1.0
+# Bounded translation scenes: at most 30 s and 6 whole lines, cut at a speaker turn or a pause >= 1 s.
+SCENE_MAX_S, SCENE_MAX_UNITS, SCENE_PAUSE = 30.0, 6, 1.0
 CONTEXT_BEFORE, CONTEXT_AFTER, CONTEXT_SPAN = 3, 2, 60.0  # context lines each side of a scene, from within this many s
 # Aksharas of `full` per English syllable (§4.3): a weak prior until a speaker has K_MIN_LINES validated lines, then
 # the running median of theirs (lines of at least K_MIN_SYLLABLES syllables, the last K_WINDOW).
@@ -1140,22 +1140,27 @@ def _audio_hash(*clips: np.ndarray) -> str:
     return h.hexdigest()[:16]
 
 
-def scene_cut(run: list[SourceUnit]) -> int:
+def scene_cut(run: list[SourceUnit], *, max_seconds: float | None = None, max_units: int | None = None) -> int:
     """How many lines of `run` (lines in time order, from where the next scene starts to the video's end, or at least
-    one past SCENE_MAX_UNITS of them) the next scene takes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): at most SCENE_MAX_S
-    s and SCENE_MAX_UNITS lines, cut at the last speaker turn or pause of SCENE_PAUSE s or more in its second half, else
-    at the limit; one line longer than a scene is a scene of its own, and the rest of the video under the limit is one."""
+    one past its line limit) the next scene takes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): cut at the last speaker turn
+    or pause of SCENE_PAUSE s or more in its second half, else at the limit. One line longer than a scene stays whole,
+    and the rest of the video under the limits is one. Explicit caps support controlled latency comparisons; omitted
+    caps keep the production SCENE_MAX_S/SCENE_MAX_UNITS defaults."""
+    max_seconds = SCENE_MAX_S if max_seconds is None else max_seconds
+    max_units = SCENE_MAX_UNITS if max_units is None else max_units
+    if not 0 < max_seconds < float("inf") or not isinstance(max_units, int) or max_units < 1:
+        raise ValueError("scene limits must be a positive finite duration and a positive integer line count")
     s0 = run[0].start
     fit = 0
-    while fit < min(len(run), SCENE_MAX_UNITS) and run[fit].end - s0 <= SCENE_MAX_S:
+    while fit < min(len(run), max_units) and run[fit].end - s0 <= max_seconds:
         fit += 1
     if fit == 0:
         return 1  # one sentence longer than a scene
-    if fit == len(run) and fit < SCENE_MAX_UNITS:
+    if fit == len(run) and fit < max_units:
         return fit  # the rest of the video
     for i in range(fit - 1, 0, -1):
         a, b = run[i], run[i + 1] if i + 1 < len(run) else None
-        if a.end - s0 < SCENE_MAX_S / 2:
+        if a.end - s0 < max_seconds / 2:
             break
         if b is None or b.speaker != a.speaker or b.start - a.end >= SCENE_PAUSE:
             return i + 1

@@ -20,6 +20,10 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
 - Speed/quality pass (ADR-022, 2026-10-05): vectorized separator mask merge; duration-aware complete first translations;
   priority admission for queued Claude calls; selected-waveform checks with bounded retries; synthesis-versioned take
   restoration; corrected export wall-time traces. Models, precision and CFM defaults are unchanged.
+- Translation latency (ADR-023): scenes now hold at most 30 seconds / 6 complete lines, preserving the whole-video
+  brief, context, models and meaning reviews. Queued rephrases recheck the synthesis budget before spending it.
+  `scripts/bench_scene_pipeline.py` compares explicit scene limits on fresh whole-video runs;
+  `scripts/bench_translation_scenes.py` also checks context-dependent original text without loading audio models.
 - Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
   `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
   separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`

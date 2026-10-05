@@ -550,3 +550,33 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   this short, fresh run includes voice preparation and Claude calls and does not establish real-time throughput or
   a whole-render speedup. Native-listener quality, long-video throughput and a calibrated pronunciation judge remain
   open acceptance work.
+
+## ADR-023 — Smaller reviewed translation batches feed speech synthesis sooner
+
+- **Decision (2026-10-05):** following the maintainer's request to implement the next speed priority, bound each
+  translation scene at 30 seconds and 6 complete source lines instead of 150 seconds and 30 lines. Preserve the
+  speaker-turn/pause preference and keep an overlong sentence whole. This amends ADR-021's scene size; all scenes use
+  the same policy, with no special first scene.
+- **Quality contract:** the complete video brief and calibrated voices are still ready before translation. Keep
+  the three contiguous lanes, three preceding/two following context lines, glossary, duration-based tier selection,
+  Opus medium translation, Sonnet high meaning review, corrective retranslation and review of changed voiced tiers.
+  No model, precision, candidate-count, effort, prompt or audio-inference policy changes. A lower latency does not
+  establish better Telugu naturalness or pronunciation.
+- **Resume:** boundaries depend on source units and the fixed limits, never preview length or cached progress.
+  Existing reviewed line caches and matching voice takes remain reusable; settled-scene keys follow their new
+  grouping. Explicit internal caps retain the old policy for controlled comparisons, without a new user setting.
+  Final displayed timing flags come from the settled final plan, so a working-plan overflow that later disappears
+  cannot leave a stale `long` warning on the first export and disappear only after resuming the same takes.
+- **Concurrent fix-ups:** recheck the rephrase synthesis budget when queued work executes. Several scene tasks can
+  otherwise queue against the same last slot and exceed it. Skipped optional rephrases preserve the original take;
+  meaning corrections remain eligible. A deterministic regression exercises two queued rephrases and a correction.
+- **Reproduction:** `scripts/bench_scene_pipeline.py` compares fresh whole-video runs with explicit caps and records
+  first retained take separately from completed export. Use separate processes/caches and alternating order, with
+  the normal `verify_mac.py` Anthropic-only proxy and network sandbox. The local calibration seed is held fixed;
+  provider generation and prompt caching still vary. `scripts/bench_translation_scenes.py` isolates text scheduling
+  with a fixed brief/calibration and includes original boundary-dependent examples. Its text timing excludes audio,
+  changed-voiced-tier review and export. A retained take is not yet final playable PCM.
+- **Acceptance limits:** native Telugu listening, longer representative videos, pronunciation evaluation and the
+  full separation/leakage acceptance run remain separate work. The synthetic integration fixture also exposes an
+  ASR tail artifact and inconsistent automated review classifications; neither a generic C nor a deterministic
+  correction proves native-speaker quality. All comparison outputs must be retained, including imperfect ones.

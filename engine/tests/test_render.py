@@ -1009,7 +1009,7 @@ class HeldClaude(MockClaude):
 async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_hold(tmp_path, monkeypatch):
     monkeypatch.setattr(dubber, "CLAUDE_BACKOFF", 0.05)
     cli = HeldClaude({("brief", None), ("scene", 1), ("review", 2)})
-    b = backend()
+    b = backend(UniqueTranscriber())
     b.translator = translator_with(cli)
     events: list[dict] = []
     job = job_for(tmp_path, b, events=events)
@@ -1023,12 +1023,25 @@ async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_ho
     job._before_call = watched
     reviewing: list[tuple[int, bool]] = []  # (scene, held) at each review
     review = job._review
+    reviewed_twice = asyncio.Event()
 
     async def watched_review(req, lines):
         reviewing.append((req.scene, job.scenes[req.scene - 1].held))
-        return await review(req, lines)
+        result = await review(req, lines)
+        if req.scene == 2 and sum(no == 2 for no, _ in reviewing) == 2:
+            reviewed_twice.set()
+        return result
 
     job._review = watched_review
+    voice_line = job._voice_line
+
+    async def after_retry(st):
+        # Exercise retry-before-voicing deterministically. A nearby short scene otherwise may legitimately voice
+        # during the hold, leaving nothing for the lane to review again (covered by the held-scene test).
+        await asyncio.wait_for(reviewed_twice.wait(), 5.0)
+        return await voice_line(st)
+
+    job._voice_line = after_retry
     assert await job.run() == "done"
     assert (1, True, True) not in seen and (1, False, True) in seen  # released: untranslated, never `held`
     assert (2, True, False) in seen  # its review failed: translated, unreviewed, voiceable during the hold
@@ -1042,7 +1055,7 @@ async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_ho
     assert asked.count(("scene", 1, True)) == asked.count(("scene", 1, False)) == 1   # released, then asked again
     assert asked.count(("review", 2, True)) == asked.count(("review", 2, False)) == 1  # failed, then reviewed
     assert asked.count(("scene", 2, False)) == 1  # the second time its lines came from the line cache
-    assert len(job.scenes) == 2 and all(sc.reviewed and not sc.held for sc in job.scenes)
+    assert len(job.scenes) >= 2 and all(sc.reviewed and not sc.held for sc in job.scenes)
     assert all(st.line.coverage.cls == "C" for st in job.units.values())
     assert any(e["type"] == "claude_error" and e["kind"] == "not_signed_in" for e in events)
     statuses = [e["status"] for e in events if e["type"] == "render"]
@@ -1287,7 +1300,9 @@ async def test_each_scene_keeps_its_fit_and_the_stage_waits_for_it(tmp_path):
     b.translator = translator_with(cli)
     job = job_for(tmp_path, b)
     assert await job.run() == "done"
-    fitted = {c["message"]["scene"] for c in cli.calls if c["call"] == "fit"}
+    # The translator can also make synchronous `fit` calls to complete cached tiers inside submit(). Only scenes
+    # asking for a side fit after review have a task for the render to own and wait on.
+    fitted = {e["scene"] for e in trace_of(tmp_path) if e["event"] == "scene" and e["fits"]}
     assert fitted and all(sc.fit is not None for sc in job.scenes if sc.no in fitted)
     assert all(sc.fitted for sc in job.scenes)  # translate ends once every fit is back...
     assert any("concise" in st.line.tiers for st in job.units.values())  # ...and folded into its lines
@@ -1784,11 +1799,11 @@ async def test_fixups_shorter_tier_then_one_rephrase_per_scene(tmp_path, monkeyp
         mine = [r for r in rows if r["line"] == job._line_key(st)]
         assert [r["wording"] for r in mine][1:] == ["rephrase"]  # first: the shorter tier, or the take it didn't beat
         assert st.tier == "full" and len(st.line.full.spoken.split()) == 2 and st.take_s < mine[0]["takes"][0]["seconds"]
-        assert ("long" in job.flags.get(st.unit.id, [])) == st.plan.needs_shorter  # flagged while it still runs long
+        assert ("long" in job.flags.get(st.unit.id, [])) == job.final[st.unit.id].needs_shorter
         # lines.jsonl still serves the reviewed line: the rephrase is in fixups.jsonl only
         assert cached.coverage is not None and cached.full.spoken != st.line.full.spoken
     assert three >= 3
-    assert any(st.plan.needs_shorter for st in rephrased)  # kept (shorter), still long: flagged
+    assert any(job.final[st.unit.id].needs_shorter for st in rephrased)  # kept (shorter), still long in the final audio
     asked = [c["message"]["scene"] for c in cli.calls if c["call"] == "rephrase"]
     assert sorted(asked) == sorted(set(asked)) == sorted({job.units[st.unit.id].scene for st in rephrased})
     fixups = _read_rows(tmp_path / VID / "render" / "fixups.jsonl")
@@ -1814,11 +1829,47 @@ async def test_fixups_stay_within_their_share_of_the_lines(tmp_path, monkeypatch
     voiced = sum(1 for st in job.units.values() if st.take is not None)
     assert 3 <= job._resynths <= max(3, render.FIXUP_SHARE * voiced) + 1
     long = {k for k, why in job.flags.items() if "long" in why}  # the lines left long are flagged...
-    assert long and all(job.units[k].plan.needs_shorter and job.units[k].take["wording"] != "rephrase" for k in long)
+    assert long and all(job.final[k].needs_shorter and job.units[k].take["wording"] != "rephrase" for k in long)
     b.tts = MelTTS(rate=1.5)
     again = job_for(tmp_path, b)
     assert await again.run() == "done" and b.tts.batches == []
     assert again.flags == job.flags  # ...and flagged again when they come back from their rows
+    assert again.final == job.final and again.pcm == job.pcm
+    for run in (job, again):
+        assert all(("long" in run.flags.get(uid, [])) == plan.needs_shorter for uid, plan in run.final.items())
+
+
+async def test_queued_rephrases_recheck_the_budget_before_synthesis_but_review_corrections_still_run(tmp_path):
+    tts = MelTTS()
+    job = job_for(tmp_path, backend(UniqueTranscriber(), tts), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    states = [st for st in job.units.values() if st.take][:2]
+    assert len(states) == 2
+    originals = [st.take for st in states]
+    job._budget, job._resynths, job._dubbing = 3.0, 2, True
+    lines = [LineResult(st.unit.id, {"full": Wording(st.line.full.spoken + " కొత్త మాట" * (i + 1))})
+             for i, st in enumerate(states)]
+
+    async def settle(st, line):
+        if job._budget_left():  # both scene tasks see the last free slot before either queued request executes
+            return await job._fixup(st, line, "full", "rephrase", f"queued-{st.unit.id}")
+
+    before = len(tts.batches)
+    pending = [asyncio.create_task(settle(st, line)) for st, line in zip(states, lines)]
+    await asyncio.sleep(0)
+    assert len(job._fixes) == 2
+    while job._fixes:
+        await job._voice_fix(job._fixes.pop(0))
+    assert await asyncio.gather(*pending) == [False, False]  # longer than the originals, or never synthesized
+    assert job._resynths == job._budget == 3
+    synthesized = {text for text, _ in tts.batches[before:]}
+    assert lines[0].full.spoken in synthesized and lines[1].full.spoken not in synthesized
+    assert states[1].take is originals[1]  # a queued request skipped at admission changes no cost or take row
+    fix = render._Fix(states[1], lines[1], "full", "retranslate", "review-correction",
+                      asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert fix.done.result() and states[1].take["wording"] == "retranslate"
+    assert job._resynths == 3 and lines[1].full.spoken in {text for text, _ in tts.batches[before:]}
 
 
 @pytest.mark.parametrize("optional", ["shorter", "rephrase"])
@@ -2112,7 +2163,7 @@ async def test_a_scene_whose_fix_ups_a_pause_cut_short_is_settled_again_but_a_re
     assert not set(asked) & rephrases
     restored = [st for st in job.units.values() if st.unit.id in job._restored and st.take["wording"] == "rephrase"]
     assert restored and any(st.plan.needs_shorter for st in restored)  # still long: flagged, not rephrased again
-    assert all("long" in job.flags[st.unit.id] for st in restored if st.plan.needs_shorter)
+    assert all("long" in job.flags[st.unit.id] for st in restored if job.final[st.unit.id].needs_shorter)
 
 
 class SlowFitClaude(TerseClaude):
@@ -2277,7 +2328,9 @@ async def test_the_fix_up_budget_counts_the_takes_fix_ups_make_and_a_rephrase_st
     that ran long, never for another occurrence of it."""
     monkeypatch.setattr(render, "FIXUP_SHARE", 0.3)
     tts = MelTTS(rate=1.0)  # far slower than its estimate: lines run long
-    b = backend(tts=tts)
+    repeated = UniqueTranscriber()
+    repeated.ADJ, repeated.NOUN, repeated.VERB = ("quiet",) * 8, ("river",) * 8, ("watched",) * 8
+    b = backend(repeated, tts)  # repeat within short scenes too, so cached optional takes occur before the budget ends
     b.translator = translator_with(LongDemoClaude())
     job = job_for(tmp_path, b)
     fix_ups = []  # (unit, it made a take): every `_say` of a line after its first is a fix-up (a shorter tier, a rephrase)

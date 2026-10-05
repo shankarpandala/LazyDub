@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "title": "Original adapter comparison with boundary-dependent meaning",
+  "duration": 80.0,
+  "provenance": {
+    "source": "Original English written for Maata's translation batching check; no downloaded transcript or personal data",
+    "purpose": "Compare batch boundaries while preserving complete meaning, context, terminology and review",
+    "human_native_speaker_review": "not performed",
+    "audio": "none; these are synthetic text timing windows"
+  },
+  "settings": {"speakers": 1, "style": "colloquial", "stopAt": null, "speedCap": 1.2, "ttsScript": "telugu", "presets": []},
+  "brief": {
+    "version": 1,
+    "meta": {"title": "Original adapter comparison", "channel": "Maata", "description": "An original test narrative, not electrical advice", "chapters": [], "tags": [], "talk_shares": []},
+    "topic": "A narrator compares the Pulse and Nova adapters used by Ravi and Meena, including their warnings, ratings and costs.",
+    "register": "Neutral everyday spoken Telugu, addressing the audience politely with మీరు",
+    "speakers": [{"id": "S1", "name": "", "gender": "unknown", "role": "narrator", "audience": "polite", "address": []}],
+    "glossary": [
+      {"term": "Pulse", "spoken": "పల్స్", "keep_english": true, "note": "The blue adapter's model name; not a heartbeat"},
+      {"term": "Nova", "spoken": "నోవా", "keep_english": true, "note": "The red adapter's model name"},
+      {"term": "adapter", "spoken": "అడాప్టర్", "keep_english": true, "note": ""}
+    ],
+    "entities": ["Ravi", "Meena", "Pulse", "Nova"],
+    "idioms": [],
+    "numbers": "Speak numbers, money and units naturally in Telugu script; retain exact values and uncertainty.",
+    "asr_fixes": []
+  },
+  "lines": [
+    {"id": 0, "speaker": "S1", "start": 0.0, "end": 5.0, "speech_s": 4.5, "text": "Ravi and Meena are testing two adapters before the repair."},
+    {"id": 1, "speaker": "S1", "start": 5.0, "end": 10.0, "speech_s": 4.5, "text": "A technician called the blue model Pulse and the red model Nova."},
+    {"id": 2, "speaker": "S1", "start": 10.0, "end": 15.0, "speech_s": 4.5, "text": "Pulse charges the phone faster, but Nova uses less power."},
+    {"id": 3, "speaker": "S1", "start": 15.0, "end": 20.0, "speech_s": 4.5, "text": "Neither model repairs a damaged battery."},
+    {"id": 4, "speaker": "S1", "start": 20.0, "end": 25.0, "speech_s": 4.5, "text": "Ravi received the blue adapter, and Meena kept the red one."},
+    {"id": 5, "speaker": "S1", "start": 25.0, "end": 30.0, "speech_s": 4.5, "text": "The blue adapter may overheat after about twenty minutes."},
+    {"id": 6, "speaker": "S1", "start": 30.0, "end": 35.0, "speech_s": 4.5, "text": "He must unplug it if that happens, but she should keep hers connected."},
+    {"id": 7, "speaker": "S1", "start": 35.0, "end": 40.0, "speech_s": 4.5, "text": "That warning applies only to Ravi's adapter, not to both of them."},
+    {"id": 8, "speaker": "S1", "start": 40.0, "end": 45.0, "speech_s": 4.5, "text": "Hers is rated for twelve volts; his is rated for nine."},
+    {"id": 9, "speaker": "S1", "start": 45.0, "end": 50.0, "speech_s": 4.5, "text": "Those are voltage ratings, not charging times."},
+    {"id": 10, "speaker": "S1", "start": 50.0, "end": 55.0, "speech_s": 4.5, "text": "Meena paid two hundred and fifty rupees for Nova, including the cable."},
+    {"id": 11, "speaker": "S1", "start": 55.0, "end": 60.0, "speech_s": 4.5, "text": "Ravi paid the same amount for Pulse, but the cable was extra."},
+    {"id": 12, "speaker": "S1", "start": 60.0, "end": 65.0, "speech_s": 4.5, "text": "He did not say that the extra cable was free."},
+    {"id": 13, "speaker": "S1", "start": 65.0, "end": 70.0, "speech_s": 4.5, "text": "It might cost another fifty rupees, so his total is not confirmed."},
+    {"id": 14, "speaker": "S1", "start": 70.0, "end": 75.0, "speech_s": 4.5, "text": "If both adapters stay cool, they can repeat the test tomorrow."},
+    {"id": 15, "speaker": "S1", "start": 75.0, "end": 80.0, "speech_s": 4.5, "text": "Until then, do not describe either model as proven safe."}
+  ],
+  "semantic_expectations": [
+    {"ids": [0, 1, 2, 4], "check": "Ravi and Meena test two adapters before the repair. Blue is Pulse, owned by Ravi; red is Nova, kept by Meena. Pulse charges faster, whereas Nova consumes less power. Do not swap either model or property."},
+    {"ids": [3], "check": "Neither adapter repairs an already damaged battery; do not turn this into a positive repair claim or a claim that adapters damage batteries."},
+    {"ids": [4, 5, 6], "check": "At the 6-line boundary, he/it refer to Ravi/the blue adapter, and she/hers to Meena/the red adapter. Unplugging is required only if overheating occurs. Meena's contrasting instruction remains to keep hers connected."},
+    {"ids": [5], "check": "Overheating is possible, not certain. About twenty minutes is approximate, not an exact guarantee or a different number."},
+    {"ids": [7, 8, 9], "check": "At the 8-line boundary, the warning is limited to Ravi's adapter. Her adapter is twelve volts, his nine volts. These are voltage ratings, explicitly not charging times. Correct pronouns may remain pronouns; naming their referents is not required."},
+    {"ids": [10, 11], "check": "Meena's Nova costs 250 rupees including its cable. Ravi paid the same 250 rupees for Pulse, with a separately charged cable. Do not say both cables were included or invent its price here."},
+    {"ids": [11, 12, 13], "check": "At the second 6-line boundary, he/his still refers to Ravi and it to his extra cable. He did not claim it was free; preserve that reported-claim negation. Another 50 rupees is only a possibility, and his total remains unconfirmed; do not assert a definite 300-rupee total."},
+    {"ids": [14, 15], "check": "Repeating tomorrow is conditional on both adapters staying cool, not a promise. Neither model may yet be described as proven safe. Preserve the temporal limit and the negation."},
+    {"ids": [1, 2, 10, 11], "check": "Reuse Pulse/పల్స్ and Nova/నోవా consistently as model names, with natural Telugu suffixes allowed; do not translate Pulse as heartbeat."}
+  ],
+  "comparison_notes": [
+    "All source sentences are complete and original. One speaker and contiguous five-second windows make the intended boundaries deterministic: 6/30 gives ids 0-5, 6-11, 12-15; 8/45 gives ids 0-7, 8-15; 30/150 gives one scene.",
+    "Retain the same brief, models, effort, requested-tier policy, local validation and meaning review for every arm. Preserve production before/after context and lane behavior.",
+    "The expectations are a separate evaluation checklist. Do not include them in the translator's or production reviewer's prompts.",
+    "Check every voiced or selected tier, not just full. A generic automated C result alone does not establish these expectations or native-speaker naturalness.",
+    "The timings are a controlled batching fixture, not measured source speech or evidence about synthesis speed. Do not discard meaning to satisfy them."
+  ]
+}

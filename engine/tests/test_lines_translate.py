@@ -145,20 +145,91 @@ def lines_every(seconds: float, n: int, length: float = 3.0, text: str = "A line
     return [unit(i, i * seconds, i * seconds + length, speaker, text) for i in range(n)]
 
 
-def test_a_scene_holds_at_most_150_s_and_30_lines_cut_at_a_turn_or_pause():
+def test_legacy_scene_caps_remain_available_for_controlled_comparisons():
+    def legacy(run):
+        return scene_cut(run, max_seconds=150.0, max_units=30)
+
     run = lines_every(4.0, 60, length=3.5)
-    assert scene_cut(run) == 30                                       # 30 lines come first (they end at 119.5 s)
+    assert legacy(run) == 30                                         # 30 lines come first (they end at 119.5 s)
     sparse = lines_every(8.0, 40)                                     # 5 s gaps between lines: every boundary a pause
-    assert scene_cut(sparse) == 19                                    # ends at 147 s, the last pause under 150 s
+    assert legacy(sparse) == 19                                      # ends at 147 s, the last pause under 150 s
     turns = [unit(i, 10.0 * i, 10.0 * i + 9.5, "S1" if i < 11 else "S2") for i in range(20)]
-    assert scene_cut(turns) == 11                                     # the speaker turn at 110 s, not the limit
+    assert legacy(turns) == 11                                       # the speaker turn at 110 s, not the limit
     early = [unit(i, 10.0 * i, 10.0 * i + 9.5, "S1" if i < 3 else "S2") for i in range(20)]
-    assert scene_cut(early) == 15                                     # a turn in the first half doesn't count
-    assert scene_cut([unit(0, 0.0, 170.0)]) == 1                      # one sentence longer than a scene still goes
+    assert legacy(early) == 15                                       # a turn in the first half doesn't count
+    assert legacy([unit(0, 0.0, 170.0)]) == 1                          # one sentence longer than a scene still goes
+
+
+def test_production_scenes_hold_at_most_30_seconds_and_six_whole_lines():
+    assert (SCENE_MAX_S, SCENE_MAX_UNITS) == (30.0, 6)
+    assert scene_cut(lines_every(4.0, 20, length=3.5)) == 6
+    assert scene_cut(lines_every(8.0, 20)) == 4
+    turns = [unit(i, 5.0 * i, 5.0 * i + 4.5, "S1" if i < 4 else "S2") for i in range(10)]
+    assert scene_cut(turns) == 4
+    assert scene_cut([unit(0, 0.0, 45.0), unit(1, 46.0, 48.0)]) == 1
 
 
 def test_the_rest_of_the_video_under_the_limit_is_one_scene():
-    assert scene_cut(lines_every(4.0, 20)) == 20                      # 79 s and 20 lines: all of it
+    assert scene_cut(lines_every(4.0, 5)) == 5                       # 19 s and 5 lines: all of it
+    assert scene_cut(lines_every(4.0, 20), max_seconds=150.0, max_units=30) == 20
+
+
+@pytest.mark.parametrize("seconds,limit", [(7.5, 1), (30.0, 6), (40.0, 6), (45.0, 8), (150.0, 30), (240.0, 40)])
+def test_explicit_scene_caps_cover_every_whole_sentence_and_match_a_bounded_window(seconds, limit):
+    run, start = [], 0.0
+    for i in range(83):
+        end = start + (170.0 if i == 12 else 2.0 + i % 4)
+        run.append(unit(i, start, end, f"S{1 + i // 7 % 2}"))
+        start = end + (1.2 if i % 11 == 0 else 0.2)
+    remaining, seen = run, []
+    while remaining:
+        n = scene_cut(remaining, max_seconds=seconds, max_units=limit)
+        assert n == scene_cut(remaining[:limit + 1], max_seconds=seconds, max_units=limit)
+        assert 1 <= n <= limit
+        assert n == 1 or remaining[n - 1].end - remaining[0].start <= seconds
+        seen.extend(u.id for u in remaining[:n])
+        remaining = remaining[n:]
+    assert seen == list(range(len(run)))
+
+
+def test_explicit_scene_cap_uses_its_own_second_half_for_turns_and_pauses():
+    turns = [unit(i, 5.0 * i, 5.0 * i + 4.6, "S1" if i < 4 else "S2") for i in range(10)]
+    assert scene_cut(turns, max_seconds=30.0, max_units=10) == 4  # the turn at 20 s is in this cap's second half
+    early = [replace(u, speaker="S1" if i < 2 else "S2") for i, u in enumerate(turns)]
+    assert scene_cut(early, max_seconds=30.0, max_units=10) == 6  # the turn at 10 s is too early
+    pauses = [replace(u, speaker="S1", end=u.end - (0.7 if i == 3 else 0.0)) for i, u in enumerate(turns)]
+    assert scene_cut(pauses, max_seconds=30.0, max_units=10) == 4  # the 1.1 s pause wins
+    assert scene_cut([unit(0, 0.0, 170.0)], max_seconds=30.0, max_units=6) == 1
+
+
+@pytest.mark.parametrize("seconds,limit", [(0.0, 6), (-1.0, 6), (float("inf"), 6), (float("nan"), 6),
+                                          (30.0, 0), (30.0, -1), (30.0, 1.5)])
+def test_invalid_scene_caps_are_rejected(seconds, limit):
+    with pytest.raises(ValueError, match="scene limits"):
+        scene_cut(lines_every(4.0, 4), max_seconds=seconds, max_units=limit)
+
+
+def test_explicit_production_caps_match_defaults_and_omitted_caps_follow_the_default_constants(monkeypatch):
+    for run in (lines_every(4.0, 60, length=3.5), lines_every(8.0, 40), [unit(0, 0.0, 170.0)]):
+        assert scene_cut(run) == scene_cut(run, max_seconds=30.0, max_units=6)
+    monkeypatch.setattr(dubber, "SCENE_MAX_S", 40.0)
+    monkeypatch.setattr(dubber, "SCENE_MAX_UNITS", 8)
+    run = lines_every(4.0, 60, length=3.5)
+    assert scene_cut(run) == scene_cut(run, max_seconds=40.0, max_units=8) == 8
+
+
+@pytest.mark.parametrize("seconds,limit", [(30.0, 6), (240.0, 40)])
+def test_render_scene_cap_hook_is_deterministic_across_preview_and_cached_state(tmp_path, seconds, limit):
+    job = bare_job(tmp_path)
+    put(job, *(UnitState(u, None, speech_s=3.0) for u in lines_every(4.0, 85)))
+    before = job._cut_scenes(max_seconds=seconds, max_units=limit)
+    assert len(before[0].lines) == limit  # a larger test cap is not silently constrained by the old 30-line slice
+    job.settings = replace(job.settings, stop_at=20.0)
+    for st in job._order[:15]:
+        st.voiced = True
+    after = job._cut_scenes(max_seconds=seconds, max_units=limit)
+    assert [(sc.no, sc.k, [st.unit.id for st in sc.lines]) for sc in before] == \
+           [(sc.no, sc.k, [st.unit.id for st in sc.lines]) for sc in after]
 
 
 def test_the_whole_videos_scenes_are_cut_once_from_the_first_line_to_the_last(tmp_path):
