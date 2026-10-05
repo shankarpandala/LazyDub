@@ -580,3 +580,11 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   full separation/leakage acceptance run remain separate work. The synthetic integration fixture also exposes an
   ASR tail artifact and inconsistent automated review classifications; neither a generic C nor a deterministic
   correction proves native-speaker quality. All comparison outputs must be retained, including imperfect ones.
+- **Measured result:** five fresh runs per policy on the original 60-second two-speaker fixture, with the same
+  local calibration seed and nominal thermals: median completed export 104.85 → 94.82 seconds (9.6% less time),
+  first retained take 80.54 → 61.59 seconds (23.5% less time). Median Claude calls increased 4 → 6 and output tokens
+  7,999 → 10,499. Differently worded repetitions also lost some audio-cache reuse. The tradeoff and all raw runs are
+  in `docs/spikes/results/translation-latency/m5-pro-24gb/2026-10-05-pipeline.json`; this is not a general long-video
+  speed claim. Both arms passed the separate 16-line boundary-meaning smoke and independent model text inspection,
+  with human listening still pending. The candidate MP4 passed copied-video, stream/subtitle layout, loudness, A/V
+  and watermark checks. The final complete engine suite passes: 1,079 tests (180 affected, 39 WebSocket, 860 others).

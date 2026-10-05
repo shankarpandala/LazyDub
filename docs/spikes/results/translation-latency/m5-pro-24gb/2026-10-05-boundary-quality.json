@@ -1,0 +1,5482 @@
+{
+  "scope": "Isolated text scene-shape comparison; no first-audio or whole-video speed claim",
+  "created_utc": "2026-10-05T13:57:38.555166+00:00",
+  "fixture": {
+    "version": 1,
+    "title": "Original adapter comparison with boundary-dependent meaning",
+    "duration": 80.0,
+    "provenance": {
+      "source": "Original English written for Maata's translation batching check; no downloaded transcript or personal data",
+      "purpose": "Compare batch boundaries while preserving complete meaning, context, terminology and review",
+      "human_native_speaker_review": "not performed",
+      "audio": "none; these are synthetic text timing windows"
+    },
+    "settings": {
+      "speakers": 1,
+      "style": "colloquial",
+      "stopAt": null,
+      "speedCap": 1.2,
+      "ttsScript": "telugu",
+      "presets": []
+    },
+    "brief": {
+      "version": 1,
+      "meta": {
+        "title": "Original adapter comparison",
+        "channel": "Maata",
+        "description": "An original test narrative, not electrical advice",
+        "chapters": [],
+        "tags": [],
+        "talk_shares": []
+      },
+      "topic": "A narrator compares the Pulse and Nova adapters used by Ravi and Meena, including their warnings, ratings and costs.",
+      "register": "Neutral everyday spoken Telugu, addressing the audience politely with మీరు",
+      "speakers": [
+        {
+          "id": "S1",
+          "name": "",
+          "gender": "unknown",
+          "role": "narrator",
+          "audience": "polite",
+          "address": []
+        }
+      ],
+      "glossary": [
+        {
+          "term": "Pulse",
+          "spoken": "పల్స్",
+          "keep_english": true,
+          "note": "The blue adapter's model name; not a heartbeat"
+        },
+        {
+          "term": "Nova",
+          "spoken": "నోవా",
+          "keep_english": true,
+          "note": "The red adapter's model name"
+        },
+        {
+          "term": "adapter",
+          "spoken": "అడాప్టర్",
+          "keep_english": true,
+          "note": ""
+        }
+      ],
+      "entities": [
+        "Ravi",
+        "Meena",
+        "Pulse",
+        "Nova"
+      ],
+      "idioms": [],
+      "numbers": "Speak numbers, money and units naturally in Telugu script; retain exact values and uncertainty.",
+      "asr_fixes": []
+    },
+    "lines": [
+      {
+        "id": 0,
+        "speaker": "S1",
+        "start": 0.0,
+        "end": 5.0,
+        "speech_s": 4.5,
+        "text": "Ravi and Meena are testing two adapters before the repair."
+      },
+      {
+        "id": 1,
+        "speaker": "S1",
+        "start": 5.0,
+        "end": 10.0,
+        "speech_s": 4.5,
+        "text": "A technician called the blue model Pulse and the red model Nova."
+      },
+      {
+        "id": 2,
+        "speaker": "S1",
+        "start": 10.0,
+        "end": 15.0,
+        "speech_s": 4.5,
+        "text": "Pulse charges the phone faster, but Nova uses less power."
+      },
+      {
+        "id": 3,
+        "speaker": "S1",
+        "start": 15.0,
+        "end": 20.0,
+        "speech_s": 4.5,
+        "text": "Neither model repairs a damaged battery."
+      },
+      {
+        "id": 4,
+        "speaker": "S1",
+        "start": 20.0,
+        "end": 25.0,
+        "speech_s": 4.5,
+        "text": "Ravi received the blue adapter, and Meena kept the red one."
+      },
+      {
+        "id": 5,
+        "speaker": "S1",
+        "start": 25.0,
+        "end": 30.0,
+        "speech_s": 4.5,
+        "text": "The blue adapter may overheat after about twenty minutes."
+      },
+      {
+        "id": 6,
+        "speaker": "S1",
+        "start": 30.0,
+        "end": 35.0,
+        "speech_s": 4.5,
+        "text": "He must unplug it if that happens, but she should keep hers connected."
+      },
+      {
+        "id": 7,
+        "speaker": "S1",
+        "start": 35.0,
+        "end": 40.0,
+        "speech_s": 4.5,
+        "text": "That warning applies only to Ravi's adapter, not to both of them."
+      },
+      {
+        "id": 8,
+        "speaker": "S1",
+        "start": 40.0,
+        "end": 45.0,
+        "speech_s": 4.5,
+        "text": "Hers is rated for twelve volts; his is rated for nine."
+      },
+      {
+        "id": 9,
+        "speaker": "S1",
+        "start": 45.0,
+        "end": 50.0,
+        "speech_s": 4.5,
+        "text": "Those are voltage ratings, not charging times."
+      },
+      {
+        "id": 10,
+        "speaker": "S1",
+        "start": 50.0,
+        "end": 55.0,
+        "speech_s": 4.5,
+        "text": "Meena paid two hundred and fifty rupees for Nova, including the cable."
+      },
+      {
+        "id": 11,
+        "speaker": "S1",
+        "start": 55.0,
+        "end": 60.0,
+        "speech_s": 4.5,
+        "text": "Ravi paid the same amount for Pulse, but the cable was extra."
+      },
+      {
+        "id": 12,
+        "speaker": "S1",
+        "start": 60.0,
+        "end": 65.0,
+        "speech_s": 4.5,
+        "text": "He did not say that the extra cable was free."
+      },
+      {
+        "id": 13,
+        "speaker": "S1",
+        "start": 65.0,
+        "end": 70.0,
+        "speech_s": 4.5,
+        "text": "It might cost another fifty rupees, so his total is not confirmed."
+      },
+      {
+        "id": 14,
+        "speaker": "S1",
+        "start": 70.0,
+        "end": 75.0,
+        "speech_s": 4.5,
+        "text": "If both adapters stay cool, they can repeat the test tomorrow."
+      },
+      {
+        "id": 15,
+        "speaker": "S1",
+        "start": 75.0,
+        "end": 80.0,
+        "speech_s": 4.5,
+        "text": "Until then, do not describe either model as proven safe."
+      }
+    ],
+    "semantic_expectations": [
+      {
+        "ids": [
+          0,
+          1,
+          2,
+          4
+        ],
+        "check": "Ravi and Meena test two adapters before the repair. Blue is Pulse, owned by Ravi; red is Nova, kept by Meena. Pulse charges faster, whereas Nova consumes less power. Do not swap either model or property."
+      },
+      {
+        "ids": [
+          3
+        ],
+        "check": "Neither adapter repairs an already damaged battery; do not turn this into a positive repair claim or a claim that adapters damage batteries."
+      },
+      {
+        "ids": [
+          4,
+          5,
+          6
+        ],
+        "check": "At the 6-line boundary, he/it refer to Ravi/the blue adapter, and she/hers to Meena/the red adapter. Unplugging is required only if overheating occurs. Meena's contrasting instruction remains to keep hers connected."
+      },
+      {
+        "ids": [
+          5
+        ],
+        "check": "Overheating is possible, not certain. About twenty minutes is approximate, not an exact guarantee or a different number."
+      },
+      {
+        "ids": [
+          7,
+          8,
+          9
+        ],
+        "check": "At the 8-line boundary, the warning is limited to Ravi's adapter. Her adapter is twelve volts, his nine volts. These are voltage ratings, explicitly not charging times. Correct pronouns may remain pronouns; naming their referents is not required."
+      },
+      {
+        "ids": [
+          10,
+          11
+        ],
+        "check": "Meena's Nova costs 250 rupees including its cable. Ravi paid the same 250 rupees for Pulse, with a separately charged cable. Do not say both cables were included or invent its price here."
+      },
+      {
+        "ids": [
+          11,
+          12,
+          13
+        ],
+        "check": "At the second 6-line boundary, he/his still refers to Ravi and it to his extra cable. He did not claim it was free; preserve that reported-claim negation. Another 50 rupees is only a possibility, and his total remains unconfirmed; do not assert a definite 300-rupee total."
+      },
+      {
+        "ids": [
+          14,
+          15
+        ],
+        "check": "Repeating tomorrow is conditional on both adapters staying cool, not a promise. Neither model may yet be described as proven safe. Preserve the temporal limit and the negation."
+      },
+      {
+        "ids": [
+          1,
+          2,
+          10,
+          11
+        ],
+        "check": "Reuse Pulse/పల్స్ and Nova/నోవా consistently as model names, with natural Telugu suffixes allowed; do not translate Pulse as heartbeat."
+      }
+    ],
+    "comparison_notes": [
+      "All source sentences are complete and original. One speaker and contiguous five-second windows make the intended boundaries deterministic: 6/30 gives ids 0-5, 6-11, 12-15; 8/45 gives ids 0-7, 8-15; 30/150 gives one scene.",
+      "Retain the same brief, models, effort, requested-tier policy, local validation and meaning review for every arm. Preserve production before/after context and lane behavior.",
+      "The expectations are a separate evaluation checklist. Do not include them in the translator's or production reviewer's prompts.",
+      "Check every voiced or selected tier, not just full. A generic automated C result alone does not establish these expectations or native-speaker naturalness.",
+      "The timings are a controlled batching fixture, not measured source speech or evidence about synthesis speed. Do not discard meaning to satisfy them."
+    ],
+    "units": [
+      {
+        "unit": {
+          "id": 0,
+          "speaker": "S1",
+          "start": 0.0,
+          "end": 5.0,
+          "text": "Ravi and Meena are testing two adapters before the repair.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 5.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 1,
+          "speaker": "S1",
+          "start": 5.0,
+          "end": 10.0,
+          "text": "A technician called the blue model Pulse and the red model Nova.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 10.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 2,
+          "speaker": "S1",
+          "start": 10.0,
+          "end": 15.0,
+          "text": "Pulse charges the phone faster, but Nova uses less power.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 15.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 3,
+          "speaker": "S1",
+          "start": 15.0,
+          "end": 20.0,
+          "text": "Neither model repairs a damaged battery.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 20.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 4,
+          "speaker": "S1",
+          "start": 20.0,
+          "end": 25.0,
+          "text": "Ravi received the blue adapter, and Meena kept the red one.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 25.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 5,
+          "speaker": "S1",
+          "start": 25.0,
+          "end": 30.0,
+          "text": "The blue adapter may overheat after about twenty minutes.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 30.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 6,
+          "speaker": "S1",
+          "start": 30.0,
+          "end": 35.0,
+          "text": "He must unplug it if that happens, but she should keep hers connected.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 35.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 7,
+          "speaker": "S1",
+          "start": 35.0,
+          "end": 40.0,
+          "text": "That warning applies only to Ravi's adapter, not to both of them.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 40.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 8,
+          "speaker": "S1",
+          "start": 40.0,
+          "end": 45.0,
+          "text": "Hers is rated for twelve volts; his is rated for nine.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 45.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 9,
+          "speaker": "S1",
+          "start": 45.0,
+          "end": 50.0,
+          "text": "Those are voltage ratings, not charging times.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 50.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 10,
+          "speaker": "S1",
+          "start": 50.0,
+          "end": 55.0,
+          "text": "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 55.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 11,
+          "speaker": "S1",
+          "start": 55.0,
+          "end": 60.0,
+          "text": "Ravi paid the same amount for Pulse, but the cable was extra.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 60.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 12,
+          "speaker": "S1",
+          "start": 60.0,
+          "end": 65.0,
+          "text": "He did not say that the extra cable was free.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 65.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 13,
+          "speaker": "S1",
+          "start": 65.0,
+          "end": 70.0,
+          "text": "It might cost another fifty rupees, so his total is not confirmed.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 70.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 14,
+          "speaker": "S1",
+          "start": 70.0,
+          "end": 75.0,
+          "text": "If both adapters stay cool, they can repeat the test tomorrow.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": 75.0,
+        "speech_s": 4.5,
+        "music": false
+      },
+      {
+        "unit": {
+          "id": 15,
+          "speaker": "S1",
+          "start": 75.0,
+          "end": 80.0,
+          "text": "Until then, do not describe either model as proven safe.",
+          "words": [],
+          "breaks": [],
+          "anchors": [],
+          "cut_off": false
+        },
+        "next_start": null,
+        "speech_s": 4.5,
+        "music": false
+      }
+    ],
+    "models": {
+      "scene": "claude-opus-5-5",
+      "review": "claude-sonnet-5",
+      "effort": "medium",
+      "review_effort": "high",
+      "light_effort": "low"
+    },
+    "voices": {
+      "S1": {
+        "key": {
+          "voice": "S1",
+          "cfg": 0.5,
+          "exaggeration": 0.5,
+          "reference": "v1:c31853daa64aab4d"
+        },
+        "calibration": [
+          [
+            "నిజం చెప్పాలంటే, ఈ టాపిక్ చాలా ఇంట్రెస్టింగ్.",
+            2.24
+          ],
+          [
+            "మన ఛానెల్లో ఇంతకు ముందు ఇలాంటి వీడియో ఒకటి చేశాం, లింక్ కింద ఇస్తాను.",
+            3.72
+          ],
+          [
+            "ఆఫీస్ నుంచి ఇంటికి వచ్చాక కూడా మెయిల్స్ చెక్ చేస్తూ ఉంటే, మన మైండ్కి అసలు రెస్ట్ దొరకదు, అందుకే ఫోన్ పక్కన పెట్టేయాలి.",
+            5.28
+          ]
+        ]
+      }
+    },
+    "registry": {
+      "turns": [
+        [
+          "S1",
+          0.0,
+          5.0
+        ],
+        [
+          "S1",
+          5.0,
+          10.0
+        ],
+        [
+          "S1",
+          10.0,
+          15.0
+        ],
+        [
+          "S1",
+          15.0,
+          20.0
+        ],
+        [
+          "S1",
+          20.0,
+          25.0
+        ],
+        [
+          "S1",
+          25.0,
+          30.0
+        ],
+        [
+          "S1",
+          30.0,
+          35.0
+        ],
+        [
+          "S1",
+          35.0,
+          40.0
+        ],
+        [
+          "S1",
+          40.0,
+          45.0
+        ],
+        [
+          "S1",
+          45.0,
+          50.0
+        ],
+        [
+          "S1",
+          50.0,
+          55.0
+        ],
+        [
+          "S1",
+          55.0,
+          60.0
+        ],
+        [
+          "S1",
+          60.0,
+          65.0
+        ],
+        [
+          "S1",
+          65.0,
+          70.0
+        ],
+        [
+          "S1",
+          70.0,
+          75.0
+        ],
+        [
+          "S1",
+          75.0,
+          80.0
+        ]
+      ],
+      "exclusive": [
+        [
+          "S1",
+          0.0,
+          5.0
+        ],
+        [
+          "S1",
+          5.0,
+          10.0
+        ],
+        [
+          "S1",
+          10.0,
+          15.0
+        ],
+        [
+          "S1",
+          15.0,
+          20.0
+        ],
+        [
+          "S1",
+          20.0,
+          25.0
+        ],
+        [
+          "S1",
+          25.0,
+          30.0
+        ],
+        [
+          "S1",
+          30.0,
+          35.0
+        ],
+        [
+          "S1",
+          35.0,
+          40.0
+        ],
+        [
+          "S1",
+          40.0,
+          45.0
+        ],
+        [
+          "S1",
+          45.0,
+          50.0
+        ],
+        [
+          "S1",
+          50.0,
+          55.0
+        ],
+        [
+          "S1",
+          55.0,
+          60.0
+        ],
+        [
+          "S1",
+          60.0,
+          65.0
+        ],
+        [
+          "S1",
+          65.0,
+          70.0
+        ],
+        [
+          "S1",
+          70.0,
+          75.0
+        ],
+        [
+          "S1",
+          75.0,
+          80.0
+        ]
+      ],
+      "stray": [],
+      "centroids": {}
+    },
+    "calibration_provenance": {
+      "fixture": "/Users/shankarpandala/projects/LazyDub/scripts/fixtures/translation-scenes.json",
+      "sha256": "232c1f69b4b948b287104ca3cb78cf21310cd027378cd150930cb75075e5e963",
+      "note": "Fixed initial calibrated pace; original text has no corresponding audio"
+    }
+  },
+  "fixture_sha256": "e07e1f60ef45608b5ad286f62fb3bde6f368aea2cbe522e8fa3254197cda3004",
+  "script_sha256": "5e8aff49a06fe27c58643142f27e75403f5ccedee6e459b35a271e752f3ccd52",
+  "git_head": "7131a0ad4941ddd2ea2c73afaa26e00230e5b57d",
+  "source_sha256": {
+    "engine/src/maata_engine/render.py": "ed33a5654b757dd54b4495b2f4213a1634068eaa150fd787c5bc5e207c5a5dd9",
+    "engine/src/maata_engine/dubber.py": "385fcd98561a9d533c61796bdd4f37c7099a29ea6a32852abd4f73d70ee30ba7",
+    "engine/src/maata_engine/backends/claude_translator.py": "ac10df733726d61b7d8721f17ba66a24eabd7a1a89df1a258b243abc00d5899a",
+    "engine/src/maata_engine/text/scene_prompt.py": "dd07994c3a296d5a1e69e25ccb775e3aed6af4cc9109c9dd31ae8255a4f62774",
+    "engine/models.lock.json": "fe30352bbeb05b55b5e22942247e992a19a7bbd2e706c1a38d557d6d7aceab25",
+    "engine/uv.lock": "c98c48af08a60dcf738e8b87fd2d223806c202c4f49a9e84d32e0b4a1467426d"
+  },
+  "machine": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.11",
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "prompt_hash": "f5430ea43db1",
+  "prompt_version": "scene-v4",
+  "review_hash": "8daa0f76384f",
+  "lanes": 3,
+  "plan": {
+    "A": {
+      "cap_seconds": 150.0,
+      "cap_lines": 30,
+      "lanes": [
+        [],
+        [],
+        [
+          1
+        ]
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "request": {
+            "scene": 1,
+            "lines": [
+              {
+                "id": 0,
+                "speaker": "S1",
+                "en": "Ravi and Meena are testing two adapters before the repair.",
+                "start": 0.0,
+                "end": 5.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 1,
+                "speaker": "S1",
+                "en": "A technician called the blue model Pulse and the red model Nova.",
+                "start": 5.0,
+                "end": 10.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 2,
+                "speaker": "S1",
+                "en": "Pulse charges the phone faster, but Nova uses less power.",
+                "start": 10.0,
+                "end": 15.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 3,
+                "speaker": "S1",
+                "en": "Neither model repairs a damaged battery.",
+                "start": 15.0,
+                "end": 20.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 4,
+                "speaker": "S1",
+                "en": "Ravi received the blue adapter, and Meena kept the red one.",
+                "start": 20.0,
+                "end": 25.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 5,
+                "speaker": "S1",
+                "en": "The blue adapter may overheat after about twenty minutes.",
+                "start": 25.0,
+                "end": 30.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 6,
+                "speaker": "S1",
+                "en": "He must unplug it if that happens, but she should keep hers connected.",
+                "start": 30.0,
+                "end": 35.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 7,
+                "speaker": "S1",
+                "en": "That warning applies only to Ravi's adapter, not to both of them.",
+                "start": 35.0,
+                "end": 40.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 8,
+                "speaker": "S1",
+                "en": "Hers is rated for twelve volts; his is rated for nine.",
+                "start": 40.0,
+                "end": 45.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 9,
+                "speaker": "S1",
+                "en": "Those are voltage ratings, not charging times.",
+                "start": 45.0,
+                "end": 50.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 10,
+                "speaker": "S1",
+                "en": "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                "start": 50.0,
+                "end": 55.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 11,
+                "speaker": "S1",
+                "en": "Ravi paid the same amount for Pulse, but the cable was extra.",
+                "start": 55.0,
+                "end": 60.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 12,
+                "speaker": "S1",
+                "en": "He did not say that the extra cable was free.",
+                "start": 60.0,
+                "end": 65.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 13,
+                "speaker": "S1",
+                "en": "It might cost another fifty rupees, so his total is not confirmed.",
+                "start": 65.0,
+                "end": 70.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 14,
+                "speaker": "S1",
+                "en": "If both adapters stay cool, they can repeat the test tomorrow.",
+                "start": 70.0,
+                "end": 75.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 15,
+                "speaker": "S1",
+                "en": "Until then, do not describe either model as proven safe.",
+                "start": 75.0,
+                "end": 80.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [],
+            "context_after_en": [],
+            "deadline": null
+          }
+        }
+      ]
+    },
+    "B": {
+      "cap_seconds": 30.0,
+      "cap_lines": 6,
+      "lanes": [
+        [
+          1
+        ],
+        [
+          2
+        ],
+        [
+          3
+        ]
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "request": {
+            "scene": 1,
+            "lines": [
+              {
+                "id": 0,
+                "speaker": "S1",
+                "en": "Ravi and Meena are testing two adapters before the repair.",
+                "start": 0.0,
+                "end": 5.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 1,
+                "speaker": "S1",
+                "en": "A technician called the blue model Pulse and the red model Nova.",
+                "start": 5.0,
+                "end": 10.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 2,
+                "speaker": "S1",
+                "en": "Pulse charges the phone faster, but Nova uses less power.",
+                "start": 10.0,
+                "end": 15.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 3,
+                "speaker": "S1",
+                "en": "Neither model repairs a damaged battery.",
+                "start": 15.0,
+                "end": 20.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 4,
+                "speaker": "S1",
+                "en": "Ravi received the blue adapter, and Meena kept the red one.",
+                "start": 20.0,
+                "end": 25.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 5,
+                "speaker": "S1",
+                "en": "The blue adapter may overheat after about twenty minutes.",
+                "start": 25.0,
+                "end": 30.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [],
+            "context_after_en": [
+              "He must unplug it if that happens, but she should keep hers connected.",
+              "That warning applies only to Ravi's adapter, not to both of them."
+            ],
+            "deadline": null
+          }
+        },
+        {
+          "scene": 2,
+          "request": {
+            "scene": 2,
+            "lines": [
+              {
+                "id": 6,
+                "speaker": "S1",
+                "en": "He must unplug it if that happens, but she should keep hers connected.",
+                "start": 30.0,
+                "end": 35.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 7,
+                "speaker": "S1",
+                "en": "That warning applies only to Ravi's adapter, not to both of them.",
+                "start": 35.0,
+                "end": 40.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 8,
+                "speaker": "S1",
+                "en": "Hers is rated for twelve volts; his is rated for nine.",
+                "start": 40.0,
+                "end": 45.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 9,
+                "speaker": "S1",
+                "en": "Those are voltage ratings, not charging times.",
+                "start": 45.0,
+                "end": 50.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 10,
+                "speaker": "S1",
+                "en": "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                "start": 50.0,
+                "end": 55.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 11,
+                "speaker": "S1",
+                "en": "Ravi paid the same amount for Pulse, but the cable was extra.",
+                "start": 55.0,
+                "end": 60.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [
+              [
+                "Neither model repairs a damaged battery.",
+                null
+              ],
+              [
+                "Ravi received the blue adapter, and Meena kept the red one.",
+                null
+              ],
+              [
+                "The blue adapter may overheat after about twenty minutes.",
+                null
+              ]
+            ],
+            "context_after_en": [
+              "He did not say that the extra cable was free.",
+              "It might cost another fifty rupees, so his total is not confirmed."
+            ],
+            "deadline": null
+          }
+        },
+        {
+          "scene": 3,
+          "request": {
+            "scene": 3,
+            "lines": [
+              {
+                "id": 12,
+                "speaker": "S1",
+                "en": "He did not say that the extra cable was free.",
+                "start": 60.0,
+                "end": 65.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 13,
+                "speaker": "S1",
+                "en": "It might cost another fifty rupees, so his total is not confirmed.",
+                "start": 65.0,
+                "end": 70.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 14,
+                "speaker": "S1",
+                "en": "If both adapters stay cool, they can repeat the test tomorrow.",
+                "start": 70.0,
+                "end": 75.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 15,
+                "speaker": "S1",
+                "en": "Until then, do not describe either model as proven safe.",
+                "start": 75.0,
+                "end": 80.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [
+              [
+                "Those are voltage ratings, not charging times.",
+                null
+              ],
+              [
+                "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                null
+              ],
+              [
+                "Ravi paid the same amount for Pulse, but the cable was extra.",
+                null
+              ]
+            ],
+            "context_after_en": [],
+            "deadline": null
+          }
+        }
+      ]
+    }
+  },
+  "order": "AB",
+  "runs": [
+    {
+      "arm": "A",
+      "cap_seconds": 150.0,
+      "cap_lines": 30,
+      "mock": false,
+      "local_cache": "fresh empty temporary directory",
+      "status": "completed",
+      "hygiene_start": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "cli_health": {
+        "installed": true,
+        "version": "2.1.282",
+        "signedIn": true,
+        "models": [
+          "claude-sonnet-5",
+          "claude-opus-5-5"
+        ],
+        "model": "claude-opus-5-5",
+        "problem": null,
+        "message": ""
+      },
+      "translation_stage_seconds": 108.43356879200019,
+      "hygiene_end": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "valid_hygiene": true,
+      "first_scene_ready_seconds": 108.43353154200031,
+      "first_contiguous_ready_seconds": 108.43353154200031,
+      "all_text_ready_seconds": 108.43353154200031,
+      "first_audio_seconds": null,
+      "whole_video_finish_seconds": null,
+      "ready_by_scene": {
+        "1": 108.43353154200031
+      },
+      "contiguous_ready": [
+        {
+          "elapsed_s": 108.43353154200031,
+          "scenes": 1,
+          "lines": 16,
+          "source_until_s": 80.0
+        }
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "ids": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        }
+      ],
+      "coverage": {
+        "C": 16,
+        "m": 0,
+        "P": 0,
+        "E": 0,
+        "otherTier": 0,
+        "unreviewed": 0,
+        "skipped": 0,
+        "lines": 16
+      },
+      "skipped": {},
+      "model_mismatch": false,
+      "calls": 2,
+      "usage": {
+        "input_tokens": 6,
+        "output_tokens": 15268,
+        "cache_read_tokens": 5775,
+        "cache_creation_tokens": 13687,
+        "cache_1h_tokens": 13687
+      },
+      "events": [
+        {
+          "event": "claude",
+          "call": "scene",
+          "requested": "claude-opus-5-5",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "attempt": 1,
+          "wall_s": 93.95,
+          "startup_s": 0.19,
+          "input_tokens": 2,
+          "cache_read_tokens": 1070,
+          "cache_creation_tokens": 9674,
+          "cache_1h_tokens": 9674,
+          "output_tokens": 13371,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 1,
+          "lines": 16,
+          "elapsed_s": 93.953299
+        },
+        {
+          "event": "translate",
+          "call": "scene",
+          "scene": 1,
+          "lines": 16,
+          "cached": 0,
+          "answered": 16,
+          "skipped": [],
+          "calls": 1,
+          "wall_s": 93.96,
+          "dropped": false,
+          "model": "claude-opus-5-5",
+          "prompt_hash": "f5430ea43db1",
+          "brief": 1,
+          "error": null,
+          "elapsed_s": 93.956443
+        },
+        {
+          "event": "review_picks",
+          "scene": 1,
+          "chosen": {
+            "0": "fuller",
+            "1": "fuller",
+            "2": "fuller",
+            "3": "fuller",
+            "4": "fuller",
+            "5": "fuller",
+            "6": "full",
+            "7": "fuller",
+            "8": "fuller",
+            "9": "fuller",
+            "10": "fuller",
+            "11": "fuller",
+            "12": "fuller",
+            "13": "fuller",
+            "14": "fuller",
+            "15": "fuller"
+          },
+          "elapsed_s": 93.95710024999971
+        },
+        {
+          "event": "claude",
+          "call": "review",
+          "requested": "claude-sonnet-5",
+          "model": "claude-sonnet-5",
+          "effort": "high",
+          "attempt": 1,
+          "wall_s": 14.46,
+          "startup_s": 0.18,
+          "input_tokens": 4,
+          "cache_read_tokens": 4705,
+          "cache_creation_tokens": 4013,
+          "cache_1h_tokens": 4013,
+          "output_tokens": 1897,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 1,
+          "lines": 16,
+          "elapsed_s": 108.431283
+        },
+        {
+          "event": "review",
+          "scene": 1,
+          "lines": 16,
+          "stored": 0,
+          "classes": {
+            "C": 16,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "retranslated": [],
+          "replaced": [],
+          "unreviewed": [],
+          "calls": 1,
+          "wall_s": 14.47,
+          "model": "claude-sonnet-5",
+          "review_hash": "8daa0f76384f",
+          "error": null,
+          "elapsed_s": 108.432204
+        },
+        {
+          "event": "scene",
+          "scene": 1,
+          "a": 0.0,
+          "b": 80.0,
+          "lines": 16,
+          "translated": 16,
+          "cached": 0,
+          "fits": 0,
+          "cmi": 34.1,
+          "context_te": 0,
+          "brief": 1,
+          "coverage": {
+            "C": 16,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "other_tier": 0,
+          "unreviewed": 0,
+          "wall_s": 93.96,
+          "ready_s": 108.43,
+          "elapsed_s": 108.433493
+        }
+      ],
+      "requests": [
+        {
+          "elapsed_s": 0.0007388329995592358,
+          "request": {
+            "scene": 1,
+            "lines": [
+              {
+                "id": 0,
+                "speaker": "S1",
+                "en": "Ravi and Meena are testing two adapters before the repair.",
+                "start": 0.0,
+                "end": 5.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 1,
+                "speaker": "S1",
+                "en": "A technician called the blue model Pulse and the red model Nova.",
+                "start": 5.0,
+                "end": 10.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 2,
+                "speaker": "S1",
+                "en": "Pulse charges the phone faster, but Nova uses less power.",
+                "start": 10.0,
+                "end": 15.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 3,
+                "speaker": "S1",
+                "en": "Neither model repairs a damaged battery.",
+                "start": 15.0,
+                "end": 20.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 4,
+                "speaker": "S1",
+                "en": "Ravi received the blue adapter, and Meena kept the red one.",
+                "start": 20.0,
+                "end": 25.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 5,
+                "speaker": "S1",
+                "en": "The blue adapter may overheat after about twenty minutes.",
+                "start": 25.0,
+                "end": 30.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 6,
+                "speaker": "S1",
+                "en": "He must unplug it if that happens, but she should keep hers connected.",
+                "start": 30.0,
+                "end": 35.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 7,
+                "speaker": "S1",
+                "en": "That warning applies only to Ravi's adapter, not to both of them.",
+                "start": 35.0,
+                "end": 40.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 8,
+                "speaker": "S1",
+                "en": "Hers is rated for twelve volts; his is rated for nine.",
+                "start": 40.0,
+                "end": 45.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 9,
+                "speaker": "S1",
+                "en": "Those are voltage ratings, not charging times.",
+                "start": 45.0,
+                "end": 50.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 10,
+                "speaker": "S1",
+                "en": "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                "start": 50.0,
+                "end": 55.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 11,
+                "speaker": "S1",
+                "en": "Ravi paid the same amount for Pulse, but the cable was extra.",
+                "start": 55.0,
+                "end": 60.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 12,
+                "speaker": "S1",
+                "en": "He did not say that the extra cable was free.",
+                "start": 60.0,
+                "end": 65.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 13,
+                "speaker": "S1",
+                "en": "It might cost another fifty rupees, so his total is not confirmed.",
+                "start": 65.0,
+                "end": 70.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 14,
+                "speaker": "S1",
+                "en": "If both adapters stay cool, they can repeat the test tomorrow.",
+                "start": 70.0,
+                "end": 75.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 15,
+                "speaker": "S1",
+                "en": "Until then, do not describe either model as proven safe.",
+                "start": 75.0,
+                "end": 80.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [],
+            "context_after_en": [],
+            "deadline": null
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "id": 0,
+          "full": {
+            "spoken": "రవి, మీనా రిపేర్ కి ముందు రెండు అడాప్టర్లను టెస్ట్ చేస్తున్నారు.",
+            "english": [
+              {
+                "i": 2,
+                "en": "repair"
+              },
+              {
+                "i": 6,
+                "en": "adapters"
+              },
+              {
+                "i": 7,
+                "en": "test"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవి ఇంకా మీనా రిపేర్ కి ముందు రెండు అడాప్టర్లను టెస్ట్ చేస్తున్నారు.",
+            "english": [
+              {
+                "i": 3,
+                "en": "repair"
+              },
+              {
+                "i": 7,
+                "en": "adapters"
+              },
+              {
+                "i": 8,
+                "en": "test"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 22.0,
+            "fuller": 24.0
+          },
+          "predicted_seconds": {
+            "full": 3.0299049790954005,
+            "fuller": 3.234694032687191
+          }
+        },
+        {
+          "id": 1,
+          "full": {
+            "spoken": "ఒక టెక్నీషియన్ బ్లూ మోడల్ ని పల్స్ అని, రెడ్ మోడల్ ని నోవా అని పిలిచారు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "technician"
+              },
+              {
+                "i": 2,
+                "en": "blue"
+              },
+              {
+                "i": 3,
+                "en": "model"
+              },
+              {
+                "i": 5,
+                "en": "Pulse"
+              },
+              {
+                "i": 7,
+                "en": "red"
+              },
+              {
+                "i": 8,
+                "en": "model"
+              },
+              {
+                "i": 10,
+                "en": "Nova"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒక టెక్నీషియన్ ఆ బ్లూ మోడల్ ని పల్స్ అని, ఆ రెడ్ మోడల్ ని నోవా అని పిలిచారు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "technician"
+              },
+              {
+                "i": 3,
+                "en": "blue"
+              },
+              {
+                "i": 4,
+                "en": "model"
+              },
+              {
+                "i": 6,
+                "en": "Pulse"
+              },
+              {
+                "i": 9,
+                "en": "red"
+              },
+              {
+                "i": 10,
+                "en": "model"
+              },
+              {
+                "i": 12,
+                "en": "Nova"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 27.5,
+            "fuller": 29.5
+          },
+          "predicted_seconds": {
+            "full": 3.5930748764728238,
+            "fuller": 3.797863930064614
+          }
+        },
+        {
+          "id": 2,
+          "full": {
+            "spoken": "పల్స్ ఫోన్ని ఇంకా త్వరగా ఛార్జ్ చేస్తుంది, కానీ నోవా తక్కువ పవర్ వాడుతుంది.",
+            "english": [
+              {
+                "i": 0,
+                "en": "Pulse"
+              },
+              {
+                "i": 1,
+                "en": "phone"
+              },
+              {
+                "i": 4,
+                "en": "charge"
+              },
+              {
+                "i": 7,
+                "en": "Nova"
+              },
+              {
+                "i": 9,
+                "en": "power"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "పల్స్ అయితే ఫోన్ని ఇంకా త్వరగా ఛార్జ్ చేస్తుంది, కానీ నోవా తక్కువ పవర్ వాడుతుంది.",
+            "english": [
+              {
+                "i": 0,
+                "en": "Pulse"
+              },
+              {
+                "i": 2,
+                "en": "phone"
+              },
+              {
+                "i": 5,
+                "en": "charge"
+              },
+              {
+                "i": 8,
+                "en": "Nova"
+              },
+              {
+                "i": 10,
+                "en": "power"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              3,
+              8
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 26.5,
+            "fuller": 29.5
+          },
+          "predicted_seconds": {
+            "full": 3.4906803496769285,
+            "fuller": 3.797863930064614
+          }
+        },
+        {
+          "id": 3,
+          "full": {
+            "spoken": "ఏ మోడల్ కూడా డ్యామేజ్ అయిన బ్యాటరీని రిపేర్ చేయదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "model"
+              },
+              {
+                "i": 3,
+                "en": "damage"
+              },
+              {
+                "i": 5,
+                "en": "battery"
+              },
+              {
+                "i": 6,
+                "en": "repair"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రెండు మోడల్స్ లో ఏదీ కూడా డ్యామేజ్ అయిన బ్యాటరీని రిపేర్ చేయదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "models"
+              },
+              {
+                "i": 5,
+                "en": "damage"
+              },
+              {
+                "i": 7,
+                "en": "battery"
+              },
+              {
+                "i": 8,
+                "en": "repair"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              7
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 20.5,
+            "fuller": 24.5
+          },
+          "predicted_seconds": {
+            "full": 2.876313188901558,
+            "fuller": 3.2858912960851385
+          }
+        },
+        {
+          "id": 4,
+          "full": {
+            "spoken": "రవికి బ్లూ అడాప్టర్ వచ్చింది, మీనా రెడ్ దాన్ని ఉంచుకుంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 5,
+                "en": "red"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవికి బ్లూ అడాప్టర్ వచ్చింది, ఇక మీనా ఏమో రెడ్ అడాప్టర్ ని తన దగ్గరే ఉంచుకుంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "red"
+              },
+              {
+                "i": 8,
+                "en": "adapter"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 20.0,
+            "fuller": 31.5
+          },
+          "predicted_seconds": {
+            "full": 2.8251159255036105,
+            "fuller": 4.002652983656404
+          }
+        },
+        {
+          "id": 5,
+          "full": {
+            "spoken": "బ్లూ అడాప్టర్ దాదాపు ఇరవై నిమిషాల తర్వాత ఓవర్హీట్ అవ్వొచ్చు.",
+            "english": [
+              {
+                "i": 0,
+                "en": "blue"
+              },
+              {
+                "i": 1,
+                "en": "adapter"
+              },
+              {
+                "i": 6,
+                "en": "overheat"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ బ్లూ అడాప్టర్ దాదాపు ఇరవై నిమిషాల తర్వాత ఓవర్హీట్ అయ్యే ఛాన్స్ ఉంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "overheat"
+              },
+              {
+                "i": 9,
+                "en": "chance"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 24.0,
+            "fuller": 27.5
+          },
+          "predicted_seconds": {
+            "full": 3.234694032687191,
+            "fuller": 3.5930748764728238
+          }
+        },
+        {
+          "id": 6,
+          "full": {
+            "spoken": "అలా అయితే అతను దాన్ని తప్పకుండా అన్ప్లగ్ చేయాలి, కానీ ఆమె తనది కనెక్ట్ చేసే ఉంచాలి.",
+            "english": [
+              {
+                "i": 5,
+                "en": "unplug"
+              },
+              {
+                "i": 10,
+                "en": "connect"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒకవేళ అలా జరిగితే, అతను దాన్ని తప్పకుండా అన్ప్లగ్ చేయాలి, కానీ ఆమె మాత్రం తన అడాప్టర్ ని కనెక్ట్ చేసే ఉంచాలి.",
+            "english": [
+              {
+                "i": 6,
+                "en": "unplug"
+              },
+              {
+                "i": 12,
+                "en": "adapter"
+              },
+              {
+                "i": 14,
+                "en": "connect"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              4
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [
+            "negation: 0 in the English, 1 in the Telugu"
+          ],
+          "chosen_tier": "full",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 34.0,
+            "fuller": 44.5
+          },
+          "predicted_seconds": {
+            "full": 4.258639300646142,
+            "fuller": 5.333781832003041
+          }
+        },
+        {
+          "id": 7,
+          "full": {
+            "spoken": "ఆ వార్నింగ్ రవి అడాప్టర్ కి మాత్రమే అప్లై అవుతుంది, రెండింటికీ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "warning"
+              },
+              {
+                "i": 3,
+                "en": "adapter"
+              },
+              {
+                "i": 6,
+                "en": "apply"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ వార్నింగ్ కేవలం రవి అడాప్టర్ కి మాత్రమే అప్లై అవుతుంది, వాళ్ళిద్దరి అడాప్టర్లకీ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "warning"
+              },
+              {
+                "i": 4,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "apply"
+              },
+              {
+                "i": 10,
+                "en": "adapters"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              5,
+              9
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 25.0,
+            "fuller": 33.0
+          },
+          "predicted_seconds": {
+            "full": 3.337088559483086,
+            "fuller": 4.156244773850247
+          }
+        },
+        {
+          "id": 8,
+          "full": {
+            "spoken": "ఆమెది పన్నెండు వోల్ట్స్ రేటింగ్; అతనిది తొమ్మిది వోల్ట్స్.",
+            "english": [
+              {
+                "i": 2,
+                "en": "volts"
+              },
+              {
+                "i": 3,
+                "en": "rating"
+              },
+              {
+                "i": 6,
+                "en": "volts"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆమె అడాప్టర్ రేటింగ్ పన్నెండు వోల్ట్స్; అతని అడాప్టర్ రేటింగ్ తొమ్మిది వోల్ట్స్.",
+            "english": [
+              {
+                "i": 1,
+                "en": "adapter"
+              },
+              {
+                "i": 2,
+                "en": "rating"
+              },
+              {
+                "i": 4,
+                "en": "volts"
+              },
+              {
+                "i": 6,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "rating"
+              },
+              {
+                "i": 9,
+                "en": "volts"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              1,
+              5
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 18.5,
+            "fuller": 26.0
+          },
+          "predicted_seconds": {
+            "full": 2.6715241353097676,
+            "fuller": 3.4394830862789814
+          }
+        },
+        {
+          "id": 9,
+          "full": {
+            "spoken": "అవి వోల్టేజ్ రేటింగ్స్, ఛార్జింగ్ టైం కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "voltage"
+              },
+              {
+                "i": 2,
+                "en": "ratings"
+              },
+              {
+                "i": 3,
+                "en": "charging"
+              },
+              {
+                "i": 4,
+                "en": "time"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "అవన్నీ వోల్టేజ్ రేటింగ్స్, ఛార్జింగ్ కి పట్టే టైం కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "voltage"
+              },
+              {
+                "i": 2,
+                "en": "ratings"
+              },
+              {
+                "i": 3,
+                "en": "charging"
+              },
+              {
+                "i": 6,
+                "en": "time"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              1
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 12.5,
+            "fuller": 16.5
+          },
+          "predicted_seconds": {
+            "full": 2.057156974534397,
+            "fuller": 2.4667350817179776
+          }
+        },
+        {
+          "id": 10,
+          "full": {
+            "spoken": "మీనా కేబుల్ తో కలిపి నోవాకి రెండు వందల యాభై రూపాయలు కట్టింది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "cable"
+              },
+              {
+                "i": 4,
+                "en": "Nova"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "మీనా నోవా కోసం రెండు వందల యాభై రూపాయలు కట్టింది, అందులో కేబుల్ కూడా కలిపే.",
+            "english": [
+              {
+                "i": 1,
+                "en": "Nova"
+              },
+              {
+                "i": 9,
+                "en": "cable"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 25.5,
+            "fuller": 30.5
+          },
+          "predicted_seconds": {
+            "full": 3.3882858228810337,
+            "fuller": 3.900258456860509
+          }
+        },
+        {
+          "id": 11,
+          "full": {
+            "spoken": "రవి కూడా పల్స్ కి అంతే కట్టాడు, కానీ కేబుల్ ఎక్స్ట్రా.",
+            "english": [
+              {
+                "i": 2,
+                "en": "Pulse"
+              },
+              {
+                "i": 7,
+                "en": "cable"
+              },
+              {
+                "i": 8,
+                "en": "extra"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవి కూడా పల్స్ కోసం సేమ్ అమౌంట్ కట్టాడు, కానీ కేబుల్ మాత్రం ఎక్స్ట్రా.",
+            "english": [
+              {
+                "i": 2,
+                "en": "Pulse"
+              },
+              {
+                "i": 4,
+                "en": "same"
+              },
+              {
+                "i": 5,
+                "en": "amount"
+              },
+              {
+                "i": 8,
+                "en": "cable"
+              },
+              {
+                "i": 10,
+                "en": "extra"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              8
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 18.0,
+            "fuller": 23.0
+          },
+          "predicted_seconds": {
+            "full": 2.6203268719118205,
+            "fuller": 3.1322995058912957
+          }
+        },
+        {
+          "id": 12,
+          "full": {
+            "spoken": "ఎక్స్ట్రా కేబుల్ ఫ్రీ అని అతను చెప్పలేదు.",
+            "english": [
+              {
+                "i": 0,
+                "en": "extra"
+              },
+              {
+                "i": 1,
+                "en": "cable"
+              },
+              {
+                "i": 2,
+                "en": "free"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ ఎక్స్ట్రా కేబుల్ ఫ్రీ అని మాత్రం అతను చెప్పలేదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "extra"
+              },
+              {
+                "i": 2,
+                "en": "cable"
+              },
+              {
+                "i": 3,
+                "en": "free"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              5
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 14.5,
+            "fuller": 17.5
+          },
+          "predicted_seconds": {
+            "full": 2.2619460281261876,
+            "fuller": 2.5691296085138724
+          }
+        },
+        {
+          "id": 13,
+          "full": {
+            "spoken": "దానికి ఇంకో యాభై రూపాయలు అవ్వొచ్చు, అందుకే అతని టోటల్ ఇంకా కన్ఫర్మ్ కాలేదు.",
+            "english": [
+              {
+                "i": 7,
+                "en": "total"
+              },
+              {
+                "i": 9,
+                "en": "confirm"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "దానికి బహుశా ఇంకో యాభై రూపాయలు అవ్వొచ్చు, అందుకే అతని టోటల్ అమౌంట్ ఇంకా కన్ఫర్మ్ కాలేదు.",
+            "english": [
+              {
+                "i": 8,
+                "en": "total"
+              },
+              {
+                "i": 9,
+                "en": "amount"
+              },
+              {
+                "i": 11,
+                "en": "confirm"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              10
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 30.0,
+            "fuller": 35.5
+          },
+          "predicted_seconds": {
+            "full": 3.8490611934625614,
+            "fuller": 4.412231090839985
+          }
+        },
+        {
+          "id": 14,
+          "full": {
+            "spoken": "రెండు అడాప్టర్లూ కూల్గా ఉంటే, రేపు మళ్ళీ టెస్ట్ చేయొచ్చు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "adapters"
+              },
+              {
+                "i": 2,
+                "en": "cool"
+              },
+              {
+                "i": 6,
+                "en": "test"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒకవేళ రెండు అడాప్టర్లూ కూల్గానే ఉంటే, వాళ్ళు రేపు ఆ టెస్ట్ మళ్ళీ చేయొచ్చు.",
+            "english": [
+              {
+                "i": 2,
+                "en": "adapters"
+              },
+              {
+                "i": 3,
+                "en": "cool"
+              },
+              {
+                "i": 8,
+                "en": "test"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 18.5,
+            "fuller": 26.5
+          },
+          "predicted_seconds": {
+            "full": 2.6715241353097676,
+            "fuller": 3.4906803496769285
+          }
+        },
+        {
+          "id": 15,
+          "full": {
+            "spoken": "అప్పటిదాకా, ఏ మోడల్ కూడా సేఫ్ అని ప్రూవ్ అయిందని చెప్పకండి.",
+            "english": [
+              {
+                "i": 2,
+                "en": "model"
+              },
+              {
+                "i": 4,
+                "en": "safe"
+              },
+              {
+                "i": 6,
+                "en": "prove"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "అప్పటివరకూ, ఈ రెండు మోడల్స్ లో ఏదీ కూడా సేఫ్ అని ప్రూవ్ అయిందని మాత్రం చెప్పకండి.",
+            "english": [
+              {
+                "i": 3,
+                "en": "models"
+              },
+              {
+                "i": 7,
+                "en": "safe"
+              },
+              {
+                "i": 9,
+                "en": "prove"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              8
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [
+            "negation: 1 in the English, 0 in the Telugu"
+          ],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 23.5,
+            "fuller": 31.5
+          },
+          "predicted_seconds": {
+            "full": 3.1834967692892433,
+            "fuller": 4.002652983656404
+          }
+        }
+      ],
+      "complete_output": true,
+      "quality_eligible": true,
+      "valid_timing": true,
+      "automated_quality_complete": true
+    },
+    {
+      "arm": "B",
+      "cap_seconds": 30.0,
+      "cap_lines": 6,
+      "mock": false,
+      "local_cache": "fresh empty temporary directory",
+      "status": "completed",
+      "hygiene_start": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "cli_health": {
+        "installed": true,
+        "version": "2.1.282",
+        "signedIn": true,
+        "models": [
+          "claude-sonnet-5",
+          "claude-opus-5-5"
+        ],
+        "model": "claude-opus-5-5",
+        "problem": null,
+        "message": ""
+      },
+      "translation_stage_seconds": 47.657411041999694,
+      "hygiene_end": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "valid_hygiene": true,
+      "first_scene_ready_seconds": 38.62020887499966,
+      "first_contiguous_ready_seconds": 47.6570602920001,
+      "all_text_ready_seconds": 47.6570602920001,
+      "first_audio_seconds": null,
+      "whole_video_finish_seconds": null,
+      "ready_by_scene": {
+        "3": 38.62020887499966,
+        "2": 46.461692667000534,
+        "1": 47.6570602920001
+      },
+      "contiguous_ready": [
+        {
+          "elapsed_s": 47.6570602920001,
+          "scenes": 3,
+          "lines": 16,
+          "source_until_s": 80.0
+        }
+      ],
+      "scenes": [
+        {
+          "scene": 1,
+          "ids": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "scene": 2,
+          "ids": [
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        {
+          "scene": 3,
+          "ids": [
+            12,
+            13,
+            14,
+            15
+          ]
+        }
+      ],
+      "coverage": {
+        "C": 16,
+        "m": 0,
+        "P": 0,
+        "E": 0,
+        "otherTier": 0,
+        "unreviewed": 0,
+        "skipped": 0,
+        "lines": 16
+      },
+      "skipped": {},
+      "model_mismatch": false,
+      "calls": 6,
+      "usage": {
+        "input_tokens": 14,
+        "output_tokens": 15763,
+        "cache_read_tokens": 31776,
+        "cache_creation_tokens": 9096,
+        "cache_1h_tokens": 9096
+      },
+      "events": [
+        {
+          "event": "claude",
+          "call": "scene",
+          "requested": "claude-opus-5-5",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "attempt": 1,
+          "wall_s": 25.01,
+          "startup_s": 0.21,
+          "input_tokens": 2,
+          "cache_read_tokens": 8636,
+          "cache_creation_tokens": 998,
+          "cache_1h_tokens": 998,
+          "output_tokens": 3281,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 3,
+          "lines": 4,
+          "elapsed_s": 25.015885
+        },
+        {
+          "event": "translate",
+          "call": "scene",
+          "scene": 3,
+          "lines": 4,
+          "cached": 0,
+          "answered": 4,
+          "skipped": [],
+          "calls": 1,
+          "wall_s": 25.02,
+          "dropped": false,
+          "model": "claude-opus-5-5",
+          "prompt_hash": "f5430ea43db1",
+          "brief": 1,
+          "error": null,
+          "elapsed_s": 25.016838
+        },
+        {
+          "event": "review_picks",
+          "scene": 3,
+          "chosen": {
+            "12": "fuller",
+            "13": "fuller",
+            "14": "fuller",
+            "15": "fuller"
+          },
+          "elapsed_s": 25.017038791999767
+        },
+        {
+          "event": "claude",
+          "call": "scene",
+          "requested": "claude-opus-5-5",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "attempt": 1,
+          "wall_s": 35.99,
+          "startup_s": 0.21,
+          "input_tokens": 2,
+          "cache_read_tokens": 8636,
+          "cache_creation_tokens": 1237,
+          "cache_1h_tokens": 1237,
+          "output_tokens": 4748,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 2,
+          "lines": 6,
+          "elapsed_s": 35.992882
+        },
+        {
+          "event": "translate",
+          "call": "scene",
+          "scene": 2,
+          "lines": 6,
+          "cached": 0,
+          "answered": 6,
+          "skipped": [],
+          "calls": 1,
+          "wall_s": 35.99,
+          "dropped": false,
+          "model": "claude-opus-5-5",
+          "prompt_hash": "f5430ea43db1",
+          "brief": 1,
+          "error": null,
+          "elapsed_s": 35.994112
+        },
+        {
+          "event": "review_picks",
+          "scene": 2,
+          "chosen": {
+            "6": "full",
+            "7": "fuller",
+            "8": "fuller",
+            "9": "fuller",
+            "10": "fuller",
+            "11": "fuller"
+          },
+          "elapsed_s": 35.994372625000324
+        },
+        {
+          "event": "claude",
+          "call": "scene",
+          "requested": "claude-opus-5-5",
+          "model": "claude-opus-5-5",
+          "effort": "medium",
+          "attempt": 1,
+          "wall_s": 37.59,
+          "startup_s": 0.21,
+          "input_tokens": 2,
+          "cache_read_tokens": 8636,
+          "cache_creation_tokens": 1159,
+          "cache_1h_tokens": 1159,
+          "output_tokens": 5087,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 1,
+          "lines": 6,
+          "elapsed_s": 37.59609
+        },
+        {
+          "event": "translate",
+          "call": "scene",
+          "scene": 1,
+          "lines": 6,
+          "cached": 0,
+          "answered": 6,
+          "skipped": [],
+          "calls": 1,
+          "wall_s": 37.6,
+          "dropped": false,
+          "model": "claude-opus-5-5",
+          "prompt_hash": "f5430ea43db1",
+          "brief": 1,
+          "error": null,
+          "elapsed_s": 37.597276
+        },
+        {
+          "event": "review_picks",
+          "scene": 1,
+          "chosen": {
+            "0": "fuller",
+            "1": "fuller",
+            "2": "fuller",
+            "3": "fuller",
+            "4": "fuller",
+            "5": "fuller"
+          },
+          "elapsed_s": 37.59752229199967
+        },
+        {
+          "event": "claude",
+          "call": "review",
+          "requested": "claude-sonnet-5",
+          "model": "claude-sonnet-5",
+          "effort": "high",
+          "attempt": 1,
+          "wall_s": 13.59,
+          "startup_s": 0.18,
+          "input_tokens": 2,
+          "cache_read_tokens": 1061,
+          "cache_creation_tokens": 1395,
+          "cache_1h_tokens": 1395,
+          "output_tokens": 720,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 3,
+          "lines": 4,
+          "elapsed_s": 38.619086
+        },
+        {
+          "event": "review",
+          "scene": 3,
+          "lines": 4,
+          "stored": 0,
+          "classes": {
+            "C": 4,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "retranslated": [],
+          "replaced": [],
+          "unreviewed": [],
+          "calls": 1,
+          "wall_s": 13.6,
+          "model": "claude-sonnet-5",
+          "review_hash": "8daa0f76384f",
+          "error": null,
+          "elapsed_s": 38.61972
+        },
+        {
+          "event": "scene",
+          "scene": 3,
+          "a": 60.0,
+          "b": 80.0,
+          "lines": 4,
+          "translated": 4,
+          "cached": 0,
+          "fits": 0,
+          "cmi": 26.8,
+          "context_te": 0,
+          "brief": 1,
+          "coverage": {
+            "C": 4,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "other_tier": 0,
+          "unreviewed": 0,
+          "wall_s": 25.02,
+          "ready_s": 38.62,
+          "elapsed_s": 38.620171
+        },
+        {
+          "event": "claude",
+          "call": "review",
+          "requested": "claude-sonnet-5",
+          "model": "claude-sonnet-5",
+          "effort": "high",
+          "attempt": 1,
+          "wall_s": 10.47,
+          "startup_s": 0.18,
+          "input_tokens": 4,
+          "cache_read_tokens": 3746,
+          "cache_creation_tokens": 2732,
+          "cache_1h_tokens": 2732,
+          "output_tokens": 1268,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 2,
+          "lines": 6,
+          "elapsed_s": 46.460583
+        },
+        {
+          "event": "review",
+          "scene": 2,
+          "lines": 6,
+          "stored": 0,
+          "classes": {
+            "C": 6,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "retranslated": [],
+          "replaced": [],
+          "unreviewed": [],
+          "calls": 1,
+          "wall_s": 10.47,
+          "model": "claude-sonnet-5",
+          "review_hash": "8daa0f76384f",
+          "error": null,
+          "elapsed_s": 46.461135
+        },
+        {
+          "event": "scene",
+          "scene": 2,
+          "a": 30.0,
+          "b": 60.0,
+          "lines": 6,
+          "translated": 6,
+          "cached": 0,
+          "fits": 0,
+          "cmi": 37.5,
+          "context_te": 0,
+          "brief": 1,
+          "coverage": {
+            "C": 6,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "other_tier": 0,
+          "unreviewed": 0,
+          "wall_s": 35.99,
+          "ready_s": 46.46,
+          "elapsed_s": 46.461677
+        },
+        {
+          "event": "claude",
+          "call": "review",
+          "requested": "claude-sonnet-5",
+          "model": "claude-sonnet-5",
+          "effort": "high",
+          "attempt": 1,
+          "wall_s": 10.06,
+          "startup_s": 0.18,
+          "input_tokens": 2,
+          "cache_read_tokens": 1061,
+          "cache_creation_tokens": 1575,
+          "cache_1h_tokens": 1575,
+          "output_tokens": 659,
+          "rate_limit": {
+            "status": "allowed_warning",
+            "type": "seven_day",
+            "utilization": 0.84,
+            "resets_at": 1791565200,
+            "using_overage": false
+          },
+          "error": null,
+          "scene": 1,
+          "lines": 6,
+          "elapsed_s": 47.655982
+        },
+        {
+          "event": "review",
+          "scene": 1,
+          "lines": 6,
+          "stored": 0,
+          "classes": {
+            "C": 6,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "retranslated": [],
+          "replaced": [],
+          "unreviewed": [],
+          "calls": 1,
+          "wall_s": 10.06,
+          "model": "claude-sonnet-5",
+          "review_hash": "8daa0f76384f",
+          "error": null,
+          "elapsed_s": 47.656521
+        },
+        {
+          "event": "scene",
+          "scene": 1,
+          "a": 0.0,
+          "b": 30.0,
+          "lines": 6,
+          "translated": 6,
+          "cached": 0,
+          "fits": 0,
+          "cmi": 34.7,
+          "context_te": 0,
+          "brief": 1,
+          "coverage": {
+            "C": 6,
+            "m": 0,
+            "P": 0,
+            "E": 0
+          },
+          "other_tier": 0,
+          "unreviewed": 0,
+          "wall_s": 37.6,
+          "ready_s": 47.66,
+          "elapsed_s": 47.657043
+        }
+      ],
+      "requests": [
+        {
+          "elapsed_s": 0.0005735000004278845,
+          "request": {
+            "scene": 1,
+            "lines": [
+              {
+                "id": 0,
+                "speaker": "S1",
+                "en": "Ravi and Meena are testing two adapters before the repair.",
+                "start": 0.0,
+                "end": 5.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 1,
+                "speaker": "S1",
+                "en": "A technician called the blue model Pulse and the red model Nova.",
+                "start": 5.0,
+                "end": 10.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 2,
+                "speaker": "S1",
+                "en": "Pulse charges the phone faster, but Nova uses less power.",
+                "start": 10.0,
+                "end": 15.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 3,
+                "speaker": "S1",
+                "en": "Neither model repairs a damaged battery.",
+                "start": 15.0,
+                "end": 20.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 4,
+                "speaker": "S1",
+                "en": "Ravi received the blue adapter, and Meena kept the red one.",
+                "start": 20.0,
+                "end": 25.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 5,
+                "speaker": "S1",
+                "en": "The blue adapter may overheat after about twenty minutes.",
+                "start": 25.0,
+                "end": 30.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [],
+            "context_after_en": [
+              "He must unplug it if that happens, but she should keep hers connected.",
+              "That warning applies only to Ravi's adapter, not to both of them."
+            ],
+            "deadline": null
+          }
+        },
+        {
+          "elapsed_s": 0.0007076669999150909,
+          "request": {
+            "scene": 2,
+            "lines": [
+              {
+                "id": 6,
+                "speaker": "S1",
+                "en": "He must unplug it if that happens, but she should keep hers connected.",
+                "start": 30.0,
+                "end": 35.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 7,
+                "speaker": "S1",
+                "en": "That warning applies only to Ravi's adapter, not to both of them.",
+                "start": 35.0,
+                "end": 40.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 8,
+                "speaker": "S1",
+                "en": "Hers is rated for twelve volts; his is rated for nine.",
+                "start": 40.0,
+                "end": 45.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 9,
+                "speaker": "S1",
+                "en": "Those are voltage ratings, not charging times.",
+                "start": 45.0,
+                "end": 50.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 10,
+                "speaker": "S1",
+                "en": "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                "start": 50.0,
+                "end": 55.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 11,
+                "speaker": "S1",
+                "en": "Ravi paid the same amount for Pulse, but the cable was extra.",
+                "start": 55.0,
+                "end": 60.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [
+              [
+                "Neither model repairs a damaged battery.",
+                null
+              ],
+              [
+                "Ravi received the blue adapter, and Meena kept the red one.",
+                null
+              ],
+              [
+                "The blue adapter may overheat after about twenty minutes.",
+                null
+              ]
+            ],
+            "context_after_en": [
+              "He did not say that the extra cable was free.",
+              "It might cost another fifty rupees, so his total is not confirmed."
+            ],
+            "deadline": null
+          }
+        },
+        {
+          "elapsed_s": 0.0007892089997767471,
+          "request": {
+            "scene": 3,
+            "lines": [
+              {
+                "id": 12,
+                "speaker": "S1",
+                "en": "He did not say that the extra cable was free.",
+                "start": 60.0,
+                "end": 65.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 13,
+                "speaker": "S1",
+                "en": "It might cost another fifty rupees, so his total is not confirmed.",
+                "start": 65.0,
+                "end": 70.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 14,
+                "speaker": "S1",
+                "en": "If both adapters stay cool, they can repeat the test tomorrow.",
+                "start": 70.0,
+                "end": 75.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              },
+              {
+                "id": 15,
+                "speaker": "S1",
+                "en": "Until then, do not describe either model as proven safe.",
+                "start": 75.0,
+                "end": 80.0,
+                "speech_s": 4.5,
+                "target_aksharas": 36.4,
+                "want": [
+                  "full",
+                  "fuller"
+                ],
+                "to": null,
+                "breaks": [],
+                "cut_off": false,
+                "delivery_hint": null,
+                "current": null,
+                "overflow": null,
+                "missing": [],
+                "finding": null,
+                "problems": []
+              }
+            ],
+            "call": "scene",
+            "context_before": [
+              [
+                "Those are voltage ratings, not charging times.",
+                null
+              ],
+              [
+                "Meena paid two hundred and fifty rupees for Nova, including the cable.",
+                null
+              ],
+              [
+                "Ravi paid the same amount for Pulse, but the cable was extra.",
+                null
+              ]
+            ],
+            "context_after_en": [],
+            "deadline": null
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "id": 0,
+          "full": {
+            "spoken": "రిపేర్ కి ముందు రవి, మీనా రెండు అడాప్టర్లను టెస్ట్ చేస్తున్నారు.",
+            "english": [
+              {
+                "i": 0,
+                "en": "repair"
+              },
+              {
+                "i": 6,
+                "en": "adapters"
+              },
+              {
+                "i": 7,
+                "en": "test"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవి, మీనా ఇద్దరూ రిపేర్ కి ముందు రెండు అడాప్టర్లను టెస్ట్ చేస్తున్నారు.",
+            "english": [
+              {
+                "i": 3,
+                "en": "repair"
+              },
+              {
+                "i": 7,
+                "en": "adapters"
+              },
+              {
+                "i": 8,
+                "en": "test"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 22.0,
+            "fuller": 25.0
+          },
+          "predicted_seconds": {
+            "full": 3.0299049790954005,
+            "fuller": 3.337088559483086
+          }
+        },
+        {
+          "id": 1,
+          "full": {
+            "spoken": "ఒక టెక్నీషియన్ బ్లూ మోడల్ ని పల్స్ అని, రెడ్ మోడల్ ని నోవా అని పిలిచారు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "technician"
+              },
+              {
+                "i": 2,
+                "en": "blue"
+              },
+              {
+                "i": 3,
+                "en": "model"
+              },
+              {
+                "i": 5,
+                "en": "Pulse"
+              },
+              {
+                "i": 7,
+                "en": "red"
+              },
+              {
+                "i": 8,
+                "en": "model"
+              },
+              {
+                "i": 10,
+                "en": "Nova"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒక టెక్నీషియన్ ఆ బ్లూ మోడల్ ని పల్స్ అని, ఇంకా ఆ రెడ్ మోడల్ ని నోవా అని పిలిచారు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "technician"
+              },
+              {
+                "i": 3,
+                "en": "blue"
+              },
+              {
+                "i": 4,
+                "en": "model"
+              },
+              {
+                "i": 6,
+                "en": "Pulse"
+              },
+              {
+                "i": 10,
+                "en": "red"
+              },
+              {
+                "i": 11,
+                "en": "model"
+              },
+              {
+                "i": 13,
+                "en": "Nova"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              5,
+              10
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 27.5,
+            "fuller": 31.5
+          },
+          "predicted_seconds": {
+            "full": 3.5930748764728238,
+            "fuller": 4.002652983656404
+          }
+        },
+        {
+          "id": 2,
+          "full": {
+            "spoken": "పల్స్ ఫోన్ని త్వరగా చార్జ్ చేస్తుంది, కానీ నోవా తక్కువ పవర్ వాడుతుంది.",
+            "english": [
+              {
+                "i": 0,
+                "en": "Pulse"
+              },
+              {
+                "i": 1,
+                "en": "phone"
+              },
+              {
+                "i": 3,
+                "en": "charge"
+              },
+              {
+                "i": 6,
+                "en": "Nova"
+              },
+              {
+                "i": 8,
+                "en": "power"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "పల్స్ ఫోన్ని ఇంకా త్వరగా చార్జ్ చేస్తుంది, కానీ నోవా మాత్రం తక్కువ పవర్ వాడుతుంది.",
+            "english": [
+              {
+                "i": 0,
+                "en": "Pulse"
+              },
+              {
+                "i": 1,
+                "en": "phone"
+              },
+              {
+                "i": 4,
+                "en": "charge"
+              },
+              {
+                "i": 7,
+                "en": "Nova"
+              },
+              {
+                "i": 10,
+                "en": "power"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              2,
+              7
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 24.5,
+            "fuller": 28.5
+          },
+          "predicted_seconds": {
+            "full": 3.2858912960851385,
+            "fuller": 3.695469403268719
+          }
+        },
+        {
+          "id": 3,
+          "full": {
+            "spoken": "ఏ మోడల్ కూడా పాడైన బ్యాటరీని రిపేర్ చేయదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "model"
+              },
+              {
+                "i": 4,
+                "en": "battery"
+              },
+              {
+                "i": 5,
+                "en": "repair"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఈ రెండు మోడల్స్ లో ఏదీ కూడా పాడైపోయిన బ్యాటరీని రిపేర్ చేయదు.",
+            "english": [
+              {
+                "i": 2,
+                "en": "models"
+              },
+              {
+                "i": 7,
+                "en": "battery"
+              },
+              {
+                "i": 8,
+                "en": "repair"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              0,
+              6
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 18.0,
+            "fuller": 25.0
+          },
+          "predicted_seconds": {
+            "full": 2.6203268719118205,
+            "fuller": 3.337088559483086
+          }
+        },
+        {
+          "id": 4,
+          "full": {
+            "spoken": "రవికి బ్లూ అడాప్టర్ వచ్చింది, మీనా రెడ్ ది ఉంచుకుంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 5,
+                "en": "red"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవికి బ్లూ అడాప్టర్ వచ్చింది, ఇంకా మీనా ఆ రెడ్ అడాప్టర్ ని తన దగ్గరే ఉంచుకుంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "red"
+              },
+              {
+                "i": 8,
+                "en": "adapter"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 19.0,
+            "fuller": 30.5
+          },
+          "predicted_seconds": {
+            "full": 2.7227213987077152,
+            "fuller": 3.900258456860509
+          }
+        },
+        {
+          "id": 5,
+          "full": {
+            "spoken": "బ్లూ అడాప్టర్ దాదాపు ఇరవై నిమిషాల తర్వాత ఓవర్హీట్ అవ్వొచ్చు.",
+            "english": [
+              {
+                "i": 0,
+                "en": "blue"
+              },
+              {
+                "i": 1,
+                "en": "adapter"
+              },
+              {
+                "i": 6,
+                "en": "overheat"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ బ్లూ అడాప్టర్ దాదాపు ఇరవై నిమిషాలు అయ్యాక ఓవర్హీట్ అయ్యే అవకాశం ఉంది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "blue"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 7,
+                "en": "overheat"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              0,
+              6
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 24.0,
+            "fuller": 30.0
+          },
+          "predicted_seconds": {
+            "full": 3.234694032687191,
+            "fuller": 3.8490611934625614
+          }
+        },
+        {
+          "id": 6,
+          "full": {
+            "spoken": "అలా జరిగితే అతను దాన్ని అన్ప్లగ్ చేయాలి, కానీ ఆమె తనది కనెక్ట్ చేసే ఉంచాలి.",
+            "english": [
+              {
+                "i": 4,
+                "en": "unplug"
+              },
+              {
+                "i": 9,
+                "en": "connect"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒకవేళ అలా జరిగితే, అతను తప్పకుండా దాన్ని అన్ప్లగ్ చేయాలి, కానీ ఆమె మాత్రం తన అడాప్టర్ని కనెక్ట్ చేసే ఉంచాలి.",
+            "english": [
+              {
+                "i": 6,
+                "en": "unplug"
+              },
+              {
+                "i": 12,
+                "en": "adapter"
+              },
+              {
+                "i": 13,
+                "en": "connect"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              4,
+              11
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "full",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 31.0,
+            "fuller": 44.0
+          },
+          "predicted_seconds": {
+            "full": 3.9514557202584566,
+            "fuller": 5.282584568605093
+          }
+        },
+        {
+          "id": 7,
+          "full": {
+            "spoken": "ఆ వార్నింగ్ రవి అడాప్టర్ కి మాత్రమే అప్లై అవుతుంది, రెండింటికీ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "warning"
+              },
+              {
+                "i": 3,
+                "en": "adapter"
+              },
+              {
+                "i": 6,
+                "en": "apply"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ వార్నింగ్ రవి అడాప్టర్ కి మాత్రమే అప్లై అవుతుంది, ఆ రెండు అడాప్టర్లకీ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "warning"
+              },
+              {
+                "i": 3,
+                "en": "adapter"
+              },
+              {
+                "i": 6,
+                "en": "apply"
+              },
+              {
+                "i": 10,
+                "en": "adapters"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              5,
+              9
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 25.0,
+            "fuller": 29.0
+          },
+          "predicted_seconds": {
+            "full": 3.337088559483086,
+            "fuller": 3.7466666666666666
+          }
+        },
+        {
+          "id": 8,
+          "full": {
+            "spoken": "ఆమెది పన్నెండు వోల్ట్స్ రేటింగ్; అతనిది తొమ్మిది.",
+            "english": [
+              {
+                "i": 2,
+                "en": "volts"
+              },
+              {
+                "i": 3,
+                "en": "rating"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆమె అడాప్టర్ పన్నెండు వోల్ట్స్ రేటింగ్; అతని అడాప్టర్ తొమ్మిది వోల్ట్స్ రేటింగ్.",
+            "english": [
+              {
+                "i": 1,
+                "en": "adapter"
+              },
+              {
+                "i": 3,
+                "en": "volts"
+              },
+              {
+                "i": 4,
+                "en": "rating"
+              },
+              {
+                "i": 6,
+                "en": "adapter"
+              },
+              {
+                "i": 8,
+                "en": "volts"
+              },
+              {
+                "i": 9,
+                "en": "rating"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              1,
+              5
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 17.0,
+            "fuller": 26.0
+          },
+          "predicted_seconds": {
+            "full": 2.5179323451159252,
+            "fuller": 3.4394830862789814
+          }
+        },
+        {
+          "id": 9,
+          "full": {
+            "spoken": "అవి వోల్టేజ్ రేటింగ్స్, ఛార్జింగ్ టైమ్స్ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "voltage"
+              },
+              {
+                "i": 2,
+                "en": "ratings"
+              },
+              {
+                "i": 3,
+                "en": "charging"
+              },
+              {
+                "i": 4,
+                "en": "times"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "అవన్నీ వోల్టేజ్ రేటింగ్స్, అవి ఛార్జింగ్ టైమ్స్ కాదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "voltage"
+              },
+              {
+                "i": 2,
+                "en": "ratings"
+              },
+              {
+                "i": 4,
+                "en": "charging"
+              },
+              {
+                "i": 5,
+                "en": "times"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              1,
+              5
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 13.0,
+            "fuller": 16.0
+          },
+          "predicted_seconds": {
+            "full": 2.1083542379323448,
+            "fuller": 2.41553781832003
+          }
+        },
+        {
+          "id": 10,
+          "full": {
+            "spoken": "మీనా కేబుల్ తో కలిపి నోవాకి రెండు వందల యాభై రూపాయలు కట్టింది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "cable"
+              },
+              {
+                "i": 4,
+                "en": "Nova"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "మీనా నోవా అడాప్టర్ కోసం, కేబుల్ తో సహా, రెండు వందల యాభై రూపాయలు కట్టింది.",
+            "english": [
+              {
+                "i": 1,
+                "en": "Nova"
+              },
+              {
+                "i": 2,
+                "en": "adapter"
+              },
+              {
+                "i": 4,
+                "en": "cable"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 25.5,
+            "fuller": 29.0
+          },
+          "predicted_seconds": {
+            "full": 3.3882858228810337,
+            "fuller": 3.7466666666666666
+          }
+        },
+        {
+          "id": 11,
+          "full": {
+            "spoken": "రవి పల్స్ కి అంతే అమౌంట్ కట్టాడు, కానీ కేబుల్ ఎక్స్ట్రా.",
+            "english": [
+              {
+                "i": 1,
+                "en": "Pulse"
+              },
+              {
+                "i": 4,
+                "en": "amount"
+              },
+              {
+                "i": 7,
+                "en": "cable"
+              },
+              {
+                "i": 8,
+                "en": "extra"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "రవి కూడా పల్స్ కోసం సేమ్ అమౌంట్ కట్టాడు, కానీ కేబుల్ మాత్రం ఎక్స్ట్రా.",
+            "english": [
+              {
+                "i": 2,
+                "en": "Pulse"
+              },
+              {
+                "i": 4,
+                "en": "same"
+              },
+              {
+                "i": 5,
+                "en": "amount"
+              },
+              {
+                "i": 8,
+                "en": "cable"
+              },
+              {
+                "i": 10,
+                "en": "extra"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              8
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 18.5,
+            "fuller": 23.0
+          },
+          "predicted_seconds": {
+            "full": 2.6715241353097676,
+            "fuller": 3.1322995058912957
+          }
+        },
+        {
+          "id": 12,
+          "full": {
+            "spoken": "ఎక్స్ట్రా కేబుల్ ఫ్రీ అని అతను చెప్పలేదు.",
+            "english": [
+              {
+                "i": 0,
+                "en": "extra"
+              },
+              {
+                "i": 1,
+                "en": "cable"
+              },
+              {
+                "i": 2,
+                "en": "free"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఆ ఎక్స్ట్రా కేబుల్ ఫ్రీగా ఇచ్చారని అతను చెప్పలేదు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "extra"
+              },
+              {
+                "i": 2,
+                "en": "cable"
+              },
+              {
+                "i": 3,
+                "en": "free"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              5
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 14.5,
+            "fuller": 18.5
+          },
+          "predicted_seconds": {
+            "full": 2.2619460281261876,
+            "fuller": 2.6715241353097676
+          }
+        },
+        {
+          "id": 13,
+          "full": {
+            "spoken": "దానికి ఇంకో యాభై రూపాయలు అవ్వొచ్చు, అందుకే అతని టోటల్ కన్ఫర్మ్ కాలేదు.",
+            "english": [
+              {
+                "i": 7,
+                "en": "total"
+              },
+              {
+                "i": 8,
+                "en": "confirm"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "అది ఇంకో యాభై రూపాయలు ఖర్చు అవ్వొచ్చు, అందుకే అతని టోటల్ అమౌంట్ కన్ఫర్మ్ అవ్వలేదు.",
+            "english": [
+              {
+                "i": 8,
+                "en": "total"
+              },
+              {
+                "i": 9,
+                "en": "amount"
+              },
+              {
+                "i": 10,
+                "en": "confirm"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              4,
+              9
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 28.0,
+            "fuller": 32.5
+          },
+          "predicted_seconds": {
+            "full": 3.6442721398707714,
+            "fuller": 4.1050475104523
+          }
+        },
+        {
+          "id": 14,
+          "full": {
+            "spoken": "రెండు అడాప్టర్లూ చల్లగానే ఉంటే, రేపు టెస్ట్ మళ్ళీ చేయొచ్చు.",
+            "english": [
+              {
+                "i": 1,
+                "en": "adapters"
+              },
+              {
+                "i": 5,
+                "en": "test"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "ఒకవేళ రెండు అడాప్టర్లూ చల్లగానే ఉంటే, వాళ్ళు రేపు ఆ టెస్ట్ మళ్ళీ చేయొచ్చు.",
+            "english": [
+              {
+                "i": 2,
+                "en": "adapters"
+              },
+              {
+                "i": 8,
+                "en": "test"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 20.5,
+            "fuller": 27.5
+          },
+          "predicted_seconds": {
+            "full": 2.876313188901558,
+            "fuller": 3.5930748764728238
+          }
+        },
+        {
+          "id": 15,
+          "full": {
+            "spoken": "అప్పటిదాకా, ఏ మోడల్ కూడా సేఫ్ అని ప్రూవ్ అయిందని చెప్పకండి.",
+            "english": [
+              {
+                "i": 2,
+                "en": "model"
+              },
+              {
+                "i": 4,
+                "en": "safe"
+              },
+              {
+                "i": 6,
+                "en": "prove"
+              }
+            ]
+          },
+          "fuller": {
+            "spoken": "అప్పటిదాకా, ఈ రెండిట్లో ఏ మోడల్ కూడా సేఫ్ అని ప్రూవ్ అయిందని చెప్పకండి.",
+            "english": [
+              {
+                "i": 4,
+                "en": "model"
+              },
+              {
+                "i": 6,
+                "en": "safe"
+              },
+              {
+                "i": 8,
+                "en": "prove"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": [
+              8
+            ]
+          },
+          "model": "claude-opus-5-5",
+          "cached": false,
+          "flags": [
+            "negation: 1 in the English, 0 in the Telugu"
+          ],
+          "chosen_tier": "fuller",
+          "coverage": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "selected_coverage": "C",
+          "aksharas": {
+            "full": 23.5,
+            "fuller": 27.5
+          },
+          "predicted_seconds": {
+            "full": 3.1834967692892433,
+            "fuller": 3.5930748764728238
+          }
+        }
+      ],
+      "complete_output": true,
+      "quality_eligible": true,
+      "valid_timing": true,
+      "automated_quality_complete": true
+    }
+  ],
+  "method": {
+    "brief": "frozen before timing",
+    "duration_calibration": "frozen original three takes per voice",
+    "local_cache": "fresh for every arm",
+    "provider_prompt_cache": "uncontrolled; token usage retained",
+    "audio": "no models loaded; no duration feedback, voiced-wording review or export",
+    "priority": "production callback; cursor stays at first line because there is no voicer",
+    "models": "fixed requested model IDs; fallback disabled; mismatches invalidate timing",
+    "quality": "all requests, selected tiers and automated coverage retained; human review not performed"
+  },
+  "status": "completed",
+  "summary": {
+    "first_contiguous_ready_seconds": {
+      "samples": {
+        "A": [
+          108.43353154200031
+        ],
+        "B": [
+          47.6570602920001
+        ]
+      },
+      "statistics": {
+        "A": {
+          "n": 1,
+          "p50_s": 108.43353154200031,
+          "p95_s": 108.43353154200031,
+          "max_s": 108.43353154200031
+        },
+        "B": {
+          "n": 1,
+          "p50_s": 47.6570602920001,
+          "p95_s": 47.6570602920001,
+          "max_s": 47.6570602920001
+        }
+      },
+      "minimum_five_per_configuration": false,
+      "candidate_reduction_percent": null
+    },
+    "all_text_ready_seconds": {
+      "samples": {
+        "A": [
+          108.43353154200031
+        ],
+        "B": [
+          47.6570602920001
+        ]
+      },
+      "statistics": {
+        "A": {
+          "n": 1,
+          "p50_s": 108.43353154200031,
+          "p95_s": 108.43353154200031,
+          "max_s": 108.43353154200031
+        },
+        "B": {
+          "n": 1,
+          "p50_s": 47.6570602920001,
+          "p95_s": 47.6570602920001,
+          "max_s": 47.6570602920001
+        }
+      },
+      "minimum_five_per_configuration": false,
+      "candidate_reduction_percent": null
+    },
+    "translation_stage_seconds": {
+      "samples": {
+        "A": [
+          108.43356879200019
+        ],
+        "B": [
+          47.657411041999694
+        ]
+      },
+      "statistics": {
+        "A": {
+          "n": 1,
+          "p50_s": 108.43356879200019,
+          "p95_s": 108.43356879200019,
+          "max_s": 108.43356879200019
+        },
+        "B": {
+          "n": 1,
+          "p50_s": 47.657411041999694,
+          "p95_s": 47.657411041999694,
+          "max_s": 47.657411041999694
+        }
+      },
+      "minimum_five_per_configuration": false,
+      "candidate_reduction_percent": null
+    }
+  },
+  "independent_text_inspection": {
+    "reviewer": "Independent Codex model review; not a native human or audio evaluation",
+    "source": "Original fixture semantic_expectations, kept out of production translator/reviewer prompts",
+    "expectations": 9,
+    "lines": 16,
+    "arms": {
+      "A": "all expectations satisfied",
+      "B": "all expectations satisfied"
+    },
+    "finding": "Pronoun referents, contrasting instructions, exact numbers, negation, uncertainty, conditions and term reuse preserved; no substantive candidate meaning regression found."
+  }
+}
