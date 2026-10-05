@@ -1,0 +1,158 @@
+{
+  "scope": "Exploratory paired component measurements, not whole-render speed or listening quality.",
+  "offline": true,
+  "network_policy": "(version 1)(allow default)(deny network-outbound)",
+  "baseline_git_sha": "23503cbece824be13383af67297f75028daec0e4",
+  "current_git_sha": "23503cbece824be13383af67297f75028daec0e4",
+  "python": "3.12.11",
+  "macos": "27.0.1",
+  "machine": {
+    "chip_type": "Apple M5 Pro",
+    "physical_memory": "24 GB"
+  },
+  "power": "Now drawing from 'AC Power'",
+  "versions": {
+    "torch": "2.14.0",
+    "mlx": "0.32.2",
+    "transformers": "5.2.0",
+    "chatterbox-tts": "0.1.7"
+  },
+  "thermal_start": 0,
+  "runs": 5,
+  "warmup_pairs": 2,
+  "source_sha256": {
+    "engine/src/maata_engine/separation/mel_roformer.py": "0bd84a95f86394bb4a6f676912b3c50690ad897e9175d5bc4b09e965e5eedc95",
+    "engine/src/maata_engine/backends/torch_common.py": "2b12e4b01c00e7a64991a46c516ce877ad3b0bc4e2c8c1c6103b2d7383b7b0ef"
+  },
+  "git_diff": "diff --git a/engine/src/maata_engine/separation/mel_roformer.py b/engine/src/maata_engine/separation/mel_roformer.py\nindex 8e73eb1..7c59f0f 100644\n--- a/engine/src/maata_engine/separation/mel_roformer.py\n+++ b/engine/src/maata_engine/separation/mel_roformer.py\n@@ -14,6 +14,7 @@ Changes from upstream:\n - precision (§2.14): the STFT, the mask's application and the inverse STFT run in float32, and the band-split input is\n   cast to the model's `dtype` (bf16 by default), so the transformer and the mask estimator run in it, with the RoPE\n   tables cast to it too (a float32 table would promote every attention to float32);\n+- each band's mask is merged in one indexed scatter, preserving the order of overlapping bands;\n - `MelRoFormerResult` (unused) is left out.\n \n mlx-audio is MIT-licensed: Copyright (c) 2024 Prince Canuma and contributors (https://github.com/Blaizzy/mlx-audio).\n@@ -283,8 +284,9 @@ class BandSplit(nn.Module):\n         for indices, mask in zip(self.filterbank.freq_indices, band_masks):\n             n_freqs = len(indices)\n             mask = mask.reshape(B, T, n_freqs, 2).transpose(0, 2, 1, 3)\n-            for j, idx in enumerate(indices):\n-                output = output.at[:, idx, :, :].add(mask[:, j, :, :])\n+            # A band's indices are unique: scatter them together instead of dispatching one GPU operation per bin.\n+            # Keep bands in their original order so overlapping bins accumulate in the same float32 order.\n+            output = output.at[:, indices, :, :].add(mask)\n         return output / mx.array(self.filterbank.num_bands_per_freq).reshape(1, -1, 1, 1)",
+  "benchmark_script": "scripts/bench_inference_components.py",
+  "script_sha256": "5cefe073ce938e651507bcc2785552e31c08df89928156dba53d883aa753d92a",
+  "arguments": [
+    "--component",
+    "separator",
+    "--output",
+    "docs/spikes/results/inference-components/m5-pro-24gb/2026-10-05-separator-repro.json"
+  ],
+  "separator": {
+    "timing": {
+      "old": {
+        "n": 5,
+        "seconds": [
+          0.8287640419998752,
+          0.848459959000138,
+          0.8338893330001156,
+          0.8299217499998122,
+          0.8345857080003043
+        ],
+        "p50_s": 0.8338893330001156,
+        "p95_s": 0.8456851088001713,
+        "max_s": 0.848459959000138
+      },
+      "new": {
+        "n": 5,
+        "seconds": [
+          0.7207740829999238,
+          0.7228320839999469,
+          0.7216584580000927,
+          0.693244207999669,
+          0.7164258749999135
+        ],
+        "p50_s": 0.7207740829999238,
+        "p95_s": 0.7225973587999761,
+        "max_s": 0.7228320839999469
+      }
+    },
+    "mlx_peak_bytes": {
+      "old": [
+        1962369260,
+        1962369260,
+        1962369260,
+        1962369260,
+        1962369260
+      ],
+      "new": [
+        1962338076,
+        1962338076,
+        1962338076,
+        1962338076,
+        1962338076
+      ]
+    },
+    "max_abs_errors": [
+      1.8189894035458565e-12,
+      1.8189894035458565e-12,
+      2.7284841053187847e-12,
+      1.8189894035458565e-12,
+      2.7284841053187847e-12,
+      2.7284841053187847e-12,
+      2.7284841053187847e-12
+    ],
+    "numerical_checks": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "tolerance": {
+      "rtol": 1e-05,
+      "atol": 1e-07
+    },
+    "thermal_states": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "model": {
+      "config": {
+        "_class": "MelRoFormerConfig",
+        "model_type": "mel_band_roformer",
+        "checkpoint_family": "kim_vocal_2",
+        "dim": 384,
+        "depth": 6,
+        "heads": 8,
+        "dim_head": 64,
+        "num_bands": 60,
+        "num_stems": 1,
+        "ff_mult": 4,
+        "mlp_expansion_factor": 4,
+        "mask_estimator_depth": 2,
+        "n_fft": 2048,
+        "hop_length": 441,
+        "win_length": 2048,
+        "sample_rate": 44100,
+        "chunk_size": 352800,
+        "num_overlap": 2,
+        "_dtype": "bfloat16",
+        "_mlx_version": "0.31.0",
+        "_tool_version": "8380ab8",
+        "_source_input": "MelBandRoformer.ckpt",
+        "_source_sha256": "87201f4d31afb5bc79993230fc49446918425574db48c01c405e44f365c7559e",
+        "_source_repository": "https://huggingface.co/KimberleyJSN/melbandroformer",
+        "_source_license_at_conversion": "MIT (relicensed from GPL-3.0 on 2026-04-22, commit ac9b0614ab3cd7f77219e18ba494dfd93956c348)"
+      },
+      "weights_sha256": "312c38e5b698f8dfaa4d6064e8f79010744825828917871a9d22673a43eb7fe5"
+    },
+    "load_seconds": 0.029666165999969962,
+    "baseline_method": "def merge(self, band_masks: list, freq_bins_times_two: int) -> mx.array:\n    \"\"\"The bands' masks ([B, T, band_dim] each) scattered back to [B, freq_bins*2, T, 2] in float32, averaged where\n        bands overlap.\"\"\"\n    B, T = band_masks[0].shape[:2]\n    output = mx.zeros((B, freq_bins_times_two, T, 2), dtype=mx.float32)\n    for indices, mask in zip(self.filterbank.freq_indices, band_masks):\n        n_freqs = len(indices)\n        mask = mask.reshape(B, T, n_freqs, 2).transpose(0, 2, 1, 3)\n        for j, idx in enumerate(indices):\n            output = output.at[:, idx, :, :].add(mask[:, j, :, :])\n    return output / mx.array(self.filterbank.num_bands_per_freq).reshape(1, -1, 1, 1)",
+    "input": {
+      "shape": [
+        2,
+        2,
+        352800
+      ],
+      "seed": 47,
+      "sha256": "5d9d06d55d3109f25ade9da8b2bad0e7b2c26c620536c1bc8ab405ba16a38b86"
+    },
+    "note": "Real-weight forward, batch=2, bf16, 8s chunks; no block overlap-add/media I/O. Tiny full-wave differences may arise from iSTFT scatter reduction order; the band-mask merge has separate bitwise equivalence tests."
+  },
+  "thermal_end": 0,
+  "timings_valid_thermal": true,
+  "numerical_checks_passed": true
+}

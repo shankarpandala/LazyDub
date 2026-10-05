@@ -17,7 +17,16 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   - the Svelte UI (Library, New dub, Job, Settings) and the Tauri shell;
   - the streaming player and `Session` are gone.
 - Runs end to end on the M5 Pro (2026-10-04): a YouTube link becomes a dubbed MP4, with real models. An 8.2-minute talk took 9.8 minutes.
-- Not yet committed: real-model numbers. Run `./scripts/verify-mac.sh` and commit its JSON.
+- Speed/quality pass (ADR-022, 2026-10-05): vectorized separator mask merge; duration-aware complete first translations;
+  priority admission for queued Claude calls; selected-waveform checks with bounded retries; synthesis-versioned take
+  restoration; corrected export wall-time traces. Models, precision and CFM defaults are unchanged.
+- Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
+  `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
+  separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`
+  checks the production prompt through the sealed Claude CLI on original text. The integration smoke covers MP4,
+  subtitles, loudness, synchronization and watermark; it is not a paired whole-video speed or listening evaluation.
+- Still owed: native Telugu listening, representative long-video throughput, and the complete `./scripts/verify-mac.sh`
+  acceptance run (including separation/leakage quality and UI inspection).
 
 ## Where work runs
 

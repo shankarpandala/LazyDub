@@ -1,0 +1,771 @@
+{
+  "scope": "Original-text translation/schema/automated-meaning smoke; no audio or render-speed claim",
+  "created_utc": "2026-10-05T12:49:06.494550+00:00",
+  "machine": {
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.11",
+    "architecture": "arm64",
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "prompt_version": "scene-v4",
+  "prompt_hash": "f5430ea43db1",
+  "review_hash": "8daa0f76384f",
+  "request": {
+    "scene": 1,
+    "lines": [
+      {
+        "id": 1,
+        "speaker": "S1",
+        "en": "Ravi paid 250 rupees for two tickets, but Meena did not buy one.",
+        "start": 0.0,
+        "end": 8.0,
+        "speech_s": 8.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 2,
+        "speaker": "S1",
+        "en": "Open WhatsApp, turn off notifications, and restart the phone only if it still freezes.",
+        "start": 8.5,
+        "end": 18.5,
+        "speech_s": 10.0,
+        "target_aksharas": 50.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 3,
+        "speaker": "S1",
+        "en": "The battery may last about six hours; it is not guaranteed to last all day.",
+        "start": 19.0,
+        "end": 27.0,
+        "speech_s": 8.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 4,
+        "speaker": "S1",
+        "en": "Did you send the final PDF to Dr. Anjali before 9 AM, or only save it on your laptop?",
+        "start": 27.5,
+        "end": 37.5,
+        "speech_s": 10.0,
+        "target_aksharas": 50.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 5,
+        "speaker": "S1",
+        "en": "I mean, the update is faster, but it does not fix the camera problem.",
+        "start": 38.0,
+        "end": 45.5,
+        "speech_s": 7.5,
+        "target_aksharas": 38.0,
+        "want": [
+          "full",
+          "concise"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      }
+    ],
+    "call": "scene",
+    "context_before": [
+      [
+        "Here are five everyday examples.",
+        null
+      ]
+    ],
+    "context_after_en": [
+      "Those are all the examples."
+    ],
+    "deadline": null
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "Original translation smoke examples",
+      "channel": "Maata",
+      "description": "",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": []
+    },
+    "topic": "Everyday examples",
+    "register": "Neutral and polite, addressing the audience with మీరు",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "",
+        "gender": "unknown",
+        "role": "narrator",
+        "audience": "polite",
+        "address": []
+      }
+    ],
+    "glossary": [
+      {
+        "term": "WhatsApp",
+        "spoken": "వాట్సాప్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "PDF",
+        "spoken": "పీడీఎఫ్",
+        "keep_english": true,
+        "note": ""
+      }
+    ],
+    "entities": [
+      "Ravi",
+      "Meena",
+      "Dr. Anjali"
+    ],
+    "idioms": [],
+    "numbers": "",
+    "asr_fixes": []
+  },
+  "human_review": "not performed",
+  "events": [
+    {
+      "event": "claude",
+      "call": "scene",
+      "requested": "claude-opus-5-5",
+      "model": "claude-opus-5-5",
+      "effort": "medium",
+      "attempt": 1,
+      "wall_s": 28.64,
+      "startup_s": 0.23,
+      "input_tokens": 2,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 9550,
+      "cache_1h_tokens": 9550,
+      "output_tokens": 3667,
+      "rate_limit": {
+        "status": "allowed_warning",
+        "type": "seven_day",
+        "utilization": 0.84,
+        "resets_at": 1791565200,
+        "using_overage": false
+      },
+      "error": null,
+      "scene": 1,
+      "lines": 5
+    },
+    {
+      "event": "translate",
+      "call": "scene",
+      "scene": 1,
+      "lines": 5,
+      "cached": 0,
+      "answered": 5,
+      "skipped": [],
+      "calls": 1,
+      "wall_s": 28.64,
+      "dropped": false,
+      "model": "claude-opus-5-5",
+      "prompt_hash": "f5430ea43db1",
+      "brief": 1,
+      "error": null
+    },
+    {
+      "event": "claude",
+      "call": "review",
+      "requested": "claude-sonnet-5",
+      "model": "claude-sonnet-5",
+      "effort": "high",
+      "attempt": 1,
+      "wall_s": 18.19,
+      "startup_s": 0.18,
+      "input_tokens": 2,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 2616,
+      "cache_1h_tokens": 2616,
+      "output_tokens": 1047,
+      "rate_limit": {
+        "status": "allowed_warning",
+        "type": "seven_day",
+        "utilization": 0.84,
+        "resets_at": 1791565200,
+        "using_overage": false
+      },
+      "error": null,
+      "scene": 1,
+      "lines": 5
+    },
+    {
+      "event": "review",
+      "scene": 1,
+      "lines": 5,
+      "stored": 0,
+      "classes": {
+        "C": 5,
+        "m": 0,
+        "P": 0,
+        "E": 0
+      },
+      "retranslated": [],
+      "replaced": [],
+      "unreviewed": [],
+      "calls": 1,
+      "wall_s": 18.2,
+      "model": "claude-sonnet-5",
+      "review_hash": "8daa0f76384f",
+      "error": null
+    }
+  ],
+  "status": "passed",
+  "requested_model": "claude-opus-5-5",
+  "effort": "medium",
+  "review_model": "claude-sonnet-5",
+  "review_effort": "high",
+  "cli_health": {
+    "installed": true,
+    "version": "2.1.282",
+    "signedIn": true,
+    "models": [
+      "claude-sonnet-5",
+      "claude-opus-5-5"
+    ],
+    "model": "claude-opus-5-5",
+    "problem": null,
+    "message": ""
+  },
+  "translation_seconds": 28.641897792000236,
+  "translation_calls": 1,
+  "skipped": {},
+  "initial_output": [
+    {
+      "id": 1,
+      "full": {
+        "spoken": "రవి రెండు టికెట్లకి రెండు వందల యాభై రూపాయలు కట్టాడు, కానీ మీనా ఒక్కటి కూడా కొనలేదు.",
+        "english": [
+          {
+            "i": 2,
+            "en": "tickets"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          12
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 35.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 2,
+      "full": {
+        "spoken": "వాట్సాప్ ఓపెన్ చేసి, నోటిఫికేషన్స్ ఆఫ్ చేయండి, అప్పటికీ ఫోన్ ఫ్రీజ్ అవుతుంటేనే రీస్టార్ట్ చేయండి.",
+        "english": [
+          {
+            "i": 0,
+            "en": "WhatsApp"
+          },
+          {
+            "i": 1,
+            "en": "open"
+          },
+          {
+            "i": 3,
+            "en": "notifications"
+          },
+          {
+            "i": 4,
+            "en": "off"
+          },
+          {
+            "i": 7,
+            "en": "phone"
+          },
+          {
+            "i": 8,
+            "en": "freeze"
+          },
+          {
+            "i": 10,
+            "en": "restart"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          9
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 34.5
+      },
+      "coverage": null
+    },
+    {
+      "id": 3,
+      "full": {
+        "spoken": "బ్యాటరీ దాదాపు ఆరు గంటలు రావచ్చు; రోజంతా వస్తుందని గ్యారెంటీ లేదు.",
+        "english": [
+          {
+            "i": 0,
+            "en": "battery"
+          },
+          {
+            "i": 7,
+            "en": "guarantee"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "serious",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          8
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 26.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 4,
+      "full": {
+        "spoken": "ఫైనల్ పీడీఎఫ్ని పొద్దున తొమ్మిది గంటల లోపే డాక్టర్ అంజలి గారికి పంపించారా, లేక మీ ల్యాప్టాప్లో సేవ్ మాత్రమే చేశారా?",
+        "english": [
+          {
+            "i": 0,
+            "en": "final"
+          },
+          {
+            "i": 1,
+            "en": "PDF"
+          },
+          {
+            "i": 6,
+            "en": "Dr."
+          },
+          {
+            "i": 12,
+            "en": "laptop"
+          },
+          {
+            "i": 13,
+            "en": "save"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": true,
+        "emphasis": [
+          5,
+          14
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 43.5
+      },
+      "coverage": null
+    },
+    {
+      "id": 5,
+      "concise": {
+        "spoken": "అప్డేట్ ఇంకా ఫాస్ట్, కానీ కెమెరా ప్రాబ్లమ్ ఫిక్స్ కాలేదు.",
+        "english": [
+          {
+            "i": 0,
+            "en": "update"
+          },
+          {
+            "i": 2,
+            "en": "fast"
+          },
+          {
+            "i": 4,
+            "en": "camera"
+          },
+          {
+            "i": 5,
+            "en": "problem"
+          },
+          {
+            "i": 6,
+            "en": "fix"
+          }
+        ]
+      },
+      "full": {
+        "spoken": "అంటే, అప్డేట్ ఇంకా ఫాస్ట్గా ఉంది, కానీ కెమెరా ప్రాబ్లమ్ని మాత్రం ఫిక్స్ చేయలేదు.",
+        "english": [
+          {
+            "i": 1,
+            "en": "update"
+          },
+          {
+            "i": 3,
+            "en": "fast"
+          },
+          {
+            "i": 6,
+            "en": "camera"
+          },
+          {
+            "i": 7,
+            "en": "problem"
+          },
+          {
+            "i": 9,
+            "en": "fix"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          10
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "concise": 18.0,
+        "full": 26.0
+      },
+      "coverage": null
+    }
+  ],
+  "review_seconds": 18.202493875000073,
+  "review_calls": 1,
+  "reviewed_output": [
+    {
+      "id": 1,
+      "full": {
+        "spoken": "రవి రెండు టికెట్లకి రెండు వందల యాభై రూపాయలు కట్టాడు, కానీ మీనా ఒక్కటి కూడా కొనలేదు.",
+        "english": [
+          {
+            "i": 2,
+            "en": "tickets"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          12
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 35.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 2,
+      "full": {
+        "spoken": "వాట్సాప్ ఓపెన్ చేసి, నోటిఫికేషన్స్ ఆఫ్ చేయండి, అప్పటికీ ఫోన్ ఫ్రీజ్ అవుతుంటేనే రీస్టార్ట్ చేయండి.",
+        "english": [
+          {
+            "i": 0,
+            "en": "WhatsApp"
+          },
+          {
+            "i": 1,
+            "en": "open"
+          },
+          {
+            "i": 3,
+            "en": "notifications"
+          },
+          {
+            "i": 4,
+            "en": "off"
+          },
+          {
+            "i": 7,
+            "en": "phone"
+          },
+          {
+            "i": 8,
+            "en": "freeze"
+          },
+          {
+            "i": 10,
+            "en": "restart"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          9
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 34.5
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 3,
+      "full": {
+        "spoken": "బ్యాటరీ దాదాపు ఆరు గంటలు రావచ్చు; రోజంతా వస్తుందని గ్యారెంటీ లేదు.",
+        "english": [
+          {
+            "i": 0,
+            "en": "battery"
+          },
+          {
+            "i": 7,
+            "en": "guarantee"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "serious",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          8
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 26.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 4,
+      "full": {
+        "spoken": "ఫైనల్ పీడీఎఫ్ని పొద్దున తొమ్మిది గంటల లోపే డాక్టర్ అంజలి గారికి పంపించారా, లేక మీ ల్యాప్టాప్లో సేవ్ మాత్రమే చేశారా?",
+        "english": [
+          {
+            "i": 0,
+            "en": "final"
+          },
+          {
+            "i": 1,
+            "en": "PDF"
+          },
+          {
+            "i": 6,
+            "en": "Dr."
+          },
+          {
+            "i": 12,
+            "en": "laptop"
+          },
+          {
+            "i": 13,
+            "en": "save"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": true,
+        "emphasis": [
+          5,
+          14
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "full": 43.5
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 5,
+      "concise": {
+        "spoken": "అప్డేట్ ఇంకా ఫాస్ట్, కానీ కెమెరా ప్రాబ్లమ్ ఫిక్స్ కాలేదు.",
+        "english": [
+          {
+            "i": 0,
+            "en": "update"
+          },
+          {
+            "i": 2,
+            "en": "fast"
+          },
+          {
+            "i": 4,
+            "en": "camera"
+          },
+          {
+            "i": 5,
+            "en": "problem"
+          },
+          {
+            "i": 6,
+            "en": "fix"
+          }
+        ]
+      },
+      "full": {
+        "spoken": "అంటే, అప్డేట్ ఇంకా ఫాస్ట్గా ఉంది, కానీ కెమెరా ప్రాబ్లమ్ని మాత్రం ఫిక్స్ చేయలేదు.",
+        "english": [
+          {
+            "i": 1,
+            "en": "update"
+          },
+          {
+            "i": 3,
+            "en": "fast"
+          },
+          {
+            "i": 6,
+            "en": "camera"
+          },
+          {
+            "i": 7,
+            "en": "problem"
+          },
+          {
+            "i": 9,
+            "en": "fix"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": [
+          10
+        ]
+      },
+      "model": "claude-opus-5-5",
+      "flags": [],
+      "aksharas": {
+        "concise": 18.0,
+        "full": 26.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    }
+  ],
+  "wall_seconds": 47.12
+}

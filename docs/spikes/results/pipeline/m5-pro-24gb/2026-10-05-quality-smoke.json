@@ -1,0 +1,415 @@
+{
+  "scope": "Single real-model integration smoke on original synthesized speech plus synthetic music; not a paired speed or human-listening evaluation.",
+  "created_utc": "2026-10-05T12:56:49.888755+00:00",
+  "git_base": "23503cbece824be13383af67297f75028daec0e4",
+  "working_tree": true,
+  "implementation_note": "Ran with scene-v4, vectorized separator, take identity v2 and waveform QA. Subsequent optional-failure handling changes are exercised by regression tests.",
+  "fixture": {
+    "source": "original text synthesized locally with macOS say",
+    "voices": [
+      "Samantha",
+      "Daniel"
+    ],
+    "lines": [
+      "Welcome back. Today we will build a small machine learning project on this laptop.",
+      "Before we start, please save a copy of the data. Do not delete the original file.",
+      "We have twenty examples for training and five separate examples for testing.",
+      "Why do we need a separate test set? Because memorizing the training data is not enough.",
+      "If the result is wrong, check the labels first. Then change one setting at a time.",
+      "That makes sense. Let us compare the results and explain what changed."
+    ],
+    "seconds": 60
+  },
+  "video": {
+    "seconds": 60,
+    "lines": 8,
+    "speech_turns_s": 39.9,
+    "mark": 10.0,
+    "beep_hz": 1000.0,
+    "speech_db": -20.0,
+    "music_db": -26.0,
+    "music": {
+      "synthetic": "chords, kick and hats"
+    },
+    "say_voices": []
+  },
+  "pipeline": {
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "machine": "arm64",
+      "python": "3.12.11",
+      "chip": "Apple M5 Pro",
+      "ram_bytes": "25769803776"
+    },
+    "backend": "apple",
+    "device": "mps",
+    "file": "test.mp4",
+    "translator": "ClaudeTranslator",
+    "tts_script": "telugu",
+    "audio_seconds": 60.0,
+    "model_load_seconds": 4.29,
+    "pipeline_seconds": 114.58,
+    "throughput_x_realtime": 0.52,
+    "calibration_seconds": 8.19,
+    "speakers": 2,
+    "units": 11,
+    "skipped": 0,
+    "speedup_max": 1.05,
+    "latin_ratio": 0.0,
+    "render": {
+      "stages": {
+        "fetch": {
+          "seconds": 0.07,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "speakers": {
+          "seconds": 2.25,
+          "gpu_s": 2.25,
+          "cached": false
+        },
+        "transcript": {
+          "seconds": 4.98,
+          "gpu_s": 4.98,
+          "cached": false
+        },
+        "units": {
+          "seconds": 0.0,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "brief": {
+          "seconds": 7.35,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "voices": {
+          "seconds": 19.61,
+          "gpu_s": 19.61,
+          "cached": false
+        },
+        "video": {
+          "seconds": 0.05,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "separate": {
+          "seconds": 5.68,
+          "gpu_s": 5.49,
+          "cached": false,
+          "blocks": 1
+        },
+        "translate": {
+          "seconds": 58.16,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "voice_lines": {
+          "seconds": 86.38,
+          "gpu_s": 20.63,
+          "cached": false
+        },
+        "finish": {
+          "seconds": 86.88,
+          "gpu_s": 0.5,
+          "cached": false
+        },
+        "export": {
+          "seconds": 0.78,
+          "gpu_s": 0.0,
+          "cached": false
+        }
+      },
+      "gpu_s": 53.46,
+      "gpu_s_per_video_s": 0.891,
+      "peak_rss_bytes": 5412290560,
+      "mlx_peak_bytes": 2592641390,
+      "claude": {
+        "brief": {
+          "calls": 1,
+          "input_tokens": 2,
+          "cache_read_tokens": 0,
+          "output_tokens": 840
+        },
+        "scene": {
+          "calls": 1,
+          "input_tokens": 2,
+          "cache_read_tokens": 1070,
+          "output_tokens": 6619
+        },
+        "review": {
+          "calls": 2,
+          "input_tokens": 4,
+          "cache_read_tokens": 2122,
+          "output_tokens": 1185
+        }
+      }
+    },
+    "dub": {
+      "lines": 11,
+      "coverage": {
+        "C": 1.0,
+        "m": 0.0,
+        "P": 0.0,
+        "E": 0.0,
+        "other_tier": 0.0,
+        "unreviewed": 0.0
+      },
+      "coverage_reviewed": {
+        "C": 1.0,
+        "m": 0.0,
+        "P": 0.0,
+        "E": 0.0,
+        "other_tier": 0.0,
+        "unreviewed": 0.0
+      },
+      "retranslations_kept": 0,
+      "speech_fill": 1.059,
+      "speech_fill_median": 1.065,
+      "required_rate_in_band_share": 0.727
+    },
+    "timing": {
+      "lines": 11,
+      "skipped": 0,
+      "lag_p95": 0.127,
+      "rate_p90": 1.0,
+      "rate_step_p90": 0.01,
+      "freeze_s_per_10min": 0.0,
+      "said": {
+        "whole": 11,
+        "pieces": 0,
+        "joined": 0,
+        "anchored": 0
+      },
+      "speech_lines": 11,
+      "end_error_p10": -0.44,
+      "end_error_p50": 0.04,
+      "end_error_p90": 0.354,
+      "end_early_1s_share": 0.0,
+      "long_lines": 0,
+      "long_end_error_p50": null,
+      "overlap_speech_mean": 0.7486,
+      "silent_s_per_min": 2.2585,
+      "anchors": 0,
+      "anchor_err_p50": null,
+      "anchor_err_p95": null,
+      "guards": {
+        "lag_p95": {
+          "value": 0.127,
+          "limit": 0.3,
+          "ok": true
+        },
+        "rate_p90": {
+          "value": 1.0,
+          "limit": 1.1,
+          "ok": true
+        },
+        "freeze_s_per_10min": {
+          "value": 0.0,
+          "limit": 1.0,
+          "ok": true
+        },
+        "rate_step_p90": {
+          "value": 0.01,
+          "limit": null,
+          "ok": null
+        },
+        "silent_s_per_min": {
+          "value": 2.2585,
+          "limit": 3.0,
+          "ok": true
+        },
+        "end_error_p50": {
+          "value": 0.04,
+          "limit": 0.3,
+          "ok": true
+        },
+        "end_early_1s_share": {
+          "value": 0.0,
+          "limit": null,
+          "ok": null
+        },
+        "long_end_error_p50": {
+          "value": null,
+          "limit": null,
+          "ok": null
+        }
+      }
+    },
+    "planner": {
+      "lines": 11,
+      "minutes": 0.9657,
+      "lag_p50": 0.0,
+      "lag_p95": 0.127,
+      "lag_max": 0.254,
+      "lag_min": -0.152,
+      "lag_max_unflagged": 0.254,
+      "late_share": 0.0,
+      "rate_mean": 1.0045,
+      "rate_p50": 1.0,
+      "rate_p90": 1.0,
+      "rate_max": 1.0497,
+      "at_cap_share": 0.0,
+      "rate_step_p90": 0.0099,
+      "rate_step_ok_share": 1.0,
+      "video_slowdowns": 0,
+      "freezes": 0,
+      "freeze_s": 0,
+      "freezes_per_min": 0.0,
+      "freeze_s_per_min": 0.0,
+      "freeze_s_per_10min": 0.0,
+      "freeze_line_share": 0.0,
+      "overdraft_s": 0.0,
+      "overdraft_lines": 0,
+      "overdraft_carried_s": 0.0,
+      "needs_shorter": 0,
+      "iou_mean": 0.7992,
+      "pieced_lines": 0,
+      "joined_lines": 0,
+      "anchored_lines": 0,
+      "speech_lines": 11,
+      "end_error_p10": -0.44,
+      "end_error_p50": 0.04,
+      "end_error_p90": 0.354,
+      "end_early_1s_share": 0.0,
+      "long_lines": 0,
+      "long_end_error_p50": null,
+      "overlap_speech_mean": 0.7486,
+      "silent_s_per_min": 2.2585,
+      "anchors": 0,
+      "anchor_err_p50": null,
+      "anchor_err_p95": null
+    },
+    "export": {
+      "path": "/tmp/maata-quality-CWNtmF/out/test (Telugu).mp4",
+      "bytes": 1550261,
+      "seconds": 0.78,
+      "video_seconds": 60.0,
+      "loudness": {
+        "I": -16.0,
+        "TP": -2.07,
+        "LRA": 8.06
+      },
+      "warning": null,
+      "video": {
+        "file": "/private/tmp/maata-quality-CWNtmF/test.mp4",
+        "owned": false,
+        "codec": "h264",
+        "width": 320,
+        "height": 180,
+        "fps": 10.0,
+        "start": 0.0
+      }
+    }
+  },
+  "export": {
+    "streams": [
+      {
+        "index": 0,
+        "type": "video",
+        "codec": "h264",
+        "language": "und",
+        "title": "VideoHandler",
+        "default": true,
+        "width": 320,
+        "height": 180
+      },
+      {
+        "index": 1,
+        "type": "audio",
+        "codec": "aac",
+        "language": "tel",
+        "title": "SoundHandler",
+        "default": true,
+        "sample_rate": 44100,
+        "channels": 2
+      },
+      {
+        "index": 2,
+        "type": "subtitle",
+        "codec": "mov_text",
+        "language": "tel",
+        "title": "Telugu",
+        "default": false
+      },
+      {
+        "index": 3,
+        "type": "subtitle",
+        "codec": "mov_text",
+        "language": "eng",
+        "title": "English",
+        "default": false
+      }
+    ],
+    "boxes": [
+      "ftyp",
+      "moov",
+      "free",
+      "mdat"
+    ],
+    "video_copied": true,
+    "layout_ok": true,
+    "loudness": {
+      "I": -16.0,
+      "TP": -2.07,
+      "LRA": 8.06
+    },
+    "loudness_ok": true,
+    "flash_s": 10.0,
+    "beep_onset_s": 10.000136054421768,
+    "av_offset_ms": 0.14,
+    "av_ok": true,
+    "watermark": {
+      "telugu_lines": 0.923,
+      "source_control": 0.004
+    },
+    "lines": 11,
+    "skipped": 0,
+    "watermark_ok": true
+  },
+  "runtime_synthesis_identities": [
+    {
+      "backend": "apple",
+      "model": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+      "sampleRate": 24000,
+      "format": "mel",
+      "batch": 2,
+      "cfmSteps": 10,
+      "ttsScript": "telugu",
+      "version": 2
+    },
+    {
+      "backend": "apple",
+      "model": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+      "sampleRate": 24000,
+      "format": "mel",
+      "batch": 3,
+      "cfmSteps": 10,
+      "ttsScript": "telugu",
+      "version": 2
+    }
+  ],
+  "network": {
+    "policy": "(version 1)\n(allow default)\n(deny network-outbound)\n(allow network-outbound (remote ip \"localhost:*\"))\n(allow network-outbound (remote unix-socket))\n",
+    "tunnelled": [
+      "api.anthropic.com"
+    ],
+    "refused": []
+  },
+  "human_listening": "not performed",
+  "reproduce": [
+    "Synthesize fixture.lines in order with macOS say, alternating fixture.voices; keep each AIFF.",
+    "From engine/, call scripts/verify_mac.py video WORK AIFF... with MAATA_VERIFY_SECONDS=60.",
+    "Start scripts/verify_mac.py proxy WORK outside the sandbox. Set HTTP_PROXY and HTTPS_PROXY to its localhost port.",
+    "Within the recorded network sandbox run .venv/bin/maata-bench --cache WORK/bench pipeline WORK/test.mp4 --backend apple --out WORK/out.",
+    "Stop the proxy. Within the same sandbox run .venv/bin/python ../scripts/verify_mac.py export WORK MP4 WORK/bench/localbench0/render/manifest.json."
+  ],
+  "checks": {
+    "layout_ok": true,
+    "video_copied": true,
+    "loudness_ok": true,
+    "av_ok": true,
+    "watermark_ok": true,
+    "all_lines_voiced": true
+  }
+}

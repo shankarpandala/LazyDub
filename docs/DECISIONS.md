@@ -507,3 +507,46 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   - M18: `scripts/check-youtube-video.sh` before the first real job (`yt-dlp-ejs` would be a new dependency).
 - **Not measured yet on the M5 Pro:** the whole job on a real video, and `scripts/verify-mac.sh`'s checks on its synthesised speech + music video (separation time per block, MLX and resident peak memory, the vocals' SI-SDR with its 8 dB floor, bf16 against float32, the English left in the bed, the A/V offset, loudness, the subtitle tracks and the PerTh watermark after the mix and AAC).
 - **Reopen if:** the maintainer wants to watch while it dubs again, or a long job's real numbers (hours per video, memory) make a different order of stages better.
+
+## ADR-022 — Measured separator optimization, first-pass timing, and selective audio checks
+
+- **Decision (2026-10-05):** the maintainer asked to implement the researched speed and quality improvements. Keep the
+  existing local Telugu model, precision, CFM steps and candidate counts while removing redundant work and catching
+  failed output. No new dependencies or model downloads.
+- **Separator:** merge each band's mask with one indexed scatter instead of one scalar scatter per frequency/channel.
+  The band order and float32 accumulator stay the same. Tests compare the real overlapping band layout in both input
+  precisions and multiple batch sizes, bit for bit. Real-weight paired measurements, their scope and reproducible
+  commands are in `docs/spikes/results/inference-components/m5-pro-24gb/` and `scripts/bench_inference_components.py`.
+  These are component measurements, not whole-video speed claims. A preallocated T3 token-history experiment preserved
+  token outputs but did not improve its paired timings, so production T3 remains unchanged.
+- **Translation:** `scene-v4` makes the first complete wording aim at locally supplied speech time and akshara targets.
+  Meaning wins when it cannot fit: retain names, numbers, negation, uncertainty, conditions and other meaningful
+  qualifiers; never pad, summarize or count aksharas in the LLM. The model, scene context and requested tiers remain.
+  This adopts the duration-aware generation approach documented in the
+  [Descript case study](https://openai.com/index/descript/), without assuming its reported gains transfer to Telugu.
+  `scripts/check-translation.py` exercises original examples through the sealed Claude CLI and the existing reviewer;
+  its JSON is a schema/automated-meaning smoke check, not native-speaker validation.
+- **CLI scheduling:** replace FIFO-only admission with bounded, nonpreemptive priority admission. Re-evaluate queued
+  work when a slot opens: the next unvoiced scene's review, retranslation and fitting precede distant scenes. Preserve
+  the three context lanes, FIFO ties, the concurrency bound, and process-exit-before-slot-release cancellation.
+- **Selected audio:** only the selected candidate is flowed/vocoded in the healthy path. Reject empty, malformed,
+  non-finite or numerically silent waveforms; try already-generated alternatives before one fresh batched candidate.
+  Do not treat quiet speech or long pauses as failure. Failed audio does not teach the duration estimator or enter
+  the take cache. If no initial candidate is usable, fail resumably instead of silently dropping the line. An unusable
+  optional shorter wording or fix-up preserves the original audio and still spends its fix-up budget. These checks
+  do not judge pronunciation or intelligibility; a calibrated Telugu recognizer remains a separate experiment.
+- **Cache:** `TAKES_VERSION=2`. Take files and rows use the same synthesis identity: backend, pinned model revision,
+  device, T3 dtype, sample rate, storage format, batch size, CFM steps and input script. Restoration recomputes the
+  current text/voice key; duration-estimator replay filters incompatible identities and counts each take only once.
+  Legacy takes miss once, so old output cannot bypass the new checks. Invalid cached PCM is regenerated.
+- **Measurements:** stage trace `seconds` always means wall time. The export's media length is `media_seconds`; extra
+  fields cannot overwrite stage accounting. Preserve quality defaults until listening evidence justifies changing
+  them. Cross-language performance prompts, a new TTS backend and pronunciation QA have not been validated here.
+- **Validation:** all 1,060 engine tests pass (39 WebSocket, 113 render/trace, 908 remaining tests). The paired separator
+  script reproduces a 13.6% lower warm median component time with equivalent output and nominal thermals; raw data is
+  `docs/spikes/results/inference-components/m5-pro-24gb/2026-10-05-separator-repro.json`. The original two-speaker,
+  60-second integration fixture voices all 11 lines and passes copied video, audio/subtitle layout, loudness, A/V and
+  watermark checks (`docs/spikes/results/pipeline/m5-pro-24gb/2026-10-05-quality-smoke.json`). It took 114.58 seconds:
+  this short, fresh run includes voice preparation and Claude calls and does not establish real-time throughput or
+  a whole-render speedup. Native-listener quality, long-video throughput and a calibrated pronunciation judge remain
+  open acceptance work.
