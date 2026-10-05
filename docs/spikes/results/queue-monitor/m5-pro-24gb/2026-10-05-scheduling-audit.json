@@ -1,0 +1,519 @@
+{
+  "captured_at": 1791223658.9020631,
+  "scope": "Read-only aggregate scheduling audit; no transcript, media, titles or generated wording.",
+  "jobs": [
+    {
+      "video_id": "Is8XU3J5ZZE",
+      "status": "interrupted",
+      "duration_s": 691.49,
+      "elapsed_accumulated_s": 2166.6,
+      "updated_at": 1791223609.362891,
+      "stage": "voice_lines"
+    },
+    {
+      "video_id": "4Vz6L8B73i4",
+      "status": "queued",
+      "duration_s": 10506.0,
+      "elapsed_accumulated_s": 0.0,
+      "updated_at": 1791223150.450491,
+      "stage": null
+    },
+    {
+      "video_id": "xi-zHJL5bnI",
+      "status": "queued",
+      "duration_s": 4296.0,
+      "elapsed_accumulated_s": 0.0,
+      "updated_at": 1791223124.076132,
+      "stage": null
+    },
+    {
+      "video_id": "3iRUwVzRDZQ",
+      "status": "done",
+      "duration_s": 647.0,
+      "elapsed_accumulated_s": 858.1,
+      "updated_at": 1791218100.263154,
+      "stage": "export"
+    },
+    {
+      "video_id": "9GSDvO0LFFE",
+      "status": "done",
+      "duration_s": 1061.99,
+      "elapsed_accumulated_s": 1176.5,
+      "updated_at": 1791172679.371376,
+      "stage": "export"
+    },
+    {
+      "video_id": "yWBP-gDUXiQ",
+      "status": "done",
+      "duration_s": 911.75,
+      "elapsed_accumulated_s": 1381.6,
+      "updated_at": 1791129055.037745,
+      "stage": "export"
+    },
+    {
+      "video_id": "5XTJRU9na3Y",
+      "status": "done",
+      "duration_s": 610.87,
+      "elapsed_accumulated_s": 766.2,
+      "updated_at": 1791100673.6741061,
+      "stage": "export"
+    },
+    {
+      "video_id": "9TsjAaFZG20",
+      "status": "done",
+      "duration_s": 2311.87,
+      "elapsed_accumulated_s": 1638.2,
+      "updated_at": 1791096096.5721412,
+      "stage": "export"
+    },
+    {
+      "video_id": "0eFln_mdXGY",
+      "status": "done",
+      "duration_s": 490.31,
+      "elapsed_accumulated_s": 586.0,
+      "updated_at": 1791092590.9328551,
+      "stage": "export"
+    }
+  ],
+  "active_video_id": "Is8XU3J5ZZE",
+  "latest_resume_start_inferred": 1791223009.157,
+  "latest_resume_age_s": 649.745,
+  "caveats": [
+    "Resume start inferred from the latest fetch stage event; explicit run IDs were not present in this snapshot.",
+    "job.json stage seconds and gpu_s accumulate earlier model attempts and must not be treated as current-run durations or GPU utilization.",
+    "Take completion times are filesystem mtimes. Work intervals subtract recorded synthesis+render cost; small disk/CPU and non-speech work are not exact GPU utilization.",
+    "Replay is a screening model, not a measured speedup: existing scene.ready_s includes queueing, changing lane boundaries changes context and may change text/runtime. Missing future speech cost uses observed median per line."
+  ],
+  "current_call_totals": {
+    "fit": {
+      "calls": 3,
+      "sum_process_s": 25.024,
+      "median_process_s": 7.371,
+      "median_startup_s": 0.135,
+      "errors": {}
+    },
+    "rephrase": {
+      "calls": 4,
+      "sum_process_s": 33.018,
+      "median_process_s": 8.24,
+      "median_startup_s": 0.538,
+      "errors": {}
+    },
+    "retranslate": {
+      "calls": 24,
+      "sum_process_s": 272.306,
+      "median_process_s": 10.832,
+      "median_startup_s": 0.128,
+      "errors": {}
+    },
+    "review": {
+      "calls": 31,
+      "sum_process_s": 215.675,
+      "median_process_s": 6.64,
+      "median_startup_s": 0.132,
+      "errors": {}
+    },
+    "scene": {
+      "calls": 24,
+      "sum_process_s": 491.207,
+      "median_process_s": 19.875,
+      "median_startup_s": 0.134,
+      "errors": {}
+    }
+  },
+  "scene_readiness": [
+    {
+      "scene": 1,
+      "ready_at_s": 14.84,
+      "duration_s": 14.65,
+      "lines": 6,
+      "preceding_telugu_lines": 0,
+      "fit_lines": 0
+    },
+    {
+      "scene": 2,
+      "ready_at_s": 45.899,
+      "duration_s": 31.06,
+      "lines": 4,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 3,
+      "ready_at_s": 75.825,
+      "duration_s": 29.93,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 4,
+      "ready_at_s": 120.221,
+      "duration_s": 44.4,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 5,
+      "ready_at_s": 166.234,
+      "duration_s": 46.01,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 6,
+      "ready_at_s": 190.869,
+      "duration_s": 24.63,
+      "lines": 4,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 7,
+      "ready_at_s": 229.507,
+      "duration_s": 38.64,
+      "lines": 4,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 8,
+      "ready_at_s": 283.429,
+      "duration_s": 53.92,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 9,
+      "ready_at_s": 321.769,
+      "duration_s": 38.34,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 10,
+      "ready_at_s": 15.095,
+      "duration_s": 14.91,
+      "lines": 6,
+      "preceding_telugu_lines": 0,
+      "fit_lines": 0
+    },
+    {
+      "scene": 11,
+      "ready_at_s": 38.032,
+      "duration_s": 22.94,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 12,
+      "ready_at_s": 82.469,
+      "duration_s": 44.44,
+      "lines": 4,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 13,
+      "ready_at_s": 125.817,
+      "duration_s": 43.35,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 14,
+      "ready_at_s": 176.847,
+      "duration_s": 51.03,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 15,
+      "ready_at_s": 220.445,
+      "duration_s": 43.6,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 16,
+      "ready_at_s": 255.954,
+      "duration_s": 35.51,
+      "lines": 4,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 17,
+      "ready_at_s": 287.788,
+      "duration_s": 31.83,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 18,
+      "ready_at_s": 328.263,
+      "duration_s": 40.47,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 19,
+      "ready_at_s": 23.125,
+      "duration_s": 22.94,
+      "lines": 6,
+      "preceding_telugu_lines": 0,
+      "fit_lines": 0
+    },
+    {
+      "scene": 20,
+      "ready_at_s": 57.83,
+      "duration_s": 34.7,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 21,
+      "ready_at_s": 93.772,
+      "duration_s": 35.94,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 22,
+      "ready_at_s": 135.902,
+      "duration_s": 42.13,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 23,
+      "ready_at_s": 177.339,
+      "duration_s": 41.44,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 24,
+      "ready_at_s": 200.957,
+      "duration_s": 23.62,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 1
+    },
+    {
+      "scene": 25,
+      "ready_at_s": 260.789,
+      "duration_s": 59.83,
+      "lines": 6,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 2
+    },
+    {
+      "scene": 26,
+      "ready_at_s": 311.589,
+      "duration_s": 50.8,
+      "lines": 5,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    },
+    {
+      "scene": 27,
+      "ready_at_s": 330.763,
+      "duration_s": 19.17,
+      "lines": 2,
+      "preceding_telugu_lines": 3,
+      "fit_lines": 0
+    }
+  ],
+  "wait_windows": [
+    {
+      "waiting_for_scene": 2,
+      "start_s": 28.784,
+      "end_s": 45.899,
+      "window_s": 17.115,
+      "recorded_speech_work_in_window_s": 0,
+      "no_recorded_speech_work_s": 17.115,
+      "later_scenes_already_reviewed": 2
+    },
+    {
+      "waiting_for_scene": 3,
+      "start_s": 60.751,
+      "end_s": 75.825,
+      "window_s": 15.074,
+      "recorded_speech_work_in_window_s": 0.126,
+      "no_recorded_speech_work_s": 14.948,
+      "later_scenes_already_reviewed": 4
+    },
+    {
+      "waiting_for_scene": 4,
+      "start_s": 92.423,
+      "end_s": 120.221,
+      "window_s": 27.798,
+      "recorded_speech_work_in_window_s": 0.153,
+      "no_recorded_speech_work_s": 27.645,
+      "later_scenes_already_reviewed": 5
+    },
+    {
+      "waiting_for_scene": 6,
+      "start_s": 187.431,
+      "end_s": 190.869,
+      "window_s": 3.438,
+      "recorded_speech_work_in_window_s": 0.418,
+      "no_recorded_speech_work_s": 3.02,
+      "later_scenes_already_reviewed": 10
+    },
+    {
+      "waiting_for_scene": 7,
+      "start_s": 210.338,
+      "end_s": 229.507,
+      "window_s": 19.169,
+      "recorded_speech_work_in_window_s": 0.256,
+      "no_recorded_speech_work_s": 18.913,
+      "later_scenes_already_reviewed": 11
+    },
+    {
+      "waiting_for_scene": 8,
+      "start_s": 246.495,
+      "end_s": 283.429,
+      "window_s": 36.934,
+      "recorded_speech_work_in_window_s": 0.916,
+      "no_recorded_speech_work_s": 36.018,
+      "later_scenes_already_reviewed": 12
+    },
+    {
+      "waiting_for_scene": 9,
+      "start_s": 300.273,
+      "end_s": 321.769,
+      "window_s": 21.496,
+      "recorded_speech_work_in_window_s": 0.178,
+      "no_recorded_speech_work_s": 21.318,
+      "later_scenes_already_reviewed": 15
+    }
+  ],
+  "total_wait_window_s": 141.024,
+  "no_recorded_speech_work_in_wait_windows_s": 138.977,
+  "recorded_speech_work_s": 412.864,
+  "recorded_speech_rows": 104,
+  "median_speech_work_per_line_s": 3.155,
+  "replay": [
+    {
+      "weights": [
+        1,
+        1,
+        1
+      ],
+      "lane_starts": [
+        1,
+        10,
+        19
+      ],
+      "lane_sizes": [
+        9,
+        9,
+        9
+      ],
+      "predicted_total_s": 730.18,
+      "predicted_wait_s": 181.68
+    },
+    {
+      "weights": [
+        1,
+        1.5,
+        2
+      ],
+      "lane_starts": [
+        1,
+        7,
+        16
+      ],
+      "lane_sizes": [
+        6,
+        9,
+        12
+      ],
+      "predicted_total_s": 652.53,
+      "predicted_wait_s": 104.03
+    },
+    {
+      "weights": [
+        1,
+        2,
+        3
+      ],
+      "lane_starts": [
+        1,
+        5,
+        14
+      ],
+      "lane_sizes": [
+        4,
+        9,
+        14
+      ],
+      "predicted_total_s": 661.9,
+      "predicted_wait_s": 113.39
+    },
+    {
+      "weights": [
+        1,
+        2,
+        4
+      ],
+      "lane_starts": [
+        1,
+        4,
+        12
+      ],
+      "lane_sizes": [
+        3,
+        8,
+        16
+      ],
+      "predicted_total_s": 654.54,
+      "predicted_wait_s": 106.04
+    },
+    {
+      "weights": [
+        1,
+        3,
+        5
+      ],
+      "lane_starts": [
+        1,
+        4,
+        13
+      ],
+      "lane_sizes": [
+        3,
+        9,
+        15
+      ],
+      "predicted_total_s": 680.04,
+      "predicted_wait_s": 131.53
+    }
+  ],
+  "proposal": {
+    "change": "Front-load the existing three contiguous translation lanes; screen 1:2:3 and 1:2:4 against equal thirds.",
+    "retained": [
+      "Three CLI slots",
+      "Exactly two initial lane boundaries without preceding Telugu",
+      "Fully reviewed preceding Telugu within each lane",
+      "Global brief, reviews, retranslation, fit, voice quality and pause/resume behavior"
+    ],
+    "validation": "Measured bounded fresh-cache fixture and context-boundary quality comparison before changing production; estimates above are not measured gains."
+  }
+}

@@ -22,6 +22,37 @@ from maata_engine.dubber import VoiceCost  # noqa: E402
 from maata_engine.gpu import BACKGROUND, URGENT, VOICE, GpuScheduler  # noqa: E402
 from maata_engine.text.scene_prompt import PROMPT_HASH  # noqa: E402
 
+
+async def test_run_boundaries_and_stage_deltas_survive_pause_and_resume(tmp_path, monkeypatch):
+    from maata_engine import render
+
+    job = bare_job(tmp_path)
+    monkeypatch.setattr(render, "ORDER", (("fetch",),))
+    monkeypatch.setattr(job, "_separator_ready", lambda: None)
+    monkeypatch.setattr(job, "_let_go_of_sources", lambda: None)
+    attempts = 0
+
+    async def fetch():
+        nonlocal attempts
+        attempts += 1
+        await job._begin("fetch")
+        await asyncio.sleep(0.01)
+        if attempts == 1:
+            raise render._Paused
+
+    monkeypatch.setattr(job, "_fetch", fetch)
+    assert await job.run() == "paused"
+    assert await job.run() == "done"
+    events = trace(job)
+    starts = [e for e in events if e["event"] == "run_start"]
+    ends = [e for e in events if e["event"] == "run_end"]
+    stages = [e for e in events if e["event"] == "stage_timing"]
+    assert len({e["run_id"] for e in starts}) == 2
+    assert [e["status"] for e in ends] == ["paused", "done"]
+    assert [e["outcome"] for e in stages] == ["paused", "done"]
+    assert all(e["run_id"] in {s["run_id"] for s in starts} for e in events)
+    assert sum(e["wall_s"] for e in stages) == pytest.approx(job.doc["stages"]["fetch"]["seconds"], abs=.015)
+
 UNIT_KEYS = {"lock_wait_s", "takes", "synth_s", "t3_s", "t3_tokens", "t3_steps", "t3_ms_per_token", "flow_s", "cfm_steps",
              "render_s", "retakes",
              "translate_ready_at", "translate_s", "model", "prompt_hash", "cache_hit", "audio_s", "tier", "wording",
@@ -31,6 +62,32 @@ UNIT_KEYS = {"lock_wait_s", "takes", "synth_s", "t3_s", "t3_tokens", "t3_steps",
              "anchor_errors", "end_error_s", "overlap_speech"}  # the timing fields (§3.10)
 ASR_KEYS = {"redecoded", "recovered", "rejected", "punctuated", "edge_guesses", "uncovered", "low_confidence",
             "repeats"}  # the ASR guards (§3.4)
+
+
+async def test_gpu_work_separates_queue_wait_from_actual_calls(tmp_path):
+    job = bare_job(tmp_path)
+    job._run_id = "current"
+
+    async def holder():
+        async with job.gpu.hold(BACKGROUND):
+            await asyncio.sleep(0.08)
+
+    def original_operation():
+        time.sleep(0.01)
+        return "private value"
+
+    task = asyncio.create_task(holder())
+    await asyncio.sleep(0)
+    assert (await job._on_gpu(original_operation))[0] == "private value"
+    await task
+    await job._gpu_now(original_operation)
+    first, second = trace(job, "gpu_work")
+    assert first["run_id"] == second["run_id"] == "current"
+    assert first["queue_wait_s"] >= .06
+    assert first["run_s"] >= .008 and second["run_s"] >= .008
+    assert second["queue_wait_s"] < first["queue_wait_s"]
+    assert first["operation"] == "original_operation"
+    assert "private value" not in str([first, second])
 
 
 @dataclass

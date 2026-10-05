@@ -33,6 +33,7 @@ AAC_OPTIONS: dict[str, str] = {}  # the encoder's own options: none, so AudioToo
 OUTPUT_PER_HOUR = 0.1e9  # bytes of the output's volume per hour of video, beside the video's own size (§2.17)
 NAME_BYTES = 150         # the title's share of a file name, in UTF-8 bytes
 FINISHING = "Finishing the file…"  # the stage's extra while faststart rewrites the file (it can't be paused)
+CHECKING = "Checking audio quality…"  # the encoded AAC's loudness and true peak, with per-block pause checks
 VP9 = "QuickTime can't play VP9; open it in IINA or VLC."
 NO_BED = "No background sound: the file has the Telugu voices only."
 # A minimal ASS header: without one, a mov_text encoder doesn't open (`avcodec_open2` fails).
@@ -165,6 +166,10 @@ def export(dest: Path, *, video: Path, lines: Sequence[mix.Line], voice_sr: int,
         if cancel is not None and cancel.is_set():
             raise Cancelled("export paused")
 
+    def measured(seconds: float) -> None:
+        # AAC padding may extend past `end`. Keep the displayed count below 100% until the meter has flushed too.
+        report(min(2 * end / 3 + min(seconds, end) / 3, max(0.0, round(end, 1) - 0.1)), CHECKING)
+
     try:
         # Pass 1: each speaker's gain, the bed's balance, then the mix's integrated loudness (a third of the progress).
         gains = mix.speaker_gains(lines, voice_sr)
@@ -181,13 +186,17 @@ def export(dest: Path, *, video: Path, lines: Sequence[mix.Line], voice_sr: int,
         with av.open(str(part), "w", format="mp4", options={"movflags": "+faststart"}) as out:
             _mux(out, video, mix.master(mix.Mix(lines, end, voice_sr, gains, under).blocks(), gain), tracks, cut, end,
                  metadata, check, report)
-            report(end, FINISHING)
+            report(2 * end / 3, FINISHING)
+        check()
         _subtitles_off(part)
-        loudness = _measure(part)
+        report(2 * end / 3, CHECKING)
+        loudness = _measure(part, check=check, progress=measured)
         if loudness["TP"] is not None and loudness["TP"] > mix.TP_CEIL:
             warnings.append(f"The loudest peak is {loudness['TP']:.1f} dBTP, over {mix.TP_CEIL:.0f} dBTP.")
         size = part.stat().st_size
         check()  # a stopped export never puts a file in place (the job would not know it as its own)
+        report(end, CHECKING)
+        check()  # progress callbacks may themselves request a pause
         os.replace(part, dest)
     except BaseException:
         with contextlib.suppress(OSError):
@@ -278,7 +287,7 @@ def _blocks(out, a, audio: Iterator[np.ndarray], copy_video: Callable[[float], N
             out.mux(p)
         copy_cues(round(until * 1000))
         done += block.shape[1]
-        report(end / 3 + 2 * until / 3)
+        report(end / 3 + until / 3)
     for p in a.encode(None):
         out.mux(p)
     copy_video(math.inf)
@@ -324,21 +333,37 @@ def _subtitles_off(path: Path) -> None:
                 f.write(bytes([flags & ~1]))
 
 
-def _measure(path: Path) -> dict:
+def _measure(path: Path, *, check: Callable[[], None] | None = None,
+             progress: Callable[[float], None] | None = None) -> dict:
     """{"I", "TP", "LRA"} of the file's AAC, decoded (AAC adds its own overshoot to the peaks), fed to the meter in
-    BLOCK s chunks."""
+    BLOCK s chunks. `progress` receives seconds measured; `check` may cancel at each block boundary."""
     import av
 
+    if check is not None:
+        check()
     meter = mix.Loudness(mix.MIX_SR, 2, peak=True)
+    measured = 0
+
+    def add(frames: list[np.ndarray], n: int) -> None:
+        nonlocal measured
+        if check is not None:
+            check()
+        meter.add(np.concatenate(frames, axis=1))
+        measured += n
+        if progress is not None:
+            progress(measured / mix.MIX_SR)
+        if check is not None:
+            check()
+
     with av.open(str(path)) as c:
         frames, n = [], 0
         for frame in c.decode(c.streams.audio[0]):
             frames.append(frame.to_ndarray().reshape(2, -1))
             n += frame.samples
             if n >= mix.BLOCK * mix.MIX_SR:
-                meter.add(np.concatenate(frames, axis=1))
+                add(frames, n)
                 frames, n = [], 0
         if frames:
-            meter.add(np.concatenate(frames, axis=1))
+            add(frames, n)
     got = meter.result()
     return {"I": round(got["I"], 2), "TP": got["TP"], "LRA": round(got["LRA"], 2)}

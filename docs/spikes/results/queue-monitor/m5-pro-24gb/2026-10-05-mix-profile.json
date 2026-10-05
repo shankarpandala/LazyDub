@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-05T18:11:16.200505+00:00",
+  "scope": "CPU-only streaming Mix.blocks component on original synthetic three-hour timeline; not export, inference, or end-to-end dubbing",
+  "rerun_command": "/Users/shankarpandala/projects/LazyDub/engine/.venv/bin/python /tmp/maata-mix-profile.py",
+  "source": {
+    "before_path": "/tmp/maata-mix-before.py",
+    "before_sha256": "762d0736acc163eb2089a4001976cc4d9e8844fb0a245f1175540c52f4819c85",
+    "after_path": "/Users/shankarpandala/projects/LazyDub/engine/src/maata_engine/mix.py",
+    "after_sha256": "b852318a6ab73b400e30fda0d17d466969f67aa130cc503af86cb31a8cdca10f",
+    "head": "3944a47c114cc45abd4e2d82911765e9210c181b",
+    "script_sha256": "02fe6fb0f62b2015ce1ed182b2c6701c123cf0d30a29cc1c867209e0ee0d671a"
+  },
+  "machine": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "cpu": "Apple M5 Pro",
+    "ram_bytes": "25769803776",
+    "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=23789667)\t100%; charged; 0:00 remaining present: true",
+    "python": "3.12.11 (main, Aug 18 2025, 19:02:39) [Clang 20.1.4 ]",
+    "numpy": "2.5.3"
+  },
+  "fixture": {
+    "provenance": "Original seeded synthetic noise voices and constant bed; no media downloaded",
+    "seed": 20261006,
+    "seconds": 10800.31,
+    "voice_rate": 24000,
+    "output_rate": 44100,
+    "output_channels": 2,
+    "block_seconds": 10.0,
+    "lines": 3729,
+    "duck_spans": 2401,
+    "bare_spans": 481,
+    "source_pcm_sha256": "313a39f4ac3edd5c89b6f33972777bd4dbce6bb27ce5010e638729c63c0b25f1"
+  },
+  "method": {
+    "paired_repetitions": 5,
+    "order": [
+      "before,after",
+      "after,before",
+      "before,after",
+      "after,before",
+      "before,after"
+    ],
+    "warmup": "One 20-second run per arm; then full exact comparison before timings",
+    "timed": "Mix construction, repeated voice PCM memmap reads, resampling, prepared synthetic-bed ducking and block consumption",
+    "excluded": "AAC, loudness/mastering, real bed decoding/disk, GPU, CLI/network, all inference and hashing",
+    "caveats": [
+      "Exploratory single-process warm-cache CPU component measurement",
+      "No thermal-state samples; not a formal reference-machine acceptance benchmark",
+      "Other system activity was not controlled; no whole-video speed claim"
+    ]
+  },
+  "exact_pcm": {
+    "bitwise_equal": true,
+    "blocks": 1081,
+    "frames_per_channel": 476293671,
+    "samples_compared": 952587342,
+    "sha256": [
+      "8a8825a3347c030c5b31989d5d66e82c9ccaf30425679a6da20a33b84f8b612e",
+      "8a8825a3347c030c5b31989d5d66e82c9ccaf30425679a6da20a33b84f8b612e"
+    ],
+    "wall_s_not_in_timing": 14.009155790998193
+  },
+  "pairs": [
+    {
+      "pair": 1,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": {
+        "wall_s": 5.5962576669990085,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "after": {
+        "wall_s": 5.917473749999772,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "ratio_after_before": 1.057398372647308
+    },
+    {
+      "pair": 2,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": {
+        "wall_s": 5.532266416001221,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "before": {
+        "wall_s": 5.619109625000419,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "ratio_after_before": 0.9845450231807513
+    },
+    {
+      "pair": 3,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": {
+        "wall_s": 5.667195499998343,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "after": {
+        "wall_s": 5.5861911669999245,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "ratio_after_before": 0.9857064516305389
+    },
+    {
+      "pair": 4,
+      "order": [
+        "after",
+        "before"
+      ],
+      "after": {
+        "wall_s": 5.572039208000206,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "before": {
+        "wall_s": 5.793877957999939,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "ratio_after_before": 0.9617115252326937
+    },
+    {
+      "pair": 5,
+      "order": [
+        "before",
+        "after"
+      ],
+      "before": {
+        "wall_s": 5.652830582999741,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "after": {
+        "wall_s": 5.649069791998045,
+        "blocks": 1081,
+        "frames_per_channel": 476293671,
+        "edge_sum": -47.30557163525373
+      },
+      "ratio_after_before": 0.9993347065781512
+    }
+  ],
+  "summary": {
+    "before_median_s": 5.652830582999741,
+    "after_median_s": 5.5861911669999245,
+    "median_paired_ratio_after_before": 0.9857064516305389
+  }
+}

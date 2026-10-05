@@ -100,7 +100,11 @@ def test_the_mp4_copies_the_video_and_carries_the_telugu_audio_and_two_subtitle_
     # the file appears under its name only once done; the .part.mp4 is gone
     assert not any(s[3] for s in seen) and any(s[4] for s in seen) and dest.is_file()
     assert not mp4.part_path(dest).exists() and got["bytes"] == dest.stat().st_size
-    assert seen[-1][2] == mp4.FINISHING and max(s[0] for s in seen if s[0] <= seen[-1][1] / 3 + 1e-6) > 0  # pass 1
+    assert any(s[2] == mp4.FINISHING and s[0] < s[1] for s in seen)
+    assert seen[-1][2] == mp4.CHECKING and seen[-1][0] == seen[-1][1]
+    assert all(s[0] < s[1] for s in seen[:-1])  # 100% waits for the encoded-audio quality check
+    assert [s[0] for s in seen] == sorted(s[0] for s in seen)
+    assert max(s[0] for s in seen if s[0] <= seen[-1][1] / 3 + 1e-6) > 0  # pass 1
     with av.open(str(dest)) as c:
         assert [s.type for s in c.streams] == ["video", "audio", "subtitle", "subtitle"]
         v, a = c.streams.video[0], c.streams.audio[0]
@@ -237,6 +241,45 @@ def test_a_pause_mid_export_leaves_no_file_and_the_export_again_is_the_same_byte
     other = tmp_path / "again.mp4"
     do_export(other, video, start, lines)
     assert dest.read_bytes() == other.read_bytes()  # an export made again from the start is the same file
+
+
+def test_a_pause_during_encoded_audio_quality_check_stops_at_a_block_and_preserves_a_prior_output(tmp_path):
+    video = tmp_path / "source.mp4"
+    synth_video(video, seconds=24.0)
+    lines = [click_line(tmp_path, "a", 1.0, seconds=2.0)]
+    dest = tmp_path / "out.mp4"
+    dest.write_bytes(b"previous finished output")
+    cancel = threading.Event()
+    checks: list[tuple[float, float]] = []
+
+    def progress(done: float, total: float, extra: str | None) -> None:
+        if extra == mp4.CHECKING:
+            checks.append((done, total))
+            assert dest.read_bytes() == b"previous finished output" and mp4.part_path(dest).exists()
+            if len(checks) == 2:  # phase start, then one 10-second block of decoded AAC
+                cancel.set()
+
+    with pytest.raises(Cancelled):
+        do_export(dest, video, audio_start(video), lines, cancel=cancel, progress=progress)
+    assert len(checks) == 2 and checks[0][0] < checks[1][0] < checks[1][1]
+    assert dest.read_bytes() == b"previous finished output" and not mp4.part_path(dest).exists()
+
+
+def test_quality_check_progress_keeps_loudness_results_and_export_bytes(tmp_path):
+    video = tmp_path / "source.mp4"
+    synth_video(video, seconds=12.0)
+    lines = [click_line(tmp_path, "a", 1.0, seconds=2.0)]
+    plain, tracked = tmp_path / "plain.mp4", tmp_path / "tracked.mp4"
+    baseline = do_export(plain, video, audio_start(video), lines)
+    seen = []
+    actual = do_export(tracked, video, audio_start(video), lines,
+                       progress=lambda done, total, extra: seen.append((done, total, extra)))
+    assert plain.read_bytes() == tracked.read_bytes()
+    assert actual["loudness"] == baseline["loudness"] == mp4._measure(tracked)
+    checking = [(done, total) for done, total, extra in seen if extra == mp4.CHECKING]
+    assert len(checking) >= 4  # phase start, full block, final partial block, meter flushed
+    assert checking[-1][0] == checking[-1][1]
+    assert all(done < total for done, total in checking[:-1])
 
 
 # ---- through a render job ------------------------------------------------------------------------------------------

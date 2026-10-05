@@ -4,7 +4,7 @@
 From the repository root:
     engine/.venv/bin/python scripts/check-translation.py --out PATH.json
 
-Uses the normal sealed Claude CLI and production local validators/reviewer. This is a schema and automated-meaning
+Uses the normal sealed Codex CLI and production local validators/reviewer. This is a schema and automated-meaning
 smoke check, not a native-speaker quality evaluation or an end-to-end speed benchmark. The isolated temporary cache
 ensures every rerun makes fresh calls without changing the user's jobs or cached translations.
 """

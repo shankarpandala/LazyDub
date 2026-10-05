@@ -6,11 +6,12 @@ import pytest
 
 from maata_engine.backends.base import LineSpec, Wording
 from maata_engine.qa.validators import (check_line, check_reply, glossary_entries, negations, script_problems, suspect,
-                                        unsaid_numbers)
+                                        unsaid_numbers, wording)
+from maata_engine.text.tenglish import anchored_english, latin_spoken
 
 
 def w(spoken: str, *english: tuple[int, str]) -> dict:
-    return {"spoken": spoken, "english": [{"i": i, "en": en} for i, en in english]}
+    return {"spoken": spoken, "english": anchored_english(spoken, english)}
 
 
 def spec(i: int = 1, en: str = "The shop opens early.", want: tuple[str, ...] = ("full",), **kw) -> LineSpec:
@@ -69,19 +70,67 @@ def test_a_full_wording_that_breaks_the_script_rejects_the_line():
 
 # ---- the english map -------------------------------------------------------------------------------------------------
 def test_english_entries_must_point_at_a_telugu_word_and_be_english():
-    full = w("షాప్ పొద్దున్నే తెరుస్తారు — సరే.", (0, "shop"), (9, "early"), (3, "dash"), (0, "store"), (1, "\u0435arly"),
-             (2, "cheyandi"), (4, ""))
+    full = w("షాప్ పొద్దున్నే తెరుస్తారు — సరే.")
+    full["english"] = [{"word": word, "occurrence": 0, "en": en} for word, en in
+                       [("షాప్", "shop"), ("లేదు", "early"), ("—", "dash"), ("షాప్", "store"),
+                        ("పొద్దున్నే", "\u0435arly"), ("తెరుస్తారు", "cheyandi"), ("సరే.", "")]]
     got, why = check_line(line(full=full), spec())
     assert why == [] and got.full.english == ((0, "shop"),)
-    assert got.flags == ("full english: 9 is not a word of the line", "full english: 3 is not a word of the line",
+    assert got.flags == ("full english: exact word/occurrence not found", "full english: exact word/occurrence not found",
                          "full english: word 0 listed twice", "full english: '\u0435arly' has Cyrillic letters",
                          "full english: 'cheyandi' is romanised Telugu", "full english: '' is empty")
 
 
 def test_english_names_with_digits_capitals_and_symbols_pass():
-    full = w("జీపీటీ ఫోర్ తో సీ ప్లస్ ప్లస్ రాయొచ్చు.", (0, "GPT-4"), (2, "C++"), (1, "four"))
+    full = w("జీపీటీ-ఫోర్ సీప్లస్ప్లస్ రాయొచ్చు.", (0, "GPT-4"), (1, "C++"))
     got, _ = check_line(line(full=full), spec(en="You can write C++ with GPT-4."))
-    assert got.full.english == ((0, "GPT-4"), (1, "four"), (2, "C++")) and got.flags == ()
+    assert got.full.english == ((0, "GPT-4"), (1, "C++")) and got.flags == ()
+
+
+def test_legacy_and_shifted_indices_never_overwrite_a_telugu_word():
+    spoken = "ఫోన్ చేసే ఫ్రెండ్."
+    raw = {"spoken": spoken, "english": [{"i": 1, "en": "phone"}, {"i": 2, "en": "cancel"}]}
+    got, why, flags = wording(raw)
+    assert not why and got.english == () and len(flags) == 2
+    assert latin_spoken(got.spoken, got.english) == spoken
+    # A malicious legacy index does not become trusted by also adding a valid anchor.
+    raw["english"] = [{"i": 1, "word": "ఫోన్", "occurrence": 0, "en": "phone"}]
+    assert wording(raw)[0].english == ()
+
+
+@pytest.mark.parametrize("entry", [
+    {"word": "ఫోన్", "en": "phone"},  # ambiguous: no occurrence
+    {"word": "ఫోన్", "occurrence": 2, "en": "phone"},
+    {"word": "ఫోన్", "occurrence": True, "en": "phone"},
+    {"word": "ఫోన్ ఫోన్", "occurrence": 0, "en": "phone"},
+    {"word": "లేనిది", "occurrence": 0, "en": "phone"},
+    {"word": "ఫోన్", "occurrence": 0, "en": "phone call"},
+])
+def test_absent_ambiguous_or_multiword_anchors_leave_original_text(entry):
+    spoken = "ఫోన్ ఫోన్ అన్నాడు."
+    got, why, flags = wording({"spoken": spoken, "english": [entry]})
+    assert not why and flags and got.english == ()
+    assert latin_spoken(got.spoken, got.english) == spoken
+
+
+def test_repeated_words_and_attached_punctuation_resolve_exact_occurrence():
+    spoken = 'ఫోన్ ఫోన్ "ఫ్రెండ్," అన్నాడు.'
+    raw = {"spoken": spoken, "english": [
+        {"word": "ఫోన్", "occurrence": 1, "en": "phone"},
+        {"word": '"ఫ్రెండ్,"', "occurrence": 0, "en": "friend"}]}
+    got, why, flags = wording(raw)
+    assert not why and not flags and got.english == ((1, "phone"), (2, "friend"))
+    assert latin_spoken(got.spoken, got.english) == 'ఫోన్ phone "friend," అన్నాడు.'
+    assert anchored_english(got.spoken, got.english) == raw["english"]
+
+
+@pytest.mark.parametrize("word,en", [("ఫ్రెండ్స్కి", "friends"), ("లాబీలోకి", "lobby"),
+                                     ("ఐఎన్టీజేలు", "INTJ"), ("రౌటర్ని", "router")])
+def test_inflected_loan_keeps_its_complete_telugu_surface(word, en):
+    raw = {"spoken": word, "english": [{"word": word, "occurrence": 0, "en": en}]}
+    got, why, flags = wording(raw)
+    assert not why and flags and got.english == ()
+    assert latin_spoken(got.spoken, got.english) == word
 
 
 # ---- tiers -----------------------------------------------------------------------------------------------------------
@@ -107,6 +156,28 @@ def test_a_shorter_tier_that_breaks_the_script_is_dropped_not_the_line():
 def test_whitespace_is_normalised():
     got, _ = check_line(line(full=w("  షాప్   పొద్దున్నే\nతెరుస్తారు. ", (0, "shop"))), spec())
     assert got.full.spoken == "షాప్ పొద్దున్నే తెరుస్తారు."
+
+
+@pytest.mark.parametrize("joiner", ["\u200c", "\u200d", "\u200c\u200d"])
+def test_telugu_shaping_joiners_are_normalized_without_losing_word_map_tiers_or_pieces(joiner):
+    update = f"అప్{joiner}డేట్"
+    raw = line(full=w(f"ఈ {update} త్వరగా వస్తుంది.", (1, "update")),
+               concise=w(f"{update} వస్తుంది.", (0, "update")), pieces=[f"ఈ {update}", "త్వరగా వస్తుంది."])
+    got, why = check_line(raw, spec(en="This update arrives quickly.", want=("full", "concise"), breaks=(1.0,)))
+    assert not why and got.full == Wording("ఈ అప్డేట్ త్వరగా వస్తుంది.", ((1, "update"),))
+    assert got.tiers["concise"] == Wording("అప్డేట్ వస్తుంది.", ((0, "update"),))
+    assert got.pieces == ("ఈ అప్డేట్", "త్వరగా వస్తుంది.")
+    assert got.flags == ("full ZWNJ/ZWJ normalized", "concise ZWNJ/ZWJ normalized")
+    assert not script_problems(got.full.spoken)
+    glossary = glossary_entries([{"term": "update", "spoken": update}])
+    assert len(glossary) == 1 and glossary[0].spoken == "అప్డేట్"
+
+
+@pytest.mark.parametrize("text", ["అప్\u200cdate", "అప్\u200dడేట్ 2", "అప్\u200cడే\u0430ట్", "అప్\u200bడేట్",
+                                  "క\u200dష్టం", "\u200c అప్డేట్", "అప్\u200c డేట్"])
+def test_joiner_repair_never_accepts_mixed_script_digits_other_controls_or_changes_word_boundaries(text):
+    got, why = check_line(line(full=w(text)), spec())
+    assert got is None and why
 
 
 # ---- pieces ----------------------------------------------------------------------------------------------------------

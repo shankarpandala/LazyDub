@@ -14,9 +14,9 @@
 #    SEP_DTYPE it says to use), and the English left in the bed over the speech turns (MAATA_VERIFY_ENGLISH_MAX_DB,
 #    default -20 dB).
 # 4. Dubs it to an MP4 with `maata-bench pipeline --backend apple` (per-stage seconds, GPU seconds, peak RSS and MLX
-#    memory, Claude calls), outbound network blocked by sandbox-exec except the Claude CLI's HTTPS to Anthropic, which
-#    goes through a local proxy that tunnels to nothing else. Text is translated through your signed-in Claude Code
-#    (ADR-019); MAATA_BENCH_TRANSLATOR=mock runs it offline (translation not measured). MAATA_BENCH_BASELINE=<an earlier
+#    memory, Codex calls), outbound network blocked by sandbox-exec except the Codex CLI's HTTPS to OpenAI, which
+#    goes through a local proxy that tunnels to nothing else. Text is translated through your signed-in Codex CLI
+#    (ADR-025); MAATA_BENCH_TRANSLATOR=mock runs it offline (translation not measured). MAATA_BENCH_BASELINE=<an earlier
 #    committed pipeline JSON, from the repo root> measures the timing targets against that run's.
 # 5. Checks the MP4: its streams (one copied H.264 video, one Telugu AAC, two mov_text tracks), faststart, loudness,
 #    the A/V offset (the white frame against the beep, which the bed carries) and the PerTh watermark under the Telugu.
@@ -88,7 +88,7 @@ if [[ "$floor" != True ]]; then
   die "The separator's vocals are under the 8 dB SI-SDR floor: see $out/verify-${stamp}.json. Don't start a long job."
 fi
 
-bold "→ Dubbing it to an MP4 (Apple backend, real models; network: the Claude CLI to Anthropic only)"
+bold "→ Dubbing it to an MP4 (Apple backend, real models; network: Codex CLI to OpenAI only)"
 ( cd engine && exec .venv/bin/python "$root/scripts/verify_mac.py" proxy "$work" ) &  # (outside the sandbox)
 proxy_pid=$!
 for _ in $(seq 50); do [[ -s "$work/proxy.port" ]] && break; sleep 0.1; done

@@ -1,0 +1,27 @@
+{
+  "engine_unique_tests": 1188,
+  "engine_partitions": [
+    {
+      "scope": "all except test_render.py/test_lines_translate.py",
+      "passed_initial": 990,
+      "failed_initial": 4,
+      "failed_file": "test_calibration.py",
+      "resolution": "Updated original fixtures for anchored maps, preserved inflections and clone-event filtering; all17tests in file pass after fixes; no production behavior relaxed."
+    },
+    {
+      "scope": "test_render.py + test_lines_translate.py",
+      "passed_final": 194,
+      "seconds": 239.43
+    }
+  ],
+  "prior_ui_tests_passed": 68,
+  "native_release_build": "passed",
+  "bundle": "app/src-tauri/target/release/bundle/macos/Maata.app",
+  "source_changes_since_build": "Python editable engine and documentation only; no Rust/UI changes",
+  "live_checks": [
+    "Five original sentences with actual-TTS review pass",
+    "Original60s audio: all11units voiced, export checks pass; underfill limitation retained",
+    "Bounded original-text lane pilot retains balanced default"
+  ],
+  "ui_restart": "Blocked by locked macOS; background engine launched separately to preserve queue processing. See local monitoring/background-engine.json for supervisor lifecycle."
+}

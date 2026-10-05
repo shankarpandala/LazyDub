@@ -2,13 +2,13 @@
 
 **Any YouTube video, spoken in Telugu — in the speaker's own voice. On your Mac.**
 
-Maata dubs a whole YouTube video into Telugu in the background and saves it as an MP4: every person in it speaks Telugu in an AI clone of their own voice, timed to what's on screen, over the video's own music and sound effects, with Telugu and English subtitles you can switch on in the player. Speech recognition, speaker separation, music separation and voice synthesis run **locally** — tuned first for Apple Silicon (MLX + Metal), with NVIDIA GPUs supported too — and audio never leaves your machine. Translation goes through your own [Claude Code](https://claude.com/claude-code), signed in with your own plan: only the English transcript, as text, is sent.
+Maata dubs a whole YouTube video into Telugu in the background and saves it as an MP4: every person in it speaks Telugu in an AI clone of their own voice, timed to what's on screen, over the video's own music and sound effects, with Telugu and English subtitles you can switch on in the player. Speech recognition, speaker separation, music separation and voice synthesis run **locally** — tuned first for Apple Silicon (MLX + Metal), with NVIDIA GPUs supported too — and audio never leaves your machine. Translation goes through your own [Codex CLI](https://learn.chatgpt.com/docs/non-interactive-mode), signed in with ChatGPT: the transcript, translations and video context are sent as text.
 
 > The Telugu voices are AI-generated. The app always shows an **AI dub** badge.
 
 ## Quick start (Apple Silicon Mac)
 
-Requirements: macOS 14+, Apple Silicon, 16 GB memory (24 GB recommended), ~20 GB free disk, and `uv`, Node 22.12+, Rust (`rustup`), Deno (`brew install deno`) and Claude Code, signed in (`claude auth login`).
+Requirements: macOS 14+, Apple Silicon, 16 GB memory (24 GB recommended), ~20 GB free disk, and `uv`, Node 22.12+, Rust (`rustup`), Deno (`brew install deno`) and Codex CLI, signed in (`codex login`).
 
 ```bash
 git clone https://github.com/shankarpandala/LazyDub && cd LazyDub
@@ -35,7 +35,7 @@ Paste any YouTube link and press **Dub**: the demo engine runs the whole job (sp
 Tauri shell ──spawns──► Python engine (127.0.0.1, per-launch token): one dub job at a time, the rest queued
    │                      yt-dlp audio → pyannote (MPS) on the whole file → Whisper (MLX) → sentence units
    │                      → every speaker's voice cloned (chatterbox-telugu) + a video brief from the whole transcript
-   │                      → music & effects separated (Mel-Band RoFormer, MLX) │ scenes → your Claude Code (text only)
+   │                      → music & effects separated (Mel-Band RoFormer, MLX) │ scenes → your Codex CLI (text only)
    │                      → Telugu takes (MPS) on a timeline planner (never trims) → the mix → MP4 with subtitles
    ▼
 Web UI: the Library, New dub, each job's progress, its speaker check and Settings
@@ -56,14 +56,15 @@ Logs: `~/Library/Logs/Maata/engine.log` has one line per dubbed sentence, and `~
 ```bash
 cd engine
 uv run maata-bench pipeline path/to/video.mp4 --backend apple   # dubs it to an MP4; JSON: per-stage times, memory
-uv run maata-bench pipeline path/to/video.mp4 --backend apple --translator mock   # the same, offline, without Claude
+uv run maata-bench pipeline path/to/video.mp4 --backend apple --translator mock   # the same, offline, without Codex
 cd .. && ./scripts/verify-mac.sh   # the reference check: a synthesised speech + music video, separation, A/V, loudness
 ```
 
 ## Privacy and responsible use
 
-- Speech recognition, diarization and voice synthesis happen on your device, and audio never leaves it. The network is used only for YouTube, pinned model downloads, an optional update check, and your Claude Code translating the transcript. Library telemetry that would otherwise phone home (pyannote.audio's usage metrics, Hugging Face Hub's) is switched off by the engine.
-- Translation sends the video's English transcript, as text, to Anthropic through your own Claude Code and plan; it counts toward that plan's usage. Whether Anthropic may use it to improve its models, and how long it is kept, follow your account's privacy settings on claude.ai. The app says so once, before the first video.
+- Speech recognition, diarization and voice synthesis happen on your device, and audio never leaves it. The network is used only for YouTube, pinned model downloads, an optional update check, and your Codex CLI translating the transcript. Library telemetry that would otherwise phone home (pyannote.audio's usage metrics, Hugging Face Hub's) is switched off by the engine.
+- Translation sends the video's transcript, translations and video context as text to OpenAI through your signed-in Codex CLI and counts toward your plan's Codex usage. Your account's applicable data controls and retention policies apply. The app discloses this provider change before the next video.
+- Translation, the video brief, wording adjustments and meaning reviews use GPT-6 Luna (`gpt-6-luna`) at low reasoning effort, with no automatic fallback to Claude.
 - The dubbed MP4 is saved in your output folder for your own viewing. Cloned voices and reference clips are never exported, and there is no way to make a speaker say arbitrary text. Voice data stays in the local cache.
 - Maata is **not affiliated with YouTube or Google**. It is for personal viewing; you are responsible for following YouTube's Terms of Service and your local laws. Please support creators on YouTube itself.
 

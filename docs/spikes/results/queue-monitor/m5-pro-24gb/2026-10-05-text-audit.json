@@ -1,0 +1,333 @@
+{
+  "as_of_utc": "2026-10-05T18:07:38.060075+00:00",
+  "scope": {
+    "video_id": "Is8XU3J5ZZE",
+    "video_duration_s": 691.49,
+    "source": "local append-only units.jsonl and lines.jsonl snapshot",
+    "model": "gpt-6-luna",
+    "effort": "low",
+    "provider": "codex",
+    "controlled_benchmark": false,
+    "caveats": [
+      "Active resumed video: timing spans contain service gaps, pauses, and earlier provider stages. Do not claim end-to-end speedup.",
+      "Unit records are latest per id; manual English-map audit is restricted to finalized IDs 0..74 seen at snapshot.",
+      "Model meaning-review classes are evidence of its judgments, not independent human accuracy.",
+      "No transcript text or audio retained in this aggregate report.",
+      "startup_s measures the first CLI stdout event, often thread/turn startup; it is not model first-token latency or a complete process-overhead measure. Zero reported reasoning tokens is a provider usage observation, not proof no reasoning occurred."
+    ]
+  },
+  "calls": {
+    "n": 90,
+    "by_kind": {
+      "brief": {
+        "wall_s": {
+          "n": 1,
+          "sum": 18.94,
+          "p50": 18.94,
+          "p95": 18.94,
+          "max": 18.94
+        },
+        "startup_s": {
+          "n": 1,
+          "sum": 0.064,
+          "p50": 0.064,
+          "p95": 0.064,
+          "max": 0.064
+        },
+        "tokens": {
+          "input_tokens": 8371,
+          "cache_read_tokens": 0,
+          "cache_creation_tokens": 0,
+          "output_tokens": 787,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.0,
+        "input_tokens_distribution": {
+          "n": 1,
+          "sum": 8371.0,
+          "p50": 8371.0,
+          "p95": 8371.0,
+          "max": 8371.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      },
+      "fit": {
+        "wall_s": {
+          "n": 3,
+          "sum": 25.024,
+          "p50": 7.371,
+          "p95": 11.398,
+          "max": 11.398
+        },
+        "startup_s": {
+          "n": 3,
+          "sum": 0.393,
+          "p50": 0.135,
+          "p95": 0.182,
+          "max": 0.182
+        },
+        "tokens": {
+          "input_tokens": 31261,
+          "cache_read_tokens": 8448,
+          "cache_creation_tokens": 0,
+          "output_tokens": 683,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.2702,
+        "input_tokens_distribution": {
+          "n": 3,
+          "sum": 31261.0,
+          "p50": 10468.0,
+          "p95": 10744.0,
+          "max": 10744.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      },
+      "rephrase": {
+        "wall_s": {
+          "n": 4,
+          "sum": 33.018,
+          "p50": 8.24,
+          "p95": 10.381,
+          "max": 10.381
+        },
+        "startup_s": {
+          "n": 4,
+          "sum": 2.119,
+          "p50": 0.538,
+          "p95": 0.919,
+          "max": 0.919
+        },
+        "tokens": {
+          "input_tokens": 42315,
+          "cache_read_tokens": 23552,
+          "cache_creation_tokens": 0,
+          "output_tokens": 692,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.5566,
+        "input_tokens_distribution": {
+          "n": 4,
+          "sum": 42315.0,
+          "p50": 10620.5,
+          "p95": 10730.0,
+          "max": 10730.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      },
+      "retranslate": {
+        "wall_s": {
+          "n": 24,
+          "sum": 272.306,
+          "p50": 10.832,
+          "p95": 18.564,
+          "max": 26.351
+        },
+        "startup_s": {
+          "n": 24,
+          "sum": 3.864,
+          "p50": 0.128,
+          "p95": 0.278,
+          "max": 0.653
+        },
+        "tokens": {
+          "input_tokens": 259301,
+          "cache_read_tokens": 45568,
+          "cache_creation_tokens": 0,
+          "output_tokens": 8593,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.1757,
+        "input_tokens_distribution": {
+          "n": 24,
+          "sum": 259301.0,
+          "p50": 10846.5,
+          "p95": 11103.0,
+          "max": 11106.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      },
+      "review": {
+        "wall_s": {
+          "n": 31,
+          "sum": 215.675,
+          "p50": 6.64,
+          "p95": 9.022,
+          "max": 15.692
+        },
+        "startup_s": {
+          "n": 31,
+          "sum": 5.98,
+          "p50": 0.132,
+          "p95": 0.579,
+          "max": 0.868
+        },
+        "tokens": {
+          "input_tokens": 143814,
+          "cache_read_tokens": 61440,
+          "cache_creation_tokens": 0,
+          "output_tokens": 3476,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.4272,
+        "input_tokens_distribution": {
+          "n": 31,
+          "sum": 143814.0,
+          "p50": 4662.0,
+          "p95": 4738.0,
+          "max": 4766.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      },
+      "scene": {
+        "wall_s": {
+          "n": 27,
+          "sum": 544.127,
+          "p50": 19.337,
+          "p95": 30.015,
+          "max": 34.249
+        },
+        "startup_s": {
+          "n": 27,
+          "sum": 3.942,
+          "p50": 0.133,
+          "p95": 0.246,
+          "max": 0.251
+        },
+        "tokens": {
+          "input_tokens": 312769,
+          "cache_read_tokens": 80128,
+          "cache_creation_tokens": 0,
+          "output_tokens": 21376,
+          "reasoning_output_tokens": 0
+        },
+        "reported_cached_input_fraction": 0.2562,
+        "input_tokens_distribution": {
+          "n": 27,
+          "sum": 312769.0,
+          "p50": 10847.0,
+          "p95": 11113.0,
+          "max": 32431.0
+        },
+        "errors": {},
+        "transport_retry_attempts": 0
+      }
+    },
+    "all_wall_s": {
+      "n": 90,
+      "sum": 1109.09,
+      "p50": 10.351,
+      "p95": 22.74,
+      "max": 34.249
+    },
+    "time_span_s": 1069.444,
+    "busy_union_s": 426.254,
+    "concurrent_seconds": {
+      "1": 80.954,
+      "2": 7.764,
+      "3": 337.536
+    },
+    "tokens": {
+      "input_tokens": 797831,
+      "cache_read_tokens": 219136,
+      "cache_creation_tokens": 0,
+      "output_tokens": 35607,
+      "reasoning_output_tokens": 0
+    }
+  },
+  "requests": {
+    "n": 36,
+    "requests_more_than_one_call": 0,
+    "skipped_ids": [],
+    "errors": {}
+  },
+  "review": {
+    "initial_scene_count": 27,
+    "initial_classes": {
+      "C": 92,
+      "P": 43,
+      "E": 4,
+      "m": 2
+    },
+    "initial_retranslated_line_n": 47,
+    "initial_replaced_line_n": 27,
+    "review_events_n": 31,
+    "all_retranslated_line_n": 51,
+    "all_replaced_line_n": 29,
+    "unreviewed_ids": []
+  },
+  "english_map_manual_audit": {
+    "range_inclusive": [
+      0,
+      74
+    ],
+    "finalized_units_n": 75,
+    "units_with_selected_tier_in_latest_line_cache_n": 75,
+    "mapped_line_n": 43,
+    "mapping_entry_n": 73,
+    "obvious_index_mismatch_line_n": 19,
+    "obvious_index_mismatch_entry_n": 33,
+    "obvious_mismatch_line_ids": [
+      9,
+      12,
+      13,
+      14,
+      17,
+      19,
+      21,
+      22,
+      27,
+      29,
+      30,
+      32,
+      33,
+      37,
+      40,
+      41,
+      48,
+      60,
+      73
+    ],
+    "mismatched_lines_with_kept_coverage_C_n": 14,
+    "method": "Manually compared each selected English map entry with the Telugu word at its stored index; counted only obvious lexical mismatches, not spelling variation or lost inflections. Selected cache tier may differ if changed after synthesis; examples were cross-checked against recorded Latin rendered text.",
+    "additional_unquantified_issue": "Latin rebuild can lose inflections such as plural lu or locative compound suffixes even with aligned index."
+  },
+  "findings": [
+    {
+      "priority": "P0",
+      "finding": "English word index drift corrupts Latin-script TTS while pre-rebuild coverage review can report complete.",
+      "prevention": "Use exact Telugu surface anchors and occurrence when ambiguous; validate and derive indices locally; refuse uncertain substitutions. Version prompt/cache and rerender affected takes. Review exact actual TTS text."
+    },
+    {
+      "priority": "P1",
+      "finding": "Corrective retranslations consume substantial text time and are accepted using length plus negation/number/question heuristics, not a semantic re-review.",
+      "prevention": "First remove map corruption; then controlled original-fixture experiment for combined review+repair response or stronger validated repair. Preserve meaning gating; do not drop review for speed."
+    },
+    {
+      "priority": "P2",
+      "finding": "Single-line fit/rephrase/retranslate still receive about 10k input tokens; provider prefix cache reuse is partial. CLI startup is small compared with generation wall.",
+      "prevention": "Measure prompt compaction or call-specific stable instruction prefixes with >=5 paired controlled runs after correctness fix. Do not prioritize persistent CLI solely to save startup."
+    }
+  ],
+  "implementation_status": {
+    "anchored_contract": "scene-v5",
+    "prompt_hash": "ccfdc4088a39",
+    "review_hash": "91715954c710",
+    "mitigations": [
+      "Exact token and occurrence derive positions locally; legacy index maps cannot substitute.",
+      "Attached recognized Telugu morphology remains entirely Telugu.",
+      "Meaning review sees both Telugu-script and actual Latin TTS text.",
+      "Only C/m semantic review of exact tier authorizes substitutions; exceptions, alternate tiers, fresh fits, rephrases and heuristic-only corrections remain Telugu.",
+      "Unreviewed cache reloads and fit merges cannot resurrect maps.",
+      "Primary prompt identity invalidates old translation/fixup cache; corrected actual TTS hashes invalidate only mismatching takes."
+    ],
+    "focused_tests": "259 passed; wider integration tests in progress",
+    "live_model_calls_by_auditor": 0,
+    "independent_review": "App reviewer reproduced store(unreviewed map) → unusable review twice → cached fit: reviewed, cached and fitted maps remain empty; actual Telugu TTS unchanged."
+  }
+}

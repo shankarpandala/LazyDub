@@ -170,11 +170,11 @@ export type SpeakersFound = {
 
 export type EngineSettings = { outputDir: string };
 
-/** Why translation through the Claude CLI can't go on, as the engine classes it (ADR-019). */
+/** Why translation through the Codex CLI can't go on. Claude type and wire names remain for compatibility. */
 export type ClaudeProblemKind =
   | "missing" | "not_signed_in" | "outdated" | "usage_limit" | "transient" | "stalled" | "timeout" | "bad_output" | "failed";
 
-/** The Claude CLI as the engine found it when the UI connected. */
+/** The Codex CLI as the engine found it when the UI connected. */
 export type ClaudeHealth = {
   installed: boolean;
   version: string | null;
@@ -189,13 +189,13 @@ export type ClaudeHealth = {
 };
 
 /**
- * A Claude call failed in a way translation can't get past on its own. Translation waits `retryIn` s (for a usage
+ * A Codex call failed in a way translation can't get past on its own. Translation waits `retryIn` s (for a usage
  * limit, until it resets), then tries again; the work on this Mac goes on meanwhile.
  */
 export type ClaudeProblem = {
   kind: ClaudeProblemKind;
   message: string;
-  /** Which usage limit: session, weekly, opus, sonnet or overage, when known. */
+  /** Which usage limit: session, weekly or overage, when known. Legacy provider values may still appear. */
   limit?: string | null;
   /** Epoch seconds the usage limit resets, when known. */
   resetsAt?: number | null;
@@ -205,7 +205,7 @@ export type ClaudeProblem = {
 };
 
 export type EngineMessage =
-  /** claude: null when the engine never calls Claude (the demo engine). */
+  /** claude: null when the engine never calls Codex (the demo engine); field retained for wire compatibility. */
   | {
       type: "hello"; backend: string; device: string; demo: boolean; claude?: ClaudeHealth | null;
       renders: JobItem[]; render: Render | null; settings: EngineSettings;
@@ -217,7 +217,7 @@ export type EngineMessage =
   | ({ type: "speakers_found" } & SpeakersFound)
   | ({ type: "settings" } & EngineSettings)
   | ({ type: "claude_error" } & ClaudeProblem)
-  /** A Claude call went through again after a claude_error. */
+  /** A Codex call went through again after a claude_error. */
   | { type: "claude_ok"; videoId?: string }
   /** `url`: an `inspect` that failed, the link it asked about. */
   | { type: "error"; message: string; retryable: boolean; url?: string };

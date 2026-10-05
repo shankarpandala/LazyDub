@@ -18,6 +18,7 @@ import threading
 import time
 import wave
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -716,6 +717,51 @@ async def test_voices_are_stored_and_a_resume_rebuilds_them_with_no_synthesis(tm
     assert [e["cached"] for e in trace if e["event"] == "stage" and e["key"] == "voices"] == [False, True]
 
 
+@pytest.mark.parametrize("script,change,recalibrated", [("latin", "legacy", 2), ("telugu", "legacy", 0),
+                                                       ("latin", "partial", 1), ("telugu", "changed", 2)])
+async def test_calibration_text_identity_reuses_references_and_only_repeats_affected_pace_samples(
+        tmp_path, monkeypatch, script, change, recalibrated):
+    tts = MelTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0, tts_script=script))
+    assert await job.run() == "done"
+    path = job.render_dir / "voices.json"
+    original = json.loads(path.read_text())
+    changed = json.loads(path.read_text())
+    if change == "legacy":
+        changed["inputs"].pop("calibrationTts")
+        for entry in changed["speakers"].values():
+            entry.pop("calibrationTts")
+    elif change == "partial":  # a pause after the first speaker: the global hash alone must not bless the second
+        changed["speakers"]["S2"]["calibrationTts"] = None
+        shutil.rmtree(job.render_dir / "voices")  # recalibration recreates its sample even if old samples were removed
+    else:
+        changed["inputs"]["calibrationTts"] = "different-actual-input"
+        for entry in changed["speakers"].values():
+            entry["calibrationTts"] = "different-actual-input"
+    path.write_text(json.dumps(changed))
+    output = Path(job.doc["output"]["path"])
+    output_before = output.read_bytes()
+    keys_before = {sid: v.key for sid, v in job.voices.items()}
+    takes_before, batches_before = tts.takes, list(tts.batches)
+
+    def no_reselection(_sid):
+        pytest.fail("calibration-only changes must restore the existing reference, not select a new one")
+
+    monkeypatch.setattr(job, "_voice_spans", no_reselection)
+    await job._voices()
+    assert tts.takes - takes_before == recalibrated * len(CALIBRATION_TE)
+    assert tts.batches == batches_before and output.read_bytes() == output_before
+    assert {sid: v.key for sid, v in job.voices.items()} == keys_before
+    updated = json.loads(path.read_text())
+    for sid, entry in updated["speakers"].items():
+        assert entry["calibrationTts"] == updated["inputs"]["calibrationTts"]
+        for field in ("hash", "key", "timbre", "clips", "speech", "refSeconds"):
+            assert entry[field] == original["speakers"][sid][field]
+    takes_before = tts.takes
+    await job._voices()
+    assert tts.takes == takes_before  # new provenance survives another resume without repeating calibration
+
+
 async def test_a_voice_of_the_mock_has_a_hear_voice_sample_too(tmp_path):
     """MockTTS has no mel takes, so it isn't calibrated: its sample is the first calibration sentence said by the
     speaker's voice (synthetic, never the source audio), as the demo's Hear voice needs."""
@@ -753,7 +799,7 @@ async def test_a_speaker_with_too_little_clean_speech_gets_a_preset(tmp_path):
     d = tmp_path / VID / "render"
     doc = json.loads((d / "voices.json").read_text())
     assert doc["speakers"]["S2"] == {"how": "preset", "preset": "preset_f", "refSeconds": pytest.approx(2.4),
-                                     "sample": False}
+                                     "sample": False, "calibrationTts": doc["inputs"]["calibrationTts"]}
     assert (job.voices["S2"].status, job.voices["S2"].kind, job.voices["S2"].key) == ("preset", VoiceKind.PRESET, None)
     assert job.voices["S1"].status == "cloned" and tts.built == 1 and tts.takes == len(CALIBRATION_TE)
     assert not (d / "voices" / "S2.npy").exists() and (d / "voices" / "S1.npy").exists()
@@ -940,12 +986,25 @@ async def test_translation_waits_for_voices(tmp_path):
             assert abs(x["target_aksharas"] - max(st.speech_s - 0.15, 0.0) * 6.1) > 1.0 or st.speech_s < 0.5
 
 
-async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, monkeypatch):
+@pytest.mark.parametrize("weights", [(1.0, 1.0, 1.0), (1.0, 2.0, 4.0)])
+async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, monkeypatch, weights):
     monkeypatch.setattr(dubber, "SCENE_MAX_S", 20.0)
+    monkeypatch.setattr(render, "LANE_WEIGHTS", weights)
     job = job_for(tmp_path, backend())
+    asked_after_review: list[int] = []
+    original = job._scene_request
+
+    def request(sc, lines, whole=False):
+        firsts = {lane[0].no for lane in job._translation_lanes(job.scenes)}
+        if sc.no not in firsts:
+            assert job.scenes[sc.no - 2].reviewed  # observed at submission, not only after the whole run
+            asked_after_review.append(sc.no)
+        return original(sc, lines, whole)
+
+    monkeypatch.setattr(job, "_scene_request", request)
     assert await job.run() == "done"
     n = len(job.scenes)
-    firsts = {job.scenes[i * n // render.LANES].no for i in range(render.LANES)}
+    firsts = {lane[0].no for lane in job._translation_lanes(job.scenes)}
     # (The demo repeats its sentences, so some scenes are served whole from the line cache and make no call.)
     asked = {c["message"]["scene"]: c["message"] for c in job.tr.cli.calls if c["call"] == "scene"}
     assert n >= 6 and len(set(asked) - firsts) >= 3 and asked[1]["context_before"] == []
@@ -953,7 +1012,32 @@ async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, m
         if no not in firsts:
             assert msg["context_before"] and all(x.get("te") for x in msg["context_before"])
     assert all(sc.reviewed and sc.fitted and not sc.held for sc in job.scenes)
+    assert asked_after_review
     assert [st.unit.id for sc in job.scenes for st in sc.lines] == sorted(job.units)  # every line in one scene
+
+
+def test_balanced_translation_lanes_preserve_existing_boundaries():
+    for n in range(65):
+        expected = [(i * n // render.LANES, (i + 1) * n // render.LANES) for i in range(render.LANES)]
+        assert render._lane_bounds(n, (1.0, 1.0, 1.0)) == [(a, b) for a, b in expected if a != b]
+
+
+@pytest.mark.parametrize("weights", [(1.0, 2.0, 4.0), (1.0, 1.5, 2.0), (100.0, 1.0, 1.0), (1.0, 1.0, 100.0)])
+def test_weighted_translation_lanes_cover_each_scene_once_and_stay_contiguous(weights):
+    for n in range(65):
+        bounds = render._lane_bounds(n, weights)
+        assert len(bounds) == min(n, render.LANES)
+        assert all(a < b for a, b in bounds)
+        assert [i for a, b in bounds for i in range(a, b)] == list(range(n))
+    assert render._lane_bounds(27, (1.0, 2.0, 4.0)) == [(0, 3), (3, 11), (11, 27)]
+
+
+@pytest.mark.parametrize("n,weights", [(-1, (1.0, 1.0, 1.0)), (5, (1.0, 1.0)), (5, (0.0, 1.0, 1.0)),
+                                       (5, (-1.0, 1.0, 1.0)), (5, (math.inf, 1.0, 1.0)),
+                                       (5, (math.nan, 1.0, 1.0)), (5, (1e308, 1e308, 1e308))])
+def test_translation_lanes_reject_invalid_weights(n, weights):
+    with pytest.raises(ValueError):
+        render._lane_bounds(n, weights)
 
 
 async def test_a_second_run_makes_no_scene_calls(tmp_path):
@@ -1571,6 +1655,65 @@ async def test_restore_rejects_a_row_whose_take_keys_do_not_match_its_synthesis_
     assert not list(job._rows_for(st))
 
 
+async def test_corrected_english_map_revoices_unchanged_telugu_using_actual_tts_input(tmp_path):
+    b = backend(UniqueTranscriber(), MelTTS())
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, tts_script="latin"))
+    assert await job.run() == "done"
+    output = Path(job.doc["output"]["path"])
+    original_output = output.read_bytes()
+    st = next(st for st in job.units.values() if st.take is not None)
+    spoken = "ఈ ఫోన్ ఇప్పుడు బాగుంది."
+    st.line = LineResult(st.unit.id, {"full": Wording(spoken, ((2, "phone"),))})  # old, misplaced model index
+    st.tier, st.voiced, st.voicing = "full", False, False
+    job.planner = render.TimelinePlanner(job.planner.s)
+    assert not await job._voice_line(st)
+    old = st.take
+    old_pcm = job._pcm_key(st, st.plan)
+    assert b.tts.batches[-1][0] == "ఈ ఫోన్ phone బాగుంది."
+    st.line = LineResult(st.unit.id, {"full": Wording(spoken, ((1, "phone"),))})  # index derived from the exact token
+    st.tier, st.voiced, st.voicing = "full", False, False
+    assert not list(job._rows_for(st))
+    assert not await job._voice_line(st)
+    assert b.tts.batches[-1][0] == "ఈ phone ఇప్పుడు బాగుంది."
+    assert old["tts"] != st.take["tts"] and old["takes"][0]["key"] != st.take["takes"][0]["key"]
+    assert old_pcm != job._pcm_key(st, st.plan)
+    assert job._read_take(old["takes"][0]["key"]) is not None
+    assert output.read_bytes() == original_output  # nothing deletes or rewrites an existing completed export
+
+
+@pytest.mark.parametrize("kind", ["rephrase", "retranslate"])
+async def test_old_model_fixup_cannot_replace_current_translation_when_restoring_a_take(tmp_path, kind):
+    job = job_for(tmp_path, backend(UniqueTranscriber(), MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    st = max((st for st in job.units.values() if st.take), key=lambda st: st.take_s)
+    job.tr.model = "claude-opus-5-5"
+    line = LineResult(st.unit.id, {"full": Wording("కొత్త మాట")})
+    answer_kind = "review" if kind == "retranslate" else kind
+    key = job._fixup_key(answer_kind, job._line_key(st), st.line.tiers[st.tier].spoken)
+    job._put_fixup(st, key, answer_kind, line)
+    fix = render._Fix(st, line, "full", kind, key, asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert fix.done.result() and next(job._rows_for(st))[0]["wording"] == kind
+    old_row = job._fixup_rows[key]
+    old_take = st.take
+    old_output = job.doc["output"]["path"]
+    old_bytes = Path(old_output).read_bytes()
+    st.line = LineResult(st.unit.id, {"full": Wording("ఇంకొక కొత్త సమాధానం")})  # a newly requested translation
+    model, prompt = job.tr.model, job.tr.prompt_hash
+    for changed in ("model", "prompt", "legacy"):
+        if changed == "model":
+            job.tr.model = "claude-haiku-4-5-20251001"
+        elif changed == "prompt":
+            job.tr.prompt_hash = "another-prompt"
+        else:
+            job._fixup_rows[key] = {k: v for k, v in old_row.items() if k not in ("model", "prompt_hash")}
+        assert job._fixup_line(st, job._fixup_rows[key]) is None
+        assert not list(job._rows_for(st))  # the old fix-up must not override the current translation via its take row
+        job.tr.model, job.tr.prompt_hash, job._fixup_rows[key] = model, prompt, old_row
+    assert all(job._read_take(t["key"]) is not None for t in old_take["takes"])
+    assert Path(old_output).read_bytes() == old_bytes  # cache filtering never deletes or rewrites a completed MP4
+
+
 @pytest.mark.parametrize("samples,usable", [([], False), ([np.nan], False), ([np.inf], False), ([0.0], False),
                                            ([0.0001, -0.0001], True)])
 def test_read_take_rejects_unusable_cached_pcm_and_preserves_quiet_speech(tmp_path, samples, usable):
@@ -1589,6 +1732,25 @@ async def test_estimator_replays_each_matching_take_once(tmp_path, monkeypatch):
     learned = []
     monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
     job._load_takes(stored + stored, [])  # duplicated append log entries must not skew the pace
+    expected = {tk for row in stored for tk, _, pace in row["made"] if pace is not None}
+    assert len(learned) == len(expected) > 0
+
+
+async def test_old_text_contract_does_not_teach_duration_but_keeps_matching_audio(tmp_path, monkeypatch):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    legacy = [{k: v for k, v in row.items() if k != "durationPrompt"} for row in stored]
+    for old in (legacy, [dict(row, durationPrompt="old-map-contract") for row in stored]):
+        job._load_takes(old, [])
+        assert not learned
+        st = next(st for st in job.units.values() if st.take is not None)
+        assert list(job._rows_for(st))  # current text and actual TTS input still match: no forced redub
+        assert all(job._read_take(t["key"]) is not None for row in old for t in row["takes"])
+        assert {tk for row in old for tk, _, _ in row["made"]} <= job._made
+    job._load_takes(legacy + stored, [])  # older log entries must not suppress current proven observations
     expected = {tk for row in stored for tk, _, pace in row["made"] if pace is not None}
     assert len(learned) == len(expected) > 0
 

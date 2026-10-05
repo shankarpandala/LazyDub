@@ -12,7 +12,7 @@
   });
 
   const problem = $derived(app.claudeProblem ? claudeNotice(app.claudeProblem, app.claudeProblem.at, now) : null);
-  // Shown once, before the first video goes out to Claude; never on the demo engine, which doesn't use it.
+  // Shown once, before the first transcript text goes to OpenAI; never on the demo engine, which doesn't use it.
   const privacy = $derived(!!app.claude && !app.privacySeen);
 </script>
 

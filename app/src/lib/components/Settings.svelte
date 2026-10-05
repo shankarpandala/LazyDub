@@ -66,6 +66,10 @@
     <p>Maata follows your Mac's light or dark appearance.</p>
     <h3>Engine</h3>
     <p>{app.demo ? "The demo engine: no models, a synthetic video." : `${app.backend || "…"}${app.device ? ` on ${app.device}` : ""}`}</p>
+    {#if !app.demo && app.claude}
+      <h3>Translation</h3>
+      <p>Codex · {app.claude.model}</p>
+    {/if}
   </section>
 </div>
 

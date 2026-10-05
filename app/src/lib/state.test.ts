@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AppState, REMOVE_GIVE_UP_MS, REMOVE_RETRY_MS, renderOf } from "./state.svelte";
 import { chip, live } from "./jobs";
+import { PRIVACY_KEY } from "./claude";
 import type { ClientMessage, EngineMessage, JobItem, Output, Render, SpeakersFound, StageRow, VideoInfo } from "./types";
 
 /** A fake engine connection that records what the UI sends. */
@@ -343,18 +344,18 @@ describe("continuing a job", () => {
   });
 });
 
-describe("Claude", () => {
-  const health = { installed: true, version: "2.1.281", signedIn: true, models: ["claude-sonnet-5"], model: "claude-sonnet-5",
+describe("Codex with the existing engine protocol", () => {
+  const health = { installed: true, version: "1.0.0", signedIn: true, models: ["gpt-6-luna"], model: "gpt-6-luna",
     problem: null, message: "" };
 
-  it("knows from hello whether the engine translates through Claude, and what is wrong with it already", () => {
+  it("knows from hello whether the engine translates through Codex, and what is wrong with it already", () => {
     const app = new AppState();
     app.setClaude(null);
     expect(app.claude).toBeNull();
     expect(app.claudeProblem).toBeNull();
-    app.setClaude({ ...health, signedIn: false, problem: "not_signed_in", message: "Run claude auth login." }, 5000);
-    expect(app.claude?.version).toBe("2.1.281");
-    expect(app.claudeProblem).toEqual({ kind: "not_signed_in", message: "Run claude auth login.", at: 5000 });
+    app.setClaude({ ...health, signedIn: false, problem: "not_signed_in", message: "Run codex login." }, 5000);
+    expect(app.claude?.version).toBe("1.0.0");
+    expect(app.claudeProblem).toEqual({ kind: "not_signed_in", message: "Run codex login.", at: 5000 });
     app.setClaude(health);
     expect(app.claudeProblem).toBeNull();
   });
@@ -369,8 +370,8 @@ describe("Claude", () => {
     expect(app.claudeProblem).toBeNull();
   });
 
-  it("remembers that the privacy notice was read", () => {
-    const store = new Map<string, string>();
+  it("requires the new provider notice even after the previous notice was read, then remembers it", () => {
+    const store = new Map<string, string>([["maata.claudePrivacySeen", "1"]]);
     const saved = globalThis.localStorage;
     Object.defineProperty(globalThis, "localStorage", {
       configurable: true,
@@ -381,6 +382,8 @@ describe("Claude", () => {
       expect(app.privacySeen).toBe(false);
       app.ackPrivacy();
       expect(app.privacySeen).toBe(true);
+      expect(store.get(PRIVACY_KEY)).toBe("1");
+      expect(store.get("maata.claudePrivacySeen")).toBe("1");
       expect(new AppState().privacySeen).toBe(true);
     } finally {
       Object.defineProperty(globalThis, "localStorage", { configurable: true, value: saved });

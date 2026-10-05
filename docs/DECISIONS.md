@@ -588,3 +588,119 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   speed claim. Both arms passed the separate 16-line boundary-meaning smoke and independent model text inspection,
   with human listening still pending. The candidate MP4 passed copied-video, stream/subtitle layout, loudness, A/V
   and watermark checks. The final complete engine suite passes: 1,079 tests (180 affected, 39 WebSocket, 860 others).
+
+## ADR-024 — Use the maintainer-selected latest Haiku for text work
+
+- **Decision (2026-10-05):** the maintainer asked to switch the app to the latest Haiku. Anthropic's
+  [current model catalog](https://platform.claude.com/docs/en/models/overview) and
+  [Haiku model page](https://platform.claude.com/docs/en/models/haiku-4-5/overview) list Haiku 4.5 as the latest
+  available Haiku. Pin `claude-haiku-4-5-20251001`; this supersedes ADR-019's Opus/Sonnet defaults and ADR-023's
+  unchanged-model policy. No dependency or audio-model changes.
+- **Scope:** the video brief, scene translation, fitting, rephrasing, corrective retranslation and the separate
+  meaning-review pass all use Haiku. No cross-family fallback is configured, so the app does not deliberately
+  revert to Opus or Sonnet when Haiku is unavailable. Explicit model overrides remain for controlled evaluations.
+- **Effort:** Haiku 4.5 does not support the effort parameter. Omit `--effort` for Haiku calls, including when an
+  internal caller supplies an effort override; record the effective effort as null in usage traces.
+- **Quality and measurements:** retain the prompts, context, meaning review, corrective retry and local audio
+  checks. Earlier Opus/Sonnet benchmarks do not establish Haiku's speed or Telugu quality. Native-speaker listening
+  and representative whole-video comparisons are still needed.
+- **Existing work:** completed videos remain intact. Brief and line caches already include the primary model,
+  so freshly requested translation cannot silently reuse the previous model's entries. Saved wording adjustments
+  also record model and prompt provenance: direct lookups from cached takes reject mismatched or legacy rows.
+  Apply the new engine defaults after the current dub completes rather than restarting its in-flight work.
+- **Live check:** the sealed CLI returned the pinned Haiku model for scene translation, meaning review and a
+  corrective translation on five original examples. All five passed the existing final automated coverage checks;
+  this is a functional smoke check, not an independent language-quality or speed comparison. The reopened app's
+  health handshake reports the same Haiku model, Apple backend and a healthy Claude sign-in.
+
+## ADR-025 — Move text work to GPT-6 Luna through the signed-in Codex CLI
+
+- **Decision (2026-10-05):** the maintainer found Haiku too slow and explicitly requested a current fast OpenAI
+  model through the Codex CLI, replacing ADR-024 and ADR-019's provider restriction. Use `gpt-6-luna` with low
+  reasoning effort for the video brief, scene translation, fitting, rephrasing, corrections and meaning review.
+  OpenAI's [current model guide](https://learn.chatgpt.com/docs/models) recommends Luna for focused, repeatable
+  work. There is no automatic Claude fallback, direct API key or dependency change.
+- **Transport:** run Codex CLI 0.160.0 or newer with ChatGPT sign-in, structured output and an ephemeral session in
+  an empty working directory. Disable user configuration, project instructions, hooks, plugins, MCP, action tools,
+  web search and telemetry exporters. Task instructions and text input travel on stdin; only fixed service
+  instructions and a temporary schema are written by the transport. Reject tool-use events and incomplete turns.
+  Cancellation and watchdogs terminate the subprocess group. Retry only transient failures and startup stalls.
+- **Schema compatibility:** adapt optional fields to required nullable fields for OpenAI's structured output;
+  remove only nulls representing originally absent fields before validating against the existing local schema.
+  Preserve the original prompts, glossary, context, meaning review, corrective retry and local audio checks.
+- **Privacy and compatibility:** disclose OpenAI and ChatGPT-plan usage in the app with a new provider-specific
+  notice key. Transcript, translation and video-context text goes to OpenAI; audio inference stays local. Keep
+  existing internal `claude` wire/event names for compatibility, adding explicit `provider: codex` provenance.
+  Health and Settings show the active model and Codex sign-in. Finder launches can discover the CLI bundled with
+  ChatGPT even without a shell PATH entry.
+- **Existing work:** stop the in-flight dub and save it as paused before rebuilding. Preserve its cached progress
+  and completed videos. Existing model/prompt cache keys and wording-adjustment provenance prevent silent reuse
+  of Haiku text under the new model. Do not resume the stopped job automatically.
+- **Acceptance:** a live original-sentence CLI probe returned valid Telugu in 7.742 seconds. This is a functional
+  latency check, not a paired model benchmark or whole-video speed claim. Native Telugu listening and comparative
+  long-video measurements remain necessary to establish language quality and end-to-end speed.
+- **Live integration:** the first five-line production smoke took 40.083 seconds and rejected one line after its
+  bounded retries because Luna repeatedly returned a Telugu shaping joiner in `అప్‌డేట్`. Canonicalize joiners only
+  after a Telugu virama and before a Telugu letter, preserving word boundaries and recording a repair flag. Keep
+  rejecting other invisible characters, mixed scripts and digits. The fresh rerun passed all five existing final
+  automated meaning checks in 27.541 seconds. Raw reports are `/tmp/maata-codex-translation-smoke.json` and
+  `/tmp/maata-codex-translation-smoke-fixed.json`; these local smoke results do not establish native-speaker quality.
+- **Validation:** 34 Codex transport tests, 251 QA/translation/WebSocket/bench tests and 68 UI tests pass; Svelte
+  reports no errors or warnings. The macOS release bundle builds successfully. The reopened app reports a healthy
+  Codex 0.160.0 ChatGPT sign-in and `gpt-6-luna` on the Apple backend, and Settings displays the same model. The
+  previous dub is left paused with its cache intact and no translation subprocesses running.
+
+## ADR-026 — Preserve spoken meaning and measure fresh work in long queues
+
+- **Decision (2026-10-05):** the maintainer authorizes monitoring the queued long videos, tested speed and quality
+  improvements, and graceful maintenance restarts. Preserve queue order, cached progress, completed outputs and
+  deliberate pauses. Resume work interrupted by this maintenance. Text remains GPT-6 Luna/low through Codex;
+  audio models, inference precision and quality checks remain local and unchanged.
+- **Observed quality defect:** model-counted English-word indices could replace an unrelated Telugu word in
+  Latin-script TTS, although review approved the displayed Telugu. In the inspected snapshot, 19 of 43 finalized
+  mapped lines had at least one wrong replacement. This is a manual mapping audit, not a native-language rating.
+  Scene-v5 requests exact Telugu token anchors and occurrence numbers; local code derives indices. Legacy,
+  ambiguous and invalid anchors leave Telugu intact. Attached Telugu endings stay intact too. Meaning review
+  receives both Telugu and the actual Latin TTS form. Only the exact C/m tier approved by semantic review keeps
+  its map; failed reviews, cache reads, fits and heuristic-only corrections cannot resurrect unapproved maps.
+- **Cache contract:** new prompt/review hashes invalidate affected text. Actual TTS input already keys takes and
+  downstream PCM, so changed substitutions regenerate only the affected work. Duration observations now carry
+  prompt provenance. Calibration identity includes the actual TTS input per speaker: legacy Latin pace is
+  recalibrated with the restored voice reference; compatible Telugu calibration is reusable. Never delete or
+  invalidate completed output files merely to apply a new prompt.
+- **Observed waits:** the interrupted run had no text transport retries/errors in 90 calls. CLI first-event time
+  was small relative to translation and corrective calls; it is not model first-token latency. Equal contiguous
+  translation lanes sometimes prepared far-future scenes while synthesis waited for earlier scenes. A weighted
+  lane helper supports bounded comparisons while retaining three workers, contiguous context and meaning review.
+  Historical replay is screening evidence only; the balanced production policy remains until a live comparison
+  justifies a change. Preserve the full brief and context rather than trading away meaning for a shorter prompt.
+- **Measurement:** each run emits a fresh run ID, start/end and per-attempt stage timings. Completed scheduled GPU
+  operations record execution and queue wait separately without text arguments; these are not hardware-utilization
+  samples. `scripts/monitor-queue.py` produces a read-only aggregate without titles, transcript, translations or
+  credentials. It separates run IDs, marks legacy windows explicitly, does not add overlapping stage/call time,
+  and never counts restored takes' historical synthesis cost as work in the current run.
+- **Long-timeline work:** avoid copying the remaining voice list per mix block and preparing duck-bound arrays
+  repeatedly. Original synthetic three-hour PCM is bitwise identical before/after over 952,587,342 samples. The
+  exploratory CPU timings are small/noisy and do not establish a material whole-render speedup. Reserve export
+  progress for the final decoded AAC loudness/peak pass, report that phase and check cancellation between blocks;
+  retain the pass and preserve an existing output if cancelled.
+- **Evidence and limits:** raw reports are in `docs/spikes/results/queue-monitor/m5-pro-24gb/`. Five original text
+  examples pass the new actual-TTS meaning review. The fresh original 60-second audio smoke takes 96.79 seconds,
+  voices all 11 units and passes copied video, stream/subtitle layout, loudness, A/V synchronization and watermark.
+  Its uncovered speech is 5.08 seconds/minute, above the 3-second guide; early endings still need improvement.
+  One ASR tail artifact has a heuristic-approved correction after an initial E, not a fresh semantic C. Do not
+  present aggregate heuristic C or passing export checks as proof of native Telugu quality. Native listening,
+  pronunciation and representative long-video throughput remain acceptance work.
+- **Lane experiment:** a bounded 54-line original-text pilot completed one balanced and two weighted runs (ABB,
+  below the five-per-policy measurement minimum). The first pair moved some middle-prefix readiness earlier but
+  delayed the tail; changing wording and correction counts prevents attributing the result solely to scheduling.
+  Selected-tier review gaps and one shared narrow meaning deviation remain in the preserved outputs. This text-only
+  pilot has no voice-consumption frontier or audio-quality evidence. Keep the balanced default; retain all original
+  inputs, outputs and audits in the evidence directory's `lane-pilot/` for a future whole-pipeline comparison.
+- **Validation and launch:** all 1,188 engine tests are covered by passing runs: 990 passed in the broad partition,
+  four outdated calibration-fixture assertions were corrected and their complete 17-test file passes, and the
+  final render/line partition passes all 194 tests. The prior 68 UI tests remain valid; no UI source changed in this
+  pass. The release bundle builds. macOS was locked when reopening the window, so the authorized queue was resumed
+  through the normal engine CLI with its stdin lifeline. The temporary supervisor's metadata is local at
+  `~/Library/Caches/Maata/monitoring/background-engine.json`. Stop that supervisor gracefully before launching the
+  native app after unlock, to prevent two engines from sharing the same queue.

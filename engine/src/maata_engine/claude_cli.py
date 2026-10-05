@@ -56,11 +56,11 @@ WORKDIR = "claude-cwd"  # under the engine's cache dir; always empty
 
 MIN_VERSION = (2, 1, 205)  # an invalid --json-schema fails at start from here on; before, it was silently ignored
 # The server enforces a minimum CLI version per model; a model not listed here is left to the server to refuse.
-MODEL_MIN_VERSION = {"claude-sonnet-5": MIN_VERSION, "claude-opus-5-5": (2, 1, 280)}
-# The §7.1 bake-off (ADR-019, 2026-09-25): Opus 5.5 at medium effort had no major meaning errors on 75 lines under both
-# an Opus and a Sonnet judge panel, against 3 lines for Sonnet 5, and ran 2.4x faster. Sonnet 5 covers an Opus weekly
-# limit and CLIs older than 2.1.280.
-DEFAULT_MODEL, DEFAULT_FALLBACK = "claude-opus-5-5", "claude-sonnet-5"
+MODEL_MIN_VERSION = {"claude-sonnet-5": MIN_VERSION, "claude-opus-5-5": (2, 1, 280),
+                     "claude-haiku-4-5-20251001": MIN_VERSION}
+# Maintainer-selected Haiku for all text work (ADR-024). Pin its snapshot and don't silently opt back into
+# the previous Opus/Sonnet pair. Explicit alternative models remain available to controlled comparisons.
+DEFAULT_MODEL, DEFAULT_FALLBACK = "claude-haiku-4-5-20251001", None
 LIMIT_HOLD = 3600.0  # s a family stays avoided after its weekly limit is hit, when the CLI didn't say when it resets
 
 RETRYABLE = frozenset({"transient", "stalled"})
@@ -644,13 +644,16 @@ class ClaudeCLI:
             if cancel is not None and cancel.is_set():
                 raise ClaudeCLIError("cancelled", "The Claude call was cancelled")
             model, fallback = self._models(info)
+            # Haiku 4.5 has no effort parameter. This also covers explicit benchmark overrides and a fallback
+            # to Haiku; usage records must describe what was actually sent to the CLI.
+            call_effort = None if model.startswith("claude-haiku-4-5") else effort
             t0 = time.monotonic()
             run: _Run | None = None
             try:
-                run = self._run(self._command(system, schema, model, fallback, effort), prompt, cancel)
+                run = self._run(self._command(system, schema, model, fallback, call_effort), prompt, cancel)
                 reply = parse_output(run.stdout, run.stderr, run.returncode, schema)
             except ClaudeCLIError as err:
-                self._record(call, attempt, model, effort, time.monotonic() - t0, run, err.usage, err.model, err.rate_limit,
+                self._record(call, attempt, model, call_effort, time.monotonic() - t0, run, err.usage, err.model, err.rate_limit,
                              err, tags)
                 delay = self._retry_after(err, model, fallback, attempt)
                 if delay is None:
@@ -662,7 +665,7 @@ class ClaudeCLI:
                     raise ClaudeCLIError("cancelled", "The Claude call was cancelled") from err
                 continue
             reply.seconds, reply.startup_s = time.monotonic() - t0, run.startup_s
-            self._record(call, attempt, model, effort, reply.seconds, run, reply.usage, reply.model, reply.rate_limit, None,
+            self._record(call, attempt, model, call_effort, reply.seconds, run, reply.usage, reply.model, reply.rate_limit, None,
                          tags)
             return reply
 

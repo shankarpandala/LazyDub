@@ -1,4 +1,4 @@
-"""Scene translation through the Claude CLI (docs/research/dubbing-2026-09/ARCHITECTURE.md §4; ADR-019).
+"""Scene translation through the Codex CLI, retaining the established translator/cache interfaces.
 
 One `ClaudeTranslator` per video. Its calls:
 - brief v0: the video's metadata, placed as-is in the system prompt; no call (`brief_v0`);
@@ -10,8 +10,8 @@ One `ClaudeTranslator` per video. Its calls:
   tiers to the line it fits (or a wording of one closer to the slot), never a new `full`; a rephrase comes from a
   scene's fix-ups through `submit`, outside the dub loop, and is cancelled when a Claude failure holds translation (a
   request with a `deadline` is also dropped once it passes; the job sets none);
-- review: the coverage review of a scene's chosen wordings (§4.6), on its own model (Sonnet 5 at high effort by
-  default), its own system prompt and schema; each line it classes P or E gets one re-translation from the English with
+- review: the coverage review of a scene's chosen wordings (§4.6), on its own client (GPT-6 Luna by default),
+  its own system prompt and schema; each line it classes P or E gets one re-translation from the English with
   the missing words named, which the deterministic checks class (qa/coverage.py), and the better of the two is kept.
 
 At most `concurrency` CLI processes run at once, the review's included, without any GPU lock. Cancelling a request (or
@@ -37,21 +37,23 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Coroutine
 
-from ..claude_cli import DEFAULT_FALLBACK, DEFAULT_MODEL, ClaudeCLI, ClaudeCLIError, ClaudeReply
+from ..claude_cli import ClaudeCLIError, ClaudeReply
+from ..codex_cli import DEFAULT_EFFORT, DEFAULT_FALLBACK, DEFAULT_MODEL, CodexCLI
 from ..qa.coverage import REDO, check_review, coverage_from, coverage_json, finding, rank, redo_class
 from ..qa.validators import check_line, check_reply, glossary_entries
 from ..text.akshara import count_telugu
+from ..text.tenglish import anchored_english
 from ..text.scene_prompt import (BRIEF_HASH, BRIEF_SCHEMA, BRIEF_SYSTEM, PROMPT_HASH, REVIEW_HASH, REVIEW_SCHEMA,
                                  REVIEW_SYSTEM, SCENE_SCHEMA, brief_message, review_message, system_prompt, user_message)
 from .base import (CALLS, Brief, Coverage, GlossaryEntry, LineResult, LineSpec, SceneRequest, SceneResult, SpeakerNote,
-                   VideoMeta)
+                   VideoMeta, Wording)
 
 log = logging.getLogger("maata.translate")
 
-EFFORT, LIGHT_EFFORT = "medium", "low"  # brief, scene and re-translate calls; fit and rephrase calls (§4.2)
-# The coverage review (§4.2, §4.6): Sonnet 5 at high effort. With Opus 5.5 translating, a Sonnet reviewer draws on the
-# other family's weekly limit, and its misses are less likely to be the scene model's own.
-REVIEW_MODEL, REVIEW_FALLBACK, REVIEW_EFFORT = "claude-sonnet-5", "claude-opus-5-5", "high"
+# Keep the separate meaning-review pass and corrective retranslation, using the maintainer-selected
+# fast OpenAI model and low reasoning effort for every text call.
+EFFORT, LIGHT_EFFORT = DEFAULT_EFFORT, DEFAULT_EFFORT
+REVIEW_MODEL, REVIEW_FALLBACK, REVIEW_EFFORT = DEFAULT_MODEL, DEFAULT_FALLBACK, DEFAULT_EFFORT
 CONCURRENCY = 3
 # Failures of one reply, answered by asking again for fewer lines. Everything else (not signed in, a usage limit, the
 # CLI missing or too old, a stall or throttle `ask` already retried) is the user's to fix, so it raises.
@@ -88,7 +90,7 @@ class _CallSlots:
         try:
             priority = float(self.priority(waiter.call, waiter.scene))
         except Exception:
-            log.warning("could not prioritize a Claude call; using FIFO", exc_info=True)
+            log.warning("could not prioritize a translation call; using FIFO", exc_info=True)
             priority = 0.0
         return priority if math.isfinite(priority) else 0.0, waiter.seq
 
@@ -141,7 +143,7 @@ def line_json(line: LineResult) -> dict:
     """A validated line in the reply's own shape, as the cache stores it."""
     out: dict = {"id": line.id}
     for name, w in line.tiers.items():
-        out[name] = {"spoken": w.spoken, "english": [{"i": i, "en": en} for i, en in w.english]}
+        out[name] = {"spoken": w.spoken, "english": anchored_english(w.spoken, w.english)}
     d = line.delivery
     out["delivery"] = {"emotion": d.emotion, "energy": d.energy, "question": d.question, "emphasis": list(d.emphasis)}
     if line.pieces:
@@ -149,6 +151,17 @@ def line_json(line: LineResult) -> dict:
     if line.unfinished:
         out["unfinished"] = True
     return out
+
+
+def _reviewed_maps(line: LineResult, tier: str | None = None) -> LineResult:
+    """Only the exact wording reviewed may substitute Latin words. Other tiers remain speakable Telugu."""
+    return replace(line, tiers={name: w if name == tier else Wording(w.spoken)
+                                for name, w in line.tiers.items()})
+
+
+def _authorized_maps(line: LineResult) -> LineResult:
+    c = line.coverage
+    return _reviewed_maps(line, c.tier if c is not None and c.by == "review" and c.cls in ("C", "m") else None)
 
 
 class _Jsonl:
@@ -181,15 +194,15 @@ class _Jsonl:
 
 class ClaudeTranslator:
     def __init__(self, cache_dir: Path, video_id: str, brief: Brief, *, style: str = "colloquial",
-                 cli: ClaudeCLI | None = None, model: str = DEFAULT_MODEL, fallback_model: str | None = DEFAULT_FALLBACK,
-                 effort: str = EFFORT, light_effort: str = LIGHT_EFFORT, concurrency: int = CONCURRENCY,
-                 review_cli: ClaudeCLI | None = None, review_model: str = REVIEW_MODEL,
-                 review_fallback: str | None = REVIEW_FALLBACK, review_effort: str = REVIEW_EFFORT,
+                 cli: CodexCLI | None = None, model: str = DEFAULT_MODEL, fallback_model: str | None = DEFAULT_FALLBACK,
+                 effort: str | None = EFFORT, light_effort: str | None = LIGHT_EFFORT, concurrency: int = CONCURRENCY,
+                 review_cli: CodexCLI | None = None, review_model: str = REVIEW_MODEL,
+                 review_fallback: str | None = REVIEW_FALLBACK, review_effort: str | None = REVIEW_EFFORT,
                  trace: Callable[[dict], None] | None = None, binary: str | None = None) -> None:
-        self.cli = cli or ClaudeCLI(cache_dir, model=model, fallback_model=fallback_model, effort=effort, binary=binary,
+        self.cli = cli or CodexCLI(cache_dir, model=model, fallback_model=fallback_model, effort=effort, binary=binary,
                                     trace=trace)
         # A client given for the scene calls (the mock, a test's) answers the reviews too unless one is given for them.
-        self.review_cli = review_cli or cli or ClaudeCLI(cache_dir, model=review_model, fallback_model=review_fallback,
+        self.review_cli = review_cli or cli or CodexCLI(cache_dir, model=review_model, fallback_model=review_fallback,
                                                          effort=review_effort, binary=binary, trace=trace)
         self.model: str = self.cli.model
         self.prompt_hash = PROMPT_HASH
@@ -348,7 +361,8 @@ class ClaudeTranslator:
             new = redo.lines.get(i)
             if c.cls in REDO and new is None and result.error is not None:
                 continue  # its re-translation never came back: it is reviewed again next time
-            line = replace(lines[i], coverage=c)
+            reviewed = _reviewed_maps(replace(lines[i], coverage=c), tiers[i] if c.cls in ("C", "m") else None)
+            line = reviewed
             if new is not None:  # like with like: the new wording on the tier the review classed, else both `full`s
                 t = c.tier if c.tier in new.tiers else "full"
                 ours = redo_class(specs[i].en, c, lines[i].tiers[t], new.tiers[t], t)
@@ -359,9 +373,10 @@ class ClaudeTranslator:
             if cache is None:
                 self._store(specs[i], line)
             elif i in cache:  # the wording reviewed, with its class: never a re-translation not yet voiced
-                self._store(specs[i], replace(lines[i], coverage=c))
+                self._store(specs[i], reviewed)
         unreviewed = sorted(s.id for s in todo if result.lines[s.id].coverage is None)
         for i in unreviewed:
+            result.lines[i] = _reviewed_maps(result.lines[i])
             log.info("scene %s: line %s unreviewed: %s", req.scene, i, why.get(i, getattr(result.error, "kind", "")))
         result.calls += redo.calls
         result.seconds = time.monotonic() - t0
@@ -460,6 +475,10 @@ class ClaudeTranslator:
             log.warning("scene %s: the reply also had ids nobody asked for: %s", req.scene, checked.unexpected)
         by_id = {s.id: s for s in specs}
         for lid, line in checked.lines.items():
+            if req.call in ("fit", "retranslate", "rephrase"):
+                # These new wordings have not passed the semantic check of their actual TTS form. Preserve every
+                # Telugu-spelled loan, but do not let an unreviewed Latin replacement alter what the voice says.
+                line = _reviewed_maps(line)
             old = base.get(lid) if base is not None else None
             if old is not None:
                 line = self._merged(old, line, by_id[lid], glossary)
@@ -497,12 +516,12 @@ class ClaudeTranslator:
                 left_out.append(f"fit: {k} left out")
         line, _ = check_line(raw, spec, glossary)
         if line is None:
-            return replace(old)
+            return _authorized_maps(replace(old))
         line.flags += tuple(left_out)
         c = old.coverage
         kept = c is None or c.tier not in taken or old.tiers.get(c.tier) == line.tiers.get(c.tier)
         line.coverage = c if kept else None
-        return line
+        return _authorized_maps(line)
 
     def _store(self, spec: LineSpec, line: LineResult) -> None:
         """A validated line into the line cache, with its coverage class when it has one."""
@@ -526,7 +545,7 @@ class ClaudeTranslator:
             return None
         line.cached, line.model, line.brief_version, line.coverage = (True, row.get("answered_by"), row.get("brief"),
                                                                      coverage_from(row.get("coverage")))
-        return line
+        return _authorized_maps(line)
 
     def _glossary(self) -> dict[str, str]:
         out = {g.term: g.spoken for g in self.glossary_recent.values()}
@@ -534,8 +553,8 @@ class ClaudeTranslator:
         return out
 
     # ---- plumbing ------------------------------------------------------------------------------------------------
-    async def _ask(self, call: str, system: str, prompt: str, schema: dict, effort: str, deadline: float | None = None,
-                   tags: dict | None = None, cli: ClaudeCLI | None = None) -> ClaudeReply:
+    async def _ask(self, call: str, system: str, prompt: str, schema: dict, effort: str | None, deadline: float | None = None,
+                   tags: dict | None = None, cli: CodexCLI | None = None) -> ClaudeReply:
         """One CLI call (on `cli`, by default the scene model's) in a worker thread, under bounded priority slots. If
         the awaiting task is cancelled, the process gets SIGINT and the slot frees once it has exited, however many
         more cancels arrive meanwhile (a Claude failure's cancel, then the engine stopping)."""

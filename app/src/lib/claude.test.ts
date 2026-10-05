@@ -4,29 +4,33 @@ import type { ClaudeProblem, ClaudeProblemKind } from "./types";
 
 const at = (kind: ClaudeProblemKind, over: Partial<ClaudeProblem> = {}): ClaudeProblem => ({ kind, message: "", ...over });
 
-describe("the Claude banner", () => {
-  it("tells the user what to run when the CLI isn't signed in, installed or new enough", () => {
-    expect(claudeNotice(at("not_signed_in"))).toMatchObject({ title: "Claude Code isn't signed in", command: "claude auth login" });
-    expect(claudeNotice(at("missing")).title).toBe("Claude Code isn't installed");
-    const old = claudeNotice(at("outdated", { message: "Claude Code 2.1.201 can't run claude-opus-5-5." }));
-    expect(old).toMatchObject({ title: "Claude Code needs an update", command: "claude update" });
-    expect(old.detail).toContain("2.1.201");
+describe("the Codex banner", () => {
+  it("explains how to sign in, install or update the CLI", () => {
+    expect(claudeNotice(at("not_signed_in"))).toMatchObject({ title: "Codex CLI isn't signed in", command: "codex login" });
+    expect(claudeNotice(at("missing"))).toMatchObject({ title: "Codex CLI isn't installed", command: "codex login" });
+    const old = claudeNotice(at("outdated", { message: "Codex CLI cannot run the requested model." }));
+    expect(old.title).toBe("Codex CLI needs an update");
+    expect(old.detail).toContain("cannot run the requested model");
+    expect(old.detail).toContain("Update it using the method you installed it with");
+    expect(old.command).toBeUndefined();
   });
 
   it("names the usage limit and when translation resumes", () => {
     const resets = Date.UTC(2026, 8, 25, 15, 0) / 1000;
     const n = claudeNotice(at("usage_limit", { limit: "session", resetsAt: resets }), 0, resets * 1000 - 3_600_000);
-    expect(n.title).toBe("Your Claude 5-hour usage limit is reached");
+    expect(n.title).toBe("Your Codex session usage limit is reached");
     expect(n.detail).toContain(`resumes when it resets, at ${fmtReset(resets, new Date(resets * 1000 - 3_600_000))}`);
-    expect(claudeNotice(at("usage_limit", { limit: "opus" })).title).toBe("Your Claude weekly Opus usage limit is reached");
-    expect(claudeNotice(at("usage_limit")).title).toBe("Your Claude usage limit is reached");
+    expect(claudeNotice(at("usage_limit", { limit: "weekly" })).title).toBe("Your Codex weekly usage limit is reached");
+    expect(claudeNotice(at("usage_limit", { limit: "opus" })).title).toBe("Your Codex usage limit is reached");
+    expect(claudeNotice(at("usage_limit")).title).toBe("Your Codex usage limit is reached");
   });
 
-  it("names the likely cause when Claude Code didn't start (#91987) and counts down to the retry", () => {
+  it("reports a stalled CLI without inventing a cause and counts down to the retry", () => {
     const n = claudeNotice(at("stalled", { retryIn: 60 }), 10_000, 25_000);
-    expect(n.title).toBe("Claude Code didn't start");
-    expect(n.detail).toContain("open in another window on the same version");
-    expect(n.detail).toContain("#91987");
+    expect(n.title).toBe("Codex CLI didn't start");
+    expect(n.detail).toContain("Codex did not begin a response");
+    expect(n.detail).not.toContain("another window");
+    expect(n.detail).not.toContain("#91987");
     expect(n.detail).toContain("Trying again in 45 s.");
     expect(claudeNotice(at("transient", { retryIn: 30 }), 0, 40_000).detail).toContain("Trying again now");
     expect(claudeNotice(at("failed", { message: "exit 3", retryIn: 240 }), 0, 0).detail).toContain("exit 3 Trying again in 4 min.");
@@ -57,16 +61,19 @@ describe("retry and reset times", () => {
 
 describe("hello and privacy", () => {
   it("turns the CLI's state at connect into a banner only when something is wrong", () => {
-    const ok = { installed: true, version: "2.1.281", signedIn: true, models: [], model: "claude-sonnet-5", problem: null, message: "" };
+    const ok = { installed: true, version: "1.0.0", signedIn: true, models: [], model: "gpt-6-luna", problem: null, message: "" };
     expect(healthProblem(ok)).toBeNull();
     expect(healthProblem(null)).toBeNull();
     expect(healthProblem({ ...ok, installed: false, problem: "missing", message: "not found" }))
       .toEqual({ kind: "missing", message: "not found" });
   });
-  it("says what leaves the Mac, through whose account, and where the privacy setting is", () => {
+  it("says which text leaves the Mac and whose plan it uses", () => {
     expect(PRIVACY_NOTICE.detail).toContain("audio never leaves");
-    expect(PRIVACY_NOTICE.detail).toMatch(/transcript, as text, is sent to Anthropic by your own Claude Code/);
-    expect(PRIVACY_NOTICE.detail).toContain("your own plan");
-    expect(PRIVACY_NOTICE.detail).toContain("claude.ai");
+    expect(PRIVACY_NOTICE.detail).toContain("Only text goes to OpenAI");
+    expect(PRIVACY_NOTICE.detail).toContain("the English transcript and its translations");
+    expect(PRIVACY_NOTICE.detail).toContain("through your signed-in Codex CLI");
+    expect(PRIVACY_NOTICE.detail).toContain("your ChatGPT plan");
+    expect(PRIVACY_NOTICE.detail).toContain("counts toward that plan's usage");
+    expect(PRIVACY_NOTICE.detail).not.toMatch(/Claude|Anthropic/);
   });
 });

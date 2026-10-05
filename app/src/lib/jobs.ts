@@ -153,7 +153,7 @@ export function sleptText(slept: JobItem["slept"] | undefined, now: number = Dat
 }
 
 /**
- * The Library's status chip (§5). `now`: ms; `resetsAt`: when the usage limit holding Claude back resets (epoch s).
+ * The Library's status chip (§5). `now`: ms; `resetsAt`: when the usage limit holding Codex back resets (epoch s).
  */
 export function chip(job: ChipJob, now: number = Date.now(), resetsAt: number | null = null): Chip {
   const s = job.status;
@@ -171,7 +171,7 @@ export function chip(job: ChipJob, now: number = Date.now(), resetsAt: number | 
       return { text: ["Dubbing", stage, etaText(job.eta)].filter(Boolean).join(" · "), tone: "run" };
     }
     case "waiting":
-      return { text: resetsAt ? `Waiting for Claude · resets ${fmtReset(resetsAt, new Date(now))}` : "Waiting for Claude", tone: "warn" };
+      return { text: resetsAt ? `Waiting for Codex · resets ${fmtReset(resetsAt, new Date(now))}` : "Waiting for Codex", tone: "warn" };
     case "paused":
       return { text: job.stage ? `Paused at ${STAGE_LABELS[job.stage] ?? job.stage}` : "Paused", tone: "muted" };
     case "interrupted":
@@ -205,8 +205,8 @@ export function folderText(path: string): string {
 }
 
 /**
- * New dub's estimate line (§5): "About 3–6½ h on this Mac · about 310–360 Claude calls · saves to Movies ▸ Maata", and
- * "after the 1 job ahead (about 2 h)" when it would be queued. `claude`: the engine translates through Claude (the demo
+ * New dub's estimate line (§5): "About 3–6½ h on this Mac · about 310–360 Codex calls · saves to Movies ▸ Maata", and
+ * "after the 1 job ahead (about 2 h)" when it would be queued. `claude`: the engine translates through Codex (the demo
  * doesn't).
  */
 export function estimateLine(est: Estimate, opts: {
@@ -216,7 +216,7 @@ export function estimateLine(est: Estimate, opts: {
   const parts = [`About ${fmtSpan(e.seconds[0], e.seconds[1])} on this Mac`];
   if (opts.claude) {
     const [lo, hi] = e.claudeCalls;
-    parts.push(`about ${lo === hi ? fmtCount(hi) : `${fmtCount(lo)}–${fmtCount(hi)}`} Claude calls`);
+    parts.push(`about ${lo === hi ? fmtCount(hi) : `${fmtCount(lo)}–${fmtCount(hi)}`} Codex calls`);
   }
   if (opts.outputDir) parts.push(`saves to ${folderText(opts.outputDir)}`);
   if (opts.ahead > 0) {

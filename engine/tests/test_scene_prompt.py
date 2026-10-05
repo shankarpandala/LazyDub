@@ -26,9 +26,9 @@ BRIEF_V1 = Brief(1, META, "Kites and wind", "casual; the host says మీరు 
 def test_prompt_version_and_hash_are_pinned():
     # Changing the prompt, an example, the schema or the message layout moves the hash. When it does on purpose, bump
     # SHOTS_VERSION and update both pins here: the hash keys the line cache, so old lines are never served.
-    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v4", "f5430ea43db1")
+    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v5", "ccfdc4088a39")
     assert sp.BRIEF_HASH == "42afefc5b3f2"  # keys the brief cache: a new brief prompt makes new briefs
-    assert sp.REVIEW_HASH == "8daa0f76384f"  # the review is meaning-only: the register retarget leaves it alone
+    assert sp.REVIEW_HASH == "91715954c710"  # review includes the exact Latin form sent to TTS
     assert sp.prompt_hash() == sp.PROMPT_HASH and sp.brief_hash() == sp.BRIEF_HASH
     assert sp.review_hash() == sp.REVIEW_HASH != sp.PROMPT_HASH  # the review's prompt is its own
 
@@ -123,7 +123,7 @@ def test_about_sixteen_original_examples_cover_the_contract():
     assert any("pieces" in r for r in replies) and any(r.get("unfinished") for r in replies)
     assert any(style == "formal" for _, _, style in shots)
     lecture = [(line, r) for line, r, style in shots if "lecture" in line["en"] and style == "colloquial"]
-    assert lecture and lecture[0][1]["full"]["english"] == [{"i": 1, "en": "lecture"}]  # into everyday Telugu, same noun
+    assert lecture and lecture[0][1]["full"]["english"] == [{"word": "లెక్చర్", "occurrence": 0, "en": "lecture"}]
     assert any(r["delivery"].get("question") for r in replies)
 
 
@@ -228,9 +228,20 @@ def test_the_review_message_has_english_and_the_chosen_telugu_with_the_scenes_co
                                              (cut, Wording("అంటే నేను…"))]))
     assert list(msg) == ["scene", "call", "context_before", "lines", "context_after_en"] and msg["call"] == "review"
     assert msg["context_before"] == [{"en": "Hello.", "te": "నమస్కారం."}, {"en": "Before a seek."}]
-    assert msg["lines"] == [{"id": 412, "en": "The wind lifts the kite.", "te": "గాలి కైట్ని పైకి లేపుతుంది."},
-                            {"id": 413, "en": "So what I", "te": "అంటే నేను…", "cut_off": True}]
+    assert msg["lines"] == [{"id": 412, "en": "The wind lifts the kite.", "te": "గాలి కైట్ని పైకి లేపుతుంది.",
+                             "tts": "గాలి కైట్ని పైకి లేపుతుంది."},
+                            {"id": 413, "en": "So what I", "te": "అంటే నేను…", "tts": "అంటే నేను…", "cut_off": True}]
     assert msg["context_after_en"] == ["Next one."]
+
+
+def test_review_sees_a_bad_substitution_even_when_original_telugu_is_correct():
+    # The old numeric contract could map "phone" onto the Telugu verb. The review must now see that corruption.
+    req = SceneRequest(1, (SPEC,))
+    spoken = "ఫోన్ చేసే ఫ్రెండ్."
+    msg = json.loads(sp.review_message(req, [(SPEC, Wording(spoken, ((1, "phone"),)))]))
+    assert msg["lines"][0]["te"] == spoken
+    assert msg["lines"][0]["tts"] == "ఫోన్ phone ఫ్రెండ్."
+    assert "classify E even when te alone is correct" in sp.REVIEW_SYSTEM
 
 
 def test_the_review_system_prompt_is_fixed_and_names_every_class():

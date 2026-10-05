@@ -1,7 +1,7 @@
 """A render job's translation of its lines and the dub loop's side of it (ARCHITECTURE §4.1-4.6, §4.9; OFFLINE-RENDER
 §2.8-§2.10): the whole video's scene cuts, `want` tiers from the k prior, the band rule and its fits, the coverage
 review, the Claude CLI off the dub loop, Claude failures and the banner, and the TTS script switch. No Claude: the mock
-translator, small stand-ins, or a fake `claude` executable. All English and Telugu here is original test text (the
+translator, small stand-ins, or a fake `codex` executable. All English and Telugu here is original test text (the
 demo lines included). Ported from the streaming session's tests (OFFLINE-RENDER §10 step 6)."""
 
 from __future__ import annotations
@@ -35,26 +35,28 @@ from maata_engine.timing.duration import DEFAULT_OVERHEAD, DEFAULT_RATE, Duratio
 from maata_engine.timing.planner import Plan  # noqa: E402
 from maata_engine.types import SourceUnit, TimedWord  # noqa: E402
 
-# A fake `claude`: answers scene, fit and rephrase calls from the message (Telugu script, one made-up word per id), brief
+# A fake `codex`: answers scene, fit and rephrase calls from the message (Telugu script, one made-up word per id), brief
 # calls with a small brief and review calls with every line complete, after FAKE_DELAY s; FAKE_MODE=not_signed_in fails
 # every call as the CLI does. Each call leaves {call, scene, ids, t0, t1} in FAKE_LOG.
 FAKE = r"""#!@PYTHON@
 import json, os, sys, time
 argv = sys.argv[1:]
 if argv[:1] == ["--version"]:
-    print("2.1.281 (Claude Code)")
+    print("codex-cli 0.160.0")
     sys.exit(0)
-if argv[:2] == ["auth", "status"]:
+if argv[:2] == ["login", "status"]:
     time.sleep(float(os.environ.get("FAKE_AUTH_DELAY", "0")))
-    print(json.dumps({"loggedIn": os.environ.get("FAKE_SIGNED_IN", "1") == "1", "authMethod": "claude.ai"}))
-    sys.exit(0)
-msg = json.loads(sys.stdin.read())
+    signed_in = os.environ.get("FAKE_SIGNED_IN", "1") == "1"
+    print("Logged in using ChatGPT" if signed_in else "Not logged in")
+    sys.exit(0 if signed_in else 1)
+msg = json.loads(json.loads(sys.stdin.read())["input"])
 t0 = time.time()
 def emit(ev):
     print(json.dumps(ev, ensure_ascii=False), flush=True)
-emit({"type": "system", "subtype": "init"})
+emit({"type": "thread.started", "thread_id": "fake"})
+emit({"type": "turn.started"})
 if os.environ.get("FAKE_MODE") == "not_signed_in":
-    emit({"type": "result", "subtype": "success", "is_error": True, "result": "Not logged in · Please run /login"})
+    emit({"type": "turn.failed", "error": {"message": "Not logged in"}})
     sys.exit(1)
 time.sleep(float(os.environ.get("FAKE_DELAY", "0")))
 if msg.get("call") == "brief":
@@ -76,8 +78,8 @@ else:
             out["fuller"] = w(["అంటే"] + words)
         lines.append(out)
     data = {"lines": lines}
-emit({"type": "result", "subtype": "success", "is_error": False, "result": "", "structured_output": data,
-      "usage": {"input_tokens": 1, "output_tokens": 1}, "modelUsage": {}})
+emit({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(data, ensure_ascii=False)}})
+emit({"type": "turn.completed", "usage": {"input_tokens": 1, "cached_input_tokens": 0, "output_tokens": 1}})
 with open(os.environ["FAKE_LOG"], "a") as f:
     f.write(json.dumps({"call": msg.get("call"), "scene": msg.get("scene"),
                         "ids": [x["id"] for x in msg.get("lines", [])], "t0": t0, "t1": time.time()}) + "\n")
@@ -86,7 +88,7 @@ with open(os.environ["FAKE_LOG"], "a") as f:
 
 @pytest.fixture()
 def fake_cli(tmp_path, monkeypatch):
-    exe = tmp_path / "claude"
+    exe = tmp_path / "codex"
     exe.write_text(FAKE.replace("@PYTHON@", sys.executable))
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     log = tmp_path / "calls.jsonl"
@@ -433,14 +435,14 @@ async def test_a_fit_that_comes_back_while_its_line_is_being_voiced_is_not_folde
 
 
 # ---- a scene call and its review (§4.6) -------------------------------------------------------------------------------
-@pytest.mark.parametrize("english,warns", [(0, True), (1, False), (3, False), (5, True)])
-async def test_a_scenes_code_mixing_is_logged_and_warned_about_only_well_outside_20_to_40(tmp_path, caplog, english,
-                                                                                          warns):
-    """Ten words, `english` of them English: a code-mixing index of 0, 10, 30 or 50 %. It tops out at 50 (as many English
-    words as Telugu), so the upper warning must sit below that to ever fire."""
+@pytest.mark.parametrize("english", [0, 1, 3, 5])
+async def test_reviewed_latin_substitution_index_is_logged_without_a_mixing_quota_warning(tmp_path, caplog, english):
+    """The compatible trace value counts approved substitutions; unmapped loans still have Telugu spellings.
+    Neither zero substitutions nor many imply a quality problem or an English quota."""
     job = bare_job(tmp_path)
     spoken = "ఒకటి రెండు మూడు నాలుగు ఐదు ఆరు ఏడు ఎనిమిది తొమ్మిది పది."
-    line = LineResult(0, {"full": Wording(spoken, tuple((i, "word") for i in range(english)))})
+    line = LineResult(0, {"full": Wording(spoken, tuple((i, "word") for i in range(english)))},
+                      coverage=Coverage("C", tier="full"))
     st = UnitState(SourceUnit(0, "S1", 10.0, 16.0, "One two three four five six seven eight nine ten."), 17.0,
                    speech_s=6.0, scene=1)
     put(job, st)
@@ -461,7 +463,7 @@ async def test_a_scenes_code_mixing_is_logged_and_warned_about_only_well_outside
         await job._scene(SceneRequest(1, (job._spec(st),)))
     (scene,) = trace(job, "scene")
     assert scene["cmi"] == 10.0 * min(english, 10 - english)                   # logged for every scene
-    assert ("code-mixing index" in caplog.text) == warns and st.line is line   # a warning at most: the line is used
+    assert "code-mixing index" not in caplog.text and st.line == line
 
 
 def test_a_scenes_classes_count_only_where_the_class_is_of_the_wording_chosen(tmp_path):
@@ -593,7 +595,7 @@ async def test_a_claude_failure_holds_translation_says_what_to_do_and_recovers(t
     try:
         await until(lambda: any(e["type"] == "claude_error" for e in events))
         err = next(e for e in events if e["type"] == "claude_error")
-        assert err["kind"] == "not_signed_in" and err["retryIn"] >= 0 and "Not logged in" in err["message"]
+        assert err["kind"] == "not_signed_in" and err["retryIn"] >= 0 and "codex login" in err["message"]
         await until(lambda: job.doc["status"] == "waiting")  # the job waits out the hold
         assert not (job.render_dir / "takes.jsonl").exists() and not job.skipped  # lines wait, never skipped
         fake_cli.env.setenv("FAKE_MODE", "ok")  # the user signs in
@@ -821,7 +823,7 @@ class Reviewing(MockClaude):
                     if tier in x:
                         w = x[tier]
                         x[tier] = {"spoken": "సరిగ్గా " + w["spoken"],
-                                   "english": [{"i": e["i"] + 1, "en": e["en"]} for e in w["english"]]}
+                                   "english": w["english"]}
         return reply
 
 
@@ -859,7 +861,7 @@ async def test_a_scenes_lines_count_as_translated_only_once_their_review_is_back
     units = trace(job, "unit")
     assert units and all(u["coverage"]["class"] == "C" and u["coverage"]["by"] == "review" for u in units)
     assert all(u["coverage"]["tier"] in u["tiers"] for u in units)
-    assert all(c["effort"] == "high" for c in reviews(clis[0]))
+    assert all(c["effort"] == "low" for c in reviews(clis[0]))
     (scene,) = [e for e in trace(job, "scene") if e["scene"] == 1]
     assert scene["coverage"]["C"] == scene["translated"] and scene["unreviewed"] == 0
 
@@ -869,7 +871,7 @@ async def test_a_line_the_review_finds_a_phrase_missing_from_is_retranslated_and
     job = bare_job(tmp_path, translator=factory)
     assert await job.run() == "done"
     redo = [c for c in clis[0].calls if c["call"] == "retranslate"]
-    assert redo and redo[0]["message"]["lines"][0]["missing"] == ["exactly"] and redo[0]["effort"] == "medium"
+    assert redo and redo[0]["message"]["lines"][0]["missing"] == ["exactly"] and redo[0]["effort"] == "low"
     unit = next(e for e in trace(job, "unit") if e["source"].startswith("Every line"))
     assert "సరిగ్గా" in unit["telugu"].split()  # the re-translation says more: classed C by the checks, and voiced
     assert unit["coverage"] == {"class": "C", "by": "validators", "tier": "full", "first": "P", "missing": [],
@@ -932,18 +934,19 @@ async def test_units_jsonl_has_each_lines_class_speech_fill_and_required_rate(tm
 
 # ---- Claude's state for the UI (hello) --------------------------------------------------------------------------------
 def test_health_says_installed_version_signed_in_and_models(tmp_path, fake_cli, monkeypatch):
-    from maata_engine import claude_cli
+    from maata_engine import codex_cli
 
-    ok = claude_cli.ClaudeCLI(tmp_path, binary=str(fake_cli.exe)).health()
-    assert ok == {"installed": True, "version": "2.1.281", "signedIn": True,
-                  "models": ["claude-sonnet-5", "claude-opus-5-5"], "model": "claude-opus-5-5", "problem": None,
-                  "message": ""}
+    ok = codex_cli.CodexCLI(tmp_path, binary=str(fake_cli.exe)).health()
+    assert ok["models"] == ["gpt-6-luna"]
+    assert {k: v for k, v in ok.items() if k != "models"} == {
+        "installed": True, "version": "0.160.0", "signedIn": True, "model": "gpt-6-luna",
+        "provider": "codex", "problem": None, "message": ""}
     fake_cli.env.setenv("FAKE_SIGNED_IN", "0")
-    out = claude_cli.ClaudeCLI(tmp_path, binary=str(fake_cli.exe)).health()
-    assert out["signedIn"] is False and out["problem"] == "not_signed_in" and "claude auth login" in out["message"]
-    monkeypatch.setattr(claude_cli, "find_binary", lambda explicit=None: None)
-    gone = claude_cli.ClaudeCLI(tmp_path).health()
-    assert gone["installed"] is False and gone["problem"] == "missing" and "Install Claude Code" in gone["message"]
+    out = codex_cli.CodexCLI(tmp_path, binary=str(fake_cli.exe)).health()
+    assert out["signedIn"] is False and out["problem"] == "not_signed_in" and "codex login" in out["message"]
+    monkeypatch.setattr(codex_cli, "find_binary", lambda explicit=None: None)
+    gone = codex_cli.CodexCLI(tmp_path).health()
+    assert gone["installed"] is False and gone["problem"] == "missing" and "Codex" in gone["message"]
 
 
 async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, fake_cli):
@@ -952,7 +955,7 @@ async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, f
 
     from maata_engine.server import Engine
 
-    fake_cli.env.setenv("MAATA_CLAUDE_BIN", str(fake_cli.exe))  # never the real CLI in a test
+    fake_cli.env.setenv("MAATA_CODEX_BIN", str(fake_cli.exe))  # never the real CLI in a test
     eng = Engine("mock", tmp_path / "models", tmp_path / "cache", None, "tok", demo=True)
     async with serve(eng.handler, "127.0.0.1", 0, process_request=eng.process_request) as server:
         url = f"ws://127.0.0.1:{server.sockets[0].getsockname()[1]}/ws?token=tok"
@@ -966,5 +969,5 @@ async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, f
         t0 = time.monotonic()
         async with connect(url) as ws:
             stuck = json.loads(await ws.recv())
-    assert hello["claude"]["installed"] and hello["claude"]["version"] == "2.1.281" and hello["claude"]["signedIn"]
+    assert hello["claude"]["installed"] and hello["claude"]["version"] == "0.160.0" and hello["claude"]["signedIn"]
     assert time.monotonic() - t0 < 2.5 and stuck["claude"]["problem"] == "stalled"  # hello isn't held up by it

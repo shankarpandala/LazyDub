@@ -20,6 +20,8 @@ import pytest
 from maata_engine.claude_cli import (QUIET_ENV, SETTINGS, WORKDIR, ClaudeCLI, ClaudeCLIError, check_schema, classify_failure,
                                      failure, parse_output, parse_reset, validate)
 
+HAIKU = "claude-haiku-4-5-20251001"
+
 FAKE = r"""#!@PYTHON@
 import json, os, signal, sys, time
 argv = sys.argv[1:]
@@ -118,7 +120,7 @@ def fake(tmp_path, monkeypatch):
     delays: list[float] = []
 
     def make(**kw) -> ClaudeCLI:
-        opts = dict(effort="high", binary=str(exe), timeout=8, startup_timeout=5, grace=0.5, retries=2, backoff=0.01,
+        opts = dict(binary=str(exe), timeout=8, startup_timeout=5, grace=0.5, retries=2, backoff=0.01,
                     trace=events.append)
         cli = ClaudeCLI(tmp_path / "cache", **{**opts, **kw})
         cli._sleep = delays.append  # record back-offs instead of sleeping
@@ -141,8 +143,8 @@ def test_call_is_sealed_and_prompt_goes_on_stdin(fake):
     assert argv[argv.index("--tools") + 1] == ""
     assert argv[argv.index("--system-prompt") + 1] == "SYSTEM PROMPT"
     assert json.loads(argv[argv.index("--settings") + 1]) == {"fastMode": False} == json.loads(SETTINGS)
-    assert argv[argv.index("--model") + 1] == "claude-opus-5-5" and argv[argv.index("--effort") + 1] == "high"
-    assert argv[argv.index("--fallback-model") + 1] == "claude-sonnet-5"
+    assert argv[argv.index("--model") + 1] == HAIKU
+    assert "--effort" not in argv and "--fallback-model" not in argv
     assert json.loads(argv[argv.index("--json-schema") + 1]) == SCHEMA
     assert "--bare" not in argv
     assert rec["stdin"] == "a transcript line that must not appear in argv"
@@ -150,7 +152,8 @@ def test_call_is_sealed_and_prompt_goes_on_stdin(fake):
     assert "CLAUDECODE" not in rec["env"]
     assert all(rec["env"].get(k) == v for k, v in QUIET_ENV.items()) and QUIET_ENV["DISABLE_FEEDBACK_COMMAND"] == "1"
     assert reply.data == {"lines": ["నమస్కారం"]} and reply.text == "నమస్కారం"
-    assert reply.usage["output_tokens"] == 5 and reply.model == "claude-opus-5-5"
+    assert reply.usage["output_tokens"] == 5 and reply.model == HAIKU
+    assert fake.events[-1]["effort"] is None
     assert reply.rate_limit == {"status": "allowed_warning", "type": "five_hour", "utilization": 0.86,
                                 "resets_at": 1790300000.0}
     assert reply.startup_s is not None and reply.seconds >= reply.startup_s
@@ -165,7 +168,7 @@ def test_every_call_runs_in_one_fixed_empty_directory(fake):
 
 
 def test_each_call_leaves_a_usage_record(fake):
-    cli = fake.make(model="claude-sonnet-5", fallback_model="claude-opus-5-5")  # so the fallback answer is visible
+    cli = fake.make(model="claude-sonnet-5", fallback_model="claude-opus-5-5", effort="high")
     cli.ask("s", "p", schema=SCHEMA, call="scene")
     fake.env.setenv("FAKE_MODE", "fallback")
     reply = cli.ask("s", "p", schema=SCHEMA, call="review")
@@ -179,12 +182,14 @@ def test_each_call_leaves_a_usage_record(fake):
     assert second["call"] == "review" and second["requested"] == "claude-sonnet-5" and second["model"] == "claude-opus-5-5"
 
 
-@pytest.mark.parametrize("version,models", [("2.1.250 (Claude Code)", ("claude-sonnet-5",)),
-                                            ("2.1.281 (Claude Code)", ("claude-sonnet-5", "claude-opus-5-5"))])
+@pytest.mark.parametrize("version,models", [("2.1.205 (Claude Code)", {HAIKU, "claude-sonnet-5"}),
+                                            ("2.1.250 (Claude Code)", {HAIKU, "claude-sonnet-5"}),
+                                            ("2.1.281 (Claude Code)", {HAIKU, "claude-sonnet-5", "claude-opus-5-5"})])
 def test_version_gate_reports_which_models_the_cli_can_run(fake, version, models):
     fake.env.setenv("FAKE_VERSION", version)
-    assert fake.cli.probe().models == models
-    fake.cli.ask("s", "p", schema=SCHEMA)
+    cli = fake.make(model="claude-opus-5-5", fallback_model="claude-sonnet-5")
+    assert set(cli.probe().models) == models
+    cli.ask("s", "p", schema=SCHEMA)
     argv = fake.calls()[-1]["argv"]
     # the fallback only when this CLI can run it
     assert ("--fallback-model" in argv) == ("claude-opus-5-5" in models)
@@ -476,14 +481,34 @@ def test_schemas_the_validator_cannot_fully_check_are_refused(schema):
 
 
 def test_effort_and_tags_can_be_set_per_call(fake):
-    fake.cli.ask("s", "p", schema=SCHEMA, call="fit", effort="low", tags={"scene": 4, "lines": 2})
+    cli = fake.make(model="claude-opus-5-5", effort="high")
+    cli.ask("s", "p", schema=SCHEMA, call="fit", effort="low", tags={"scene": 4, "lines": 2})
     argv = fake.calls()[-1]["argv"]
     assert argv[argv.index("--effort") + 1] == "low"
     ev = fake.events[-1]
     assert ev["effort"] == "low" and ev["scene"] == 4 and ev["lines"] == 2 and ev["call"] == "fit"
-    fake.cli.ask("s", "p", schema=SCHEMA)
+    cli.ask("s", "p", schema=SCHEMA)
     argv = fake.calls()[-1]["argv"]
     assert argv[argv.index("--effort") + 1] == "high" and fake.events[-1]["effort"] == "high"
+
+
+@pytest.mark.parametrize("default_effort,call_effort", [(None, None), ("high", None), (None, "high"), ("high", "low")])
+def test_haiku_omits_unsupported_effort_even_when_explicitly_requested(fake, default_effort, call_effort):
+    fake.env.setenv("FAKE_VERSION", "2.1.205 (Claude Code)")
+    cli = fake.make(effort=default_effort)
+    assert cli.ask("s", "p", schema=SCHEMA, effort=call_effort).model == HAIKU
+    argv = fake.calls()[-1]["argv"]
+    assert "--effort" not in argv and "--fallback-model" not in argv
+    assert fake.events[-1]["effort"] is None
+
+
+def test_a_version_fallback_to_haiku_also_omits_effort(fake):
+    fake.env.setenv("FAKE_VERSION", "2.1.250 (Claude Code)")
+    cli = fake.make(model="claude-opus-5-5", fallback_model=HAIKU, effort="high")
+    assert cli.ask("s", "p", schema=SCHEMA, effort="low").model == HAIKU
+    argv = fake.calls()[-1]["argv"]
+    assert argv[argv.index("--model") + 1] == HAIKU and "--effort" not in argv
+    assert fake.events[-1]["effort"] is None
 
 
 def test_cancel_stops_a_call_in_flight(fake):

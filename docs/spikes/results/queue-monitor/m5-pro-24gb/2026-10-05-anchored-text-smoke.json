@@ -1,0 +1,650 @@
+{
+  "scope": "Original-text translation/schema/automated-meaning smoke; no audio or render-speed claim",
+  "created_utc": "2026-10-05T18:12:03.458250+00:00",
+  "machine": {
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.11",
+    "architecture": "arm64",
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "prompt_version": "scene-v5",
+  "prompt_hash": "ccfdc4088a39",
+  "review_hash": "91715954c710",
+  "request": {
+    "scene": 1,
+    "lines": [
+      {
+        "id": 1,
+        "speaker": "S1",
+        "en": "Ravi paid 250 rupees for two tickets, but Meena did not buy one.",
+        "start": 0.0,
+        "end": 8.0,
+        "speech_s": 8.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 2,
+        "speaker": "S1",
+        "en": "Open WhatsApp, turn off notifications, and restart the phone only if it still freezes.",
+        "start": 8.5,
+        "end": 18.5,
+        "speech_s": 10.0,
+        "target_aksharas": 50.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 3,
+        "speaker": "S1",
+        "en": "The battery may last about six hours; it is not guaranteed to last all day.",
+        "start": 19.0,
+        "end": 27.0,
+        "speech_s": 8.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 4,
+        "speaker": "S1",
+        "en": "Did you send the final PDF to Dr. Anjali before 9 AM, or only save it on your laptop?",
+        "start": 27.5,
+        "end": 37.5,
+        "speech_s": 10.0,
+        "target_aksharas": 50.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 5,
+        "speaker": "S1",
+        "en": "I mean, the update is faster, but it does not fix the camera problem.",
+        "start": 38.0,
+        "end": 45.5,
+        "speech_s": 7.5,
+        "target_aksharas": 38.0,
+        "want": [
+          "full",
+          "concise"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      }
+    ],
+    "call": "scene",
+    "context_before": [
+      [
+        "Here are five everyday examples.",
+        null
+      ]
+    ],
+    "context_after_en": [
+      "Those are all the examples."
+    ],
+    "deadline": null
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "Original translation smoke examples",
+      "channel": "Maata",
+      "description": "",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": []
+    },
+    "topic": "Everyday examples",
+    "register": "Neutral and polite, addressing the audience with మీరు",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "",
+        "gender": "unknown",
+        "role": "narrator",
+        "audience": "polite",
+        "address": []
+      }
+    ],
+    "glossary": [
+      {
+        "term": "WhatsApp",
+        "spoken": "వాట్సాప్",
+        "keep_english": true,
+        "note": ""
+      },
+      {
+        "term": "PDF",
+        "spoken": "పీడీఎఫ్",
+        "keep_english": true,
+        "note": ""
+      }
+    ],
+    "entities": [
+      "Ravi",
+      "Meena",
+      "Dr. Anjali"
+    ],
+    "idioms": [],
+    "numbers": "",
+    "asr_fixes": []
+  },
+  "human_review": "not performed",
+  "events": [
+    {
+      "scene": 1,
+      "lines": 5,
+      "event": "claude",
+      "provider": "codex",
+      "call": "scene",
+      "attempt": 1,
+      "requested": "gpt-6-luna",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "wall_s": 19.078,
+      "startup_s": 0.057,
+      "input_tokens": 9697,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0,
+      "cache_1h_tokens": 0,
+      "output_tokens": 833,
+      "reasoning_output_tokens": 0,
+      "rate_limit": null,
+      "error": null
+    },
+    {
+      "event": "translate",
+      "call": "scene",
+      "scene": 1,
+      "lines": 5,
+      "cached": 0,
+      "answered": 5,
+      "skipped": [],
+      "calls": 1,
+      "wall_s": 19.08,
+      "dropped": false,
+      "model": "gpt-6-luna",
+      "prompt_hash": "ccfdc4088a39",
+      "brief": 1,
+      "error": null
+    },
+    {
+      "scene": 1,
+      "lines": 5,
+      "event": "claude",
+      "provider": "codex",
+      "call": "review",
+      "attempt": 1,
+      "requested": "gpt-6-luna",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "wall_s": 7.757,
+      "startup_s": 0.06,
+      "input_tokens": 4844,
+      "cache_read_tokens": 1792,
+      "cache_creation_tokens": 0,
+      "cache_1h_tokens": 0,
+      "output_tokens": 105,
+      "reasoning_output_tokens": 0,
+      "rate_limit": null,
+      "error": null
+    },
+    {
+      "event": "review",
+      "scene": 1,
+      "lines": 5,
+      "stored": 0,
+      "classes": {
+        "C": 5,
+        "m": 0,
+        "P": 0,
+        "E": 0
+      },
+      "retranslated": [],
+      "replaced": [],
+      "unreviewed": [],
+      "calls": 1,
+      "wall_s": 7.77,
+      "model": "gpt-6-luna",
+      "review_hash": "91715954c710",
+      "error": null
+    }
+  ],
+  "status": "passed",
+  "requested_model": "gpt-6-luna",
+  "effort": "low",
+  "review_model": "gpt-6-luna",
+  "review_effort": "low",
+  "cli_health": {
+    "provider": "codex",
+    "installed": true,
+    "version": "0.160.0",
+    "signedIn": true,
+    "models": [
+      "gpt-6-luna"
+    ],
+    "model": "gpt-6-luna",
+    "problem": null,
+    "message": ""
+  },
+  "translation_seconds": 19.080431207999936,
+  "translation_calls": 1,
+  "skipped": {},
+  "initial_output": [
+    {
+      "id": 1,
+      "full": {
+        "spoken": "రవి రెండు టికెట్లకి రెండు వందల యాభై రూపాయలు ఇచ్చాడు, కానీ మీనా ఒకటి కూడా కొనలేదు.",
+        "english": []
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 35.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 2,
+      "full": {
+        "spoken": "వాట్సాప్ ఓపెన్ చేసి, నోటిఫికేషన్లు ఆఫ్ చేసి, ఫోన్ ఇంకా హ్యాంగ్ అవుతుంటేనే రీస్టార్ట్ చేయండి.",
+        "english": [
+          {
+            "word": "ఓపెన్",
+            "occurrence": 0,
+            "en": "open"
+          },
+          {
+            "word": "ఆఫ్",
+            "occurrence": 0,
+            "en": "off"
+          },
+          {
+            "word": "రీస్టార్ట్",
+            "occurrence": 0,
+            "en": "restart"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 32.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 3,
+      "full": {
+        "spoken": "బ్యాటరీ దాదాపు ఆరు గంటలు ఉండొచ్చు, రోజంతా ఉంటుందని మాత్రం గ్యారంటీ లేదు.",
+        "english": [
+          {
+            "word": "బ్యాటరీ",
+            "occurrence": 0,
+            "en": "battery"
+          },
+          {
+            "word": "గ్యారంటీ",
+            "occurrence": 0,
+            "en": "guarantee"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 28.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 4,
+      "full": {
+        "spoken": "ఫైనల్ పీడీఎఫ్ ని ఉదయం తొమ్మిది గంటలకి ముందే డాక్టర్ అంజలికి పంపారా, లేక ల్యాప్టాప్లో మాత్రమే సేవ్ చేశారా?",
+        "english": [
+          {
+            "word": "ఫైనల్",
+            "occurrence": 0,
+            "en": "final"
+          },
+          {
+            "word": "డాక్టర్",
+            "occurrence": 0,
+            "en": "Dr."
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": true,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [
+        "full english: word 11 keeps its Telugu ending"
+      ],
+      "aksharas": {
+        "full": 41.0
+      },
+      "coverage": null
+    },
+    {
+      "id": 5,
+      "concise": {
+        "spoken": "అప్డేట్ ఫాస్ట్గా ఉంది, కానీ కెమెరా సమస్యని సరిచేయదు.",
+        "english": [
+          {
+            "word": "అప్డేట్",
+            "occurrence": 0,
+            "en": "update"
+          },
+          {
+            "word": "కెమెరా",
+            "occurrence": 0,
+            "en": "camera"
+          }
+        ]
+      },
+      "full": {
+        "spoken": "అంటే, అప్డేట్ వేగంగా ఉంది, కానీ కెమెరా సమస్యని మాత్రం సరిచేయదు.",
+        "english": [
+          {
+            "word": "అప్డేట్",
+            "occurrence": 0,
+            "en": "update"
+          },
+          {
+            "word": "కెమెరా",
+            "occurrence": 0,
+            "en": "camera"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [
+        "full ZWNJ/ZWJ normalized",
+        "concise ZWNJ/ZWJ normalized",
+        "concise english: word 1 keeps its Telugu ending"
+      ],
+      "aksharas": {
+        "concise": 20.5,
+        "full": 25.5
+      },
+      "coverage": null
+    }
+  ],
+  "review_seconds": 7.76948637500027,
+  "review_calls": 1,
+  "reviewed_output": [
+    {
+      "id": 1,
+      "full": {
+        "spoken": "రవి రెండు టికెట్లకి రెండు వందల యాభై రూపాయలు ఇచ్చాడు, కానీ మీనా ఒకటి కూడా కొనలేదు.",
+        "english": []
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 35.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 2,
+      "full": {
+        "spoken": "వాట్సాప్ ఓపెన్ చేసి, నోటిఫికేషన్లు ఆఫ్ చేసి, ఫోన్ ఇంకా హ్యాంగ్ అవుతుంటేనే రీస్టార్ట్ చేయండి.",
+        "english": [
+          {
+            "word": "ఓపెన్",
+            "occurrence": 0,
+            "en": "open"
+          },
+          {
+            "word": "ఆఫ్",
+            "occurrence": 0,
+            "en": "off"
+          },
+          {
+            "word": "రీస్టార్ట్",
+            "occurrence": 0,
+            "en": "restart"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 32.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 3,
+      "full": {
+        "spoken": "బ్యాటరీ దాదాపు ఆరు గంటలు ఉండొచ్చు, రోజంతా ఉంటుందని మాత్రం గ్యారంటీ లేదు.",
+        "english": [
+          {
+            "word": "బ్యాటరీ",
+            "occurrence": 0,
+            "en": "battery"
+          },
+          {
+            "word": "గ్యారంటీ",
+            "occurrence": 0,
+            "en": "guarantee"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [],
+      "aksharas": {
+        "full": 28.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 4,
+      "full": {
+        "spoken": "ఫైనల్ పీడీఎఫ్ ని ఉదయం తొమ్మిది గంటలకి ముందే డాక్టర్ అంజలికి పంపారా, లేక ల్యాప్టాప్లో మాత్రమే సేవ్ చేశారా?",
+        "english": [
+          {
+            "word": "ఫైనల్",
+            "occurrence": 0,
+            "en": "final"
+          },
+          {
+            "word": "డాక్టర్",
+            "occurrence": 0,
+            "en": "Dr."
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": true,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [
+        "full english: word 11 keeps its Telugu ending"
+      ],
+      "aksharas": {
+        "full": 41.0
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    },
+    {
+      "id": 5,
+      "concise": {
+        "spoken": "అప్డేట్ ఫాస్ట్గా ఉంది, కానీ కెమెరా సమస్యని సరిచేయదు.",
+        "english": []
+      },
+      "full": {
+        "spoken": "అంటే, అప్డేట్ వేగంగా ఉంది, కానీ కెమెరా సమస్యని మాత్రం సరిచేయదు.",
+        "english": [
+          {
+            "word": "అప్డేట్",
+            "occurrence": 0,
+            "en": "update"
+          },
+          {
+            "word": "కెమెరా",
+            "occurrence": 0,
+            "en": "camera"
+          }
+        ]
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "model": "gpt-6-luna",
+      "flags": [
+        "full ZWNJ/ZWJ normalized",
+        "concise ZWNJ/ZWJ normalized",
+        "concise english: word 1 keeps its Telugu ending"
+      ],
+      "aksharas": {
+        "concise": 20.5,
+        "full": 25.5
+      },
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [],
+        "added": [],
+        "error": null
+      }
+    }
+  ],
+  "wall_seconds": 26.876
+}

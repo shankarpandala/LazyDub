@@ -807,7 +807,7 @@ async def test_notifications_fire_for_speakers_done_failed_holds_and_a_crash(eng
     for _ in range(2):
         await eng._job_event({"type": "claude_error", "videoId": VID_C, "kind": "usage_limit", "message": "Limit reached.",
                               "resetsAt": None})
-    assert posted == [("Maata", f"Claude is holding back {VID_C}: Limit reached.")]
+    assert posted == [("Maata", f"Codex is holding back {VID_C}: Limit reached.")]
     # a failure
     posted.clear()
     eng.backend.tts = BrokenSynth()

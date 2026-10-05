@@ -45,11 +45,11 @@ export class AppState {
   backend = $state("");
   device = $state("");
   demo = $state(false);
-  /** The Claude CLI as the engine found it on connect; null when the engine never calls Claude (the demo). */
+  /** The Codex CLI as the engine found it on connect; null for the demo. Internal names preserve the wire protocol. */
   claude = $state<ClaudeHealth | null>(null);
   /** What holds translation back now, and when the engine said so (ms): the banner's countdown runs from then. */
   claudeProblem = $state<(ClaudeProblem & { at: number }) | null>(null);
-  /** The one-time notice that transcript text goes to Anthropic has been read. */
+  /** The one-time notice that transcript text goes to OpenAI has been read. */
   privacySeen = $state(loadFlag(PRIVACY_KEY));
 
   view = $state<View>("library");
@@ -298,7 +298,7 @@ export class AppState {
     send({ type: "settings", outputDir: outputDir.trim() });
   }
 
-  /** The engine's `hello`: how the Claude CLI is, and anything wrong with it already. */
+  /** The engine's `hello`: how the Codex CLI is, and anything wrong with it already. */
   setClaude(health: ClaudeHealth | null | undefined, now: number = Date.now()): void {
     this.claude = health ?? null;
     const p = healthProblem(health);

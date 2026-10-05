@@ -10,12 +10,12 @@
     python verify_mac.py export WORK MP4 MANIFEST the dubbed MP4: its streams, faststart, the copied video, loudness, the
                                                   A/V offset (the white frame against the beep in the Telugu track) and
                                                   the PerTh watermark under the Telugu lines
-    python verify_mac.py proxy WORK               an HTTPS proxy on 127.0.0.1 that tunnels only to Anthropic's hosts
-                                                  (the Claude CLI's way out of the bench's sandbox); WORK/proxy.port
+    python verify_mac.py proxy WORK               an HTTPS proxy on 127.0.0.1 that tunnels only to OpenAI's hosts
+                                                  (Codex CLI's way out of the bench's sandbox); WORK/proxy.port
     python verify_mac.py combine WORK OUT         the steps' JSON, the network log and the checks, in one file OUT
 
 Run from engine/ with `uv run --no-sync python ../scripts/verify_mac.py`. Each step writes WORK/<step>.json and prints it.
-Everything but the proxy is local: no network, no Claude. The music is synthetic unless a local CC0/CC-BY file is
+Everything but the proxy is local: no network, no Codex. The music is synthetic unless a local CC0/CC-BY file is
 given."""
 
 from __future__ import annotations
@@ -399,8 +399,8 @@ def check_export(work: Path, mp4: Path, manifest: Path) -> dict:
     return out
 
 
-# ---- the bench's one way out: the Claude CLI to Anthropic ---------------------------------------------------------------
-ALLOWED = (".anthropic.com", "claude.ai")  # host suffixes the proxy tunnels to (port 443 only)
+# ---- the bench's one way out: Codex CLI to OpenAI -----------------------------------------------------------------------
+ALLOWED = (".openai.com", ".chatgpt.com")  # authentication and model hosts; port 443 only
 
 
 def allowed(host: str) -> bool:
@@ -411,7 +411,7 @@ def allowed(host: str) -> bool:
 async def proxy(work: Path) -> None:
     """An HTTP CONNECT proxy on 127.0.0.1 (its port in WORK/proxy.port) that tunnels to `allowed` hosts on 443 and
     refuses everything else; each request goes to WORK/proxy.log as {host, port, tunnelled}. The sandboxed bench reaches
-    the network only through it (HTTPS_PROXY), so only the Claude CLI's calls to Anthropic leave the Mac."""
+    the network only through it (HTTPS_PROXY), so only the Codex CLI's calls to OpenAI leave the Mac."""
     import asyncio
 
     log = (work / "proxy.log").open("a", encoding="utf-8")

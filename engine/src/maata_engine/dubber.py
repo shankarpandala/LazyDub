@@ -62,9 +62,6 @@ K_PRIOR, K_MIN_LINES, K_MIN_SYLLABLES, K_WINDOW = 1.4, 3, 4, 400
 BAND = (0.85, 1.10)     # §4.5: a wording fits when its predicted duration is within this share of the line's speech time
 DENSE = 0.8             # a slot is speech-dense when speech fills this share of its span (only then is `fuller` asked)
 TIERS_BY_FULLNESS = ("fuller", "full", "concise", "very_concise")
-# %: a scene's code-mixing index is logged, and warned about only well outside CoSTA's ~20-40 (it tops out at 50, where
-# half the words are English)
-CMI_WARN = (5.0, 45.0)
 CLAUDE_BACKOFF, CLAUDE_BACKOFF_MAX = 30.0, 300.0  # s before the next scene call after a failure, doubling
 MARKS = re.compile(r"[,;:.!?।॥…—]+")  # where a wording breaks inside: a Telugu pause there is plausible (§3.10 step 3)
 BRIEF_TRIES = 3
@@ -236,6 +233,7 @@ class Dubber:
         self.units: dict[int, UnitState] = {}
         self._wake = _Wake()
         self._dir: Path | None = None  # the video's cache directory (units.jsonl)
+        self._run_id: str | None = None  # distinguishes fresh work from earlier attempts and cache replay
         self.tr: SceneTranslator | None = None
         self._side_tasks: set[asyncio.Task] = set()   # fits, a scene's fix-ups, saves: never awaited by the dub loop
         self._ratios: dict[str, list[float]] = {}   # per speaker: `full` aksharas / English syllables of each line
@@ -309,7 +307,8 @@ class Dubber:
             return
         try:
             with (self._dir / "units.jsonl").open("a", encoding="utf-8") as f:
-                f.write(json.dumps({"t": round(time.time(), 3), **rec}, ensure_ascii=False) + "\n")
+                f.write(json.dumps({"t": round(time.time(), 3), "run_id": self._run_id, **rec},
+                                   ensure_ascii=False) + "\n")
         except OSError:
             log.warning("could not write units.jsonl", exc_info=True)
 
@@ -627,8 +626,8 @@ class Dubber:
         if fits:
             self._side(self._fit(SceneRequest(req.scene, tuple(fits), "fit")))
         mix = tenglish.cmi((s.line.tiers[s.tier].spoken, s.line.tiers[s.tier].english) for s in done)
-        if done and not CMI_WARN[0] <= mix <= CMI_WARN[1]:
-            log.warning("scene %d: code-mixing index %.0f %% is well outside the usual 20-40 %%", req.scene, mix)
+        # Legacy trace field: now it counts reviewed Latin substitutions only, not all Telugu-spelled English loans.
+        # There is no preferred mixing quota, and declined/unreviewed substitutions must not trigger a quality warning.
         self._trace({"event": "scene", "scene": req.scene, "a": round(req.lines[0].start, 2),
                      "b": round(req.lines[-1].end, 2), "lines": len(req.lines), "translated": len(done),
                      "cached": sum(1 for s in done if s.cache_hit), "fits": len(fits), "cmi": round(mix, 1),
@@ -646,6 +645,13 @@ class Dubber:
         as a scene call does."""
         if not lines:
             return lines
+        def safe_wordings(answer: dict[int, LineResult]) -> dict[int, LineResult]:
+            # The Latin spelling is an optional pronunciation aid. Only a semantic review of that exact tier may
+            # authorize it; unexpected reviewer failures must still preserve the full Telugu wording.
+            return {i: replace(line, tiers={tier: w if line.coverage is not None
+                                            and line.coverage.by == "review" and line.coverage.cls in ("C", "m")
+                                            and line.coverage.tier == tier else Wording(w.spoken)
+                                            for tier, w in line.tiers.items()}) for i, line in answer.items()}
         chosen = {i: self._pick(self.units[i], line)[0] for i, line in lines.items()}
         asked = time.monotonic()
         try:
@@ -656,12 +662,12 @@ class Dubber:
             return None
         except Exception:
             log.exception("the review of scene %d failed; its lines go on unreviewed", req.scene)
-            return lines
+            return safe_wordings(lines)
         if res.error is not None:
             await self._claude_failed(res.error)
         elif res.calls:
             await self._claude_ok(asked)
-        return res.lines
+        return safe_wordings(res.lines)
 
     def _release(self, req: SceneRequest) -> None:
         """A scene call that ended without an answer: its lines go back to be asked for again."""
@@ -706,7 +712,7 @@ class Dubber:
         if err.kind == "usage_limit" and err.resets_at:
             wait = max(wait, err.resets_at - time.time() + 5.0)
         self._claude_hold = time.monotonic() + wait
-        log.warning("Claude %s: %s; the next scene call in %.0f s", err.kind, err, wait)
+        log.warning("Translation %s: %s; the next scene call in %.0f s", err.kind, err, wait)
         await self.notify({"type": "claude_error", "kind": err.kind, "message": str(err), "limit": err.limit,
                               "resetsAt": err.resets_at, "retryIn": round(wait)})
 

@@ -45,6 +45,7 @@ import shutil
 import sys
 import threading
 import time
+import uuid
 import zipfile
 from bisect import bisect_left, bisect_right
 from dataclasses import dataclass, field, replace
@@ -76,7 +77,7 @@ from .speakers import FLOOR_CAP, MIN_SHARE, MIN_TALK, SAME_COS, SpeakerRegistry,
 from .text import asr_guard, tenglish
 from .text.akshara import count_units
 from .text.asr_fix import fix_words
-from .text.scene_prompt import REVIEW_HASH
+from .text.scene_prompt import PROMPT_HASH, REVIEW_HASH
 from .timing.duration import DurationEstimator, VoiceKey
 from .timing.planner import LineSlot, Plan, TimelinePlanner, rate_ceiling, target_seconds
 from .types import SourceUnit, TimedWord, VoiceKind
@@ -104,6 +105,7 @@ TAKES_VERSION = 2        # synthesis identity and selected-waveform QA: old take
 MIX_VERSION = 1          # in every PCM key: how a line's audio is made from its takes and its final plan (§2.12)
 BRIEF_PART_WORDS = 8000  # words of transcript per brief call, about 45 min of talk (the CLI's 240 s timeout, §2.7)
 LANES = 3                # translation lanes: the translator's concurrency (§2.8)
+LANE_WEIGHTS = (1.0, 1.0, 1.0)  # balanced production baseline; explicit weights let a benchmark front-load the cursor
 PAST_STOP = 30.0         # s: a preview translates the scenes that start before its stop point plus this (§3)
 KEEP_VOICE = 0.9         # a stored voice is kept while this share of the speech in its spans is still its speaker's
 HOLD_POLL = 0.2          # s between looks at the clock (and at a pause) while a Claude hold is waited out
@@ -373,10 +375,13 @@ class RenderJob(Dubber):
             self._final_done = False
             self._extra.clear()
             self._started = time.monotonic()
+            self._run_id = uuid.uuid4().hex
             self._ticked = (time.time(), self._started)
             self._stages_at.clear()
             self.render_dir.mkdir(parents=True, exist_ok=True)
             self.doc.update(status="running", error=None, expired=False, slept=None)
+            self._trace({"event": "run_start", "backend": self.b.name, "device": self.b.device,
+                         "elapsed_before_s": self.doc["elapsed"]})
             await self._save(force=True)
             try:
                 if self._whole_output() is None:  # (a whole video's MP4 needs it again only if the lines change)
@@ -395,6 +400,8 @@ class RenderJob(Dubber):
                                     elapsed=round(self.doc["elapsed"] + time.monotonic() - self._started, 1))
                     log.info("render %s %s in %s: Maata is quitting", self.video_id, self._quit, self.doc["stage"])
                 _write_json(self.render_dir / "job.json", self.doc)
+                self._trace({"event": "run_end", "status": self._quit or "cancelled",
+                             "wall_s": round(time.monotonic() - self._started, 3)})
                 raise
             except Exception:
                 log.exception("render %s failed in %s", self.video_id, self.doc["stage"])
@@ -405,6 +412,8 @@ class RenderJob(Dubber):
                 await asyncio.to_thread(self._let_go_of_sources)
             self.doc["elapsed"] = round(self.doc["elapsed"] + time.monotonic() - self._started, 1)
             await self._save(force=True)
+            self._trace({"event": "run_end", "status": self.doc["status"],
+                         "wall_s": round(time.monotonic() - self._started, 3)})
             return self.doc["status"]
 
     def _let_go_of_sources(self) -> None:
@@ -471,9 +480,12 @@ class RenderJob(Dubber):
         self._active.append(key)
         self.doc["stage"] = self._first_active()
         t0 = time.perf_counter()
+        outcome = "done"
+        self._trace({"event": "stage_start", "key": key})
         try:
             await getattr(self, "_" + key)()
         except asyncio.CancelledError:
+            outcome = "cancelled"
             # The engine is stopping, which is not a kill: a download in its worker thread stops at its next chunk, and
             # the stage's start doesn't count as an interrupted one (the coarse step, the crash-loop guard).
             self._stop.set()
@@ -483,6 +495,7 @@ class RenderJob(Dubber):
             raise
         except Exception as e:
             paused = isinstance(e, (_Paused, Cancelled)) or self._stop.is_set()
+            outcome = "paused" if paused else "failed"
             if st["state"] == "running":
                 st["state"] = "todo" if paused else "failed"
                 st["attempts"] -= paused  # a pause is not an interrupted start (the crash-loop guard, §4)
@@ -493,8 +506,12 @@ class RenderJob(Dubber):
         finally:
             _STAGE.reset(token)
             self._active.remove(key)
-            st["seconds"] = round(st["seconds"] + time.perf_counter() - t0, 2)
+            elapsed = time.perf_counter() - t0
+            st["seconds"] = round(st["seconds"] + elapsed, 2)
             st["gpu_s"] = round(st["gpu_s"] + acct.gpu_s, 2)
+            self._trace({"event": "stage_timing", "key": key, "outcome": outcome,
+                         "wall_s": round(elapsed, 3), "gpu_s": round(acct.gpu_s, 3),
+                         "cached": not acct.worked})
         st["state"] = "done"
         st["span"] = round(_span(key, float(self.doc["duration"] or 0.0), self.settings.stop_at), 1)  # (`_prior_left`)
         # (A stage finishing while a pause stops the others, the video download, leaves the job where they stopped.)
@@ -614,10 +631,21 @@ class RenderJob(Dubber):
     async def _on_gpu(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> tuple[Any, float]:
         if self._stop.is_set():
             raise _Paused  # a pause stops GPU work at the next call (§2.1)
+        queued_at = time.perf_counter()
         out, seconds = await super()._on_gpu(fn, *args, **kwargs)
-        if (acct := _STAGE.get()) is not None:
-            acct.gpu_s += seconds
+        self._gpu_work(fn, seconds, queued_at)
         return out, seconds
+
+    def _gpu_work(self, fn: Callable[..., Any], seconds: float, queued_at: float) -> None:
+        """Completed scheduled work in this run, including restored-take reads; never historical take costs.
+        These are serialized operation durations, not a measurement of hardware utilization."""
+        acct = _STAGE.get()
+        if acct is not None:
+            acct.gpu_s += seconds
+        self._trace({"event": "gpu_work", "stage": acct.key if acct else None,
+                     "operation": getattr(fn, "__name__", type(fn).__name__),
+                     "run_s": round(seconds, 4),
+                     "queue_wait_s": round(max(0.0, time.perf_counter() - queued_at - seconds), 4)})
 
     def _cut(self, a: float, b: float) -> np.ndarray:
         return np.array(super()._cut(a, b))  # out of the memory map: a model call gets a plain array
@@ -906,9 +934,19 @@ class RenderJob(Dubber):
                   "cfg": getattr(tts, "cfg_weight", None), "exaggeration": getattr(tts, "exaggeration", None),
                   "cfmSteps": getattr(tts, "cfm_steps", None), "ttsScript": self.tts_script,
                   "calibration": _digest([[w.spoken, [list(e) for e in w.english]] for w in CALIBRATION_TE]),
+                  "calibrationTts": _digest([self._tts_text(w) for w in CALIBRATION_TE]),
                   "version": VOICE_VERSION}
         prev = _read_json(path)
-        entries = dict(prev.get("speakers") or {}) if prev is not None and prev.get("inputs") == inputs else {}
+        prior = prev.get("inputs") if prev else None
+        prior = prior if isinstance(prior, dict) else {}
+        same_voice = {k: v for k, v in prior.items() if k != "calibrationTts"} == \
+                     {k: v for k, v in inputs.items() if k != "calibrationTts"}
+        entries = dict(prev.get("speakers") or {}) if prev and same_voice else {}
+        # A calibration-only text change needs new pace samples, not new reference selection. Legacy Telugu input
+        # is exactly its stored spoken text; legacy Latin reconstruction cannot be proved unchanged from those pairs.
+        legacy_tts = prior.get("calibrationTts", inputs["calibrationTts"] if self.tts_script != "latin" else None)
+        for entry in entries.values():
+            entry.setdefault("calibrationTts", legacy_tts)  # per voice: a pause can leave only some recalibrated
         reg = self.registry
         order = sorted(reg.speakers, key=lambda sid: (-reg.speakers[sid].talk_seconds, sid))
         began = False
@@ -920,12 +958,22 @@ class RenderJob(Dubber):
                 await self._preset(_preset_name(sid), VoiceCost())
                 self.voices.setdefault(sid, VoiceState()).use_preset = True
                 continue
-            if sid in entries and await self._restore_voice(sid, entries[sid]):
-                continue
+            if sid in entries:
+                recalibrate = entries[sid]["calibrationTts"] != inputs["calibrationTts"] \
+                              and entries[sid].get("how") != "preset"
+                if recalibrate and not began:
+                    await self._begin("voices")
+                    began = True
+                if await self._restore_voice(sid, entries[sid], recalibrate=recalibrate):
+                    entries[sid]["calibrationTts"] = inputs["calibrationTts"]
+                    if recalibrate:
+                        _write_json(path, {"inputs": inputs, "speakers": entries})
+                    continue
             if not began:
                 await self._begin("voices")
                 began = True
             entries[sid] = await self._make_voice(sid)
+            entries[sid]["calibrationTts"] = inputs["calibrationTts"]
             _write_json(path, {"inputs": inputs, "speakers": entries})
         _write_json(path, {"inputs": inputs, "speakers": {sid: entries[sid] for sid in order if sid in entries}})
         for f in (self.render_dir / "voices").glob("*.npy"):  # speakers merged away, or gone with another count
@@ -986,11 +1034,12 @@ class RenderJob(Dubber):
                 "pace": round(self.estimator.rate(key), 3), "overhead": round(self.estimator.overhead(key), 3),
                 "sample": sample.is_file()}
 
-    async def _restore_voice(self, sid: str, entry: dict) -> bool:
+    async def _restore_voice(self, sid: str, entry: dict, *, recalibrate: bool = False) -> bool:
         """A stored voice back, with no synthesis. A preset while the speaker still has too little clean speech for a
         clone. A clone while at least KEEP_VOICE of the speaker's speech in its spans when it was built is still theirs
         (a speakers re-run can give it to someone else): rebuilt from those spans (4-8 s on the GPU), with its pace
-        re-fitted from its stored calibration pairs. False when the voice must be built again."""
+        re-fitted from its stored calibration pairs. If only the actual calibration text changed, repeat calibration
+        on this restored reference. False when the voice must be built again."""
         v = self.voices.setdefault(sid, VoiceState())
         if entry.get("how") == "preset":
             how, _, clips = self._voice_spans(sid)
@@ -1010,8 +1059,29 @@ class RenderJob(Dubber):
         if voice is None or reference != entry["hash"]:
             return False  # the audio under its spans isn't what it was built from
         key = self._voice_key(sid, voice, f"{VOICE_VERSION}:{reference}")
+        if recalibrate:
+            cost, kept, t0 = VoiceCost(), [], time.perf_counter()
+            used = await self._calibrate(sid, key, voice, cost, self._gpu_priority(), keep=kept)
+            elapsed = time.perf_counter() - t0
+            self.calibrate_s += elapsed
+            entry["calibration"] = [[spoken, seconds] for spoken, seconds, _ in kept]
+            entry["pace"], entry["overhead"] = round(self.estimator.rate(key), 3), round(self.estimator.overhead(key), 3)
+            sample, audio = self.render_dir / "voices" / f"{sid}.npy", None
+            if kept and hasattr(self.b.tts, "vocode"):
+                audio, _ = await self._on_gpu(self.b.tts.vocode, kept[0][2], 1.0, cost=cost)
+            elif not hasattr(self.b.tts, "synthesize_mel"):
+                audio, _ = await self._on_gpu(self.b.tts.synthesize, self._tts_text(CALIBRATION_TE[0]), voice, "te",
+                                             cost=cost)
+            if audio is not None:
+                sample.parent.mkdir(exist_ok=True)
+                _save_pcm(sample, np.asarray(audio, np.float32))
+            else:
+                sample.unlink(missing_ok=True)
+            entry["sample"] = sample.is_file()
+            self._trace({"event": "recalibrate", "speaker": sid, "calibrate_s": round(elapsed, 3),
+                         "calibration_takes": used, "pace": entry["pace"], "overhead_s": entry["overhead"]})
         pairs = [(spoken, seconds) for spoken, seconds in entry["calibration"]]
-        if pairs:
+        if pairs and not recalibrate:
             self.estimator.calibrate(key, pairs)
         v.voice, v.kind, v.ref_seconds, v.status, v.key = voice, VoiceKind.CLONED, secs, "cloned", key
         entry["sample"] = entry["sample"] and (self.render_dir / "voices" / f"{sid}.npy").is_file()
@@ -1131,8 +1201,7 @@ class RenderJob(Dubber):
                 else:
                     rest.append(sc)
             n = len(rest)
-            lanes = [rest[i * n // LANES:(i + 1) * n // LANES] for i in range(LANES)]
-            await self._all(self._lane(lane, total) for lane in lanes if lane)
+            await self._all(self._lane(lane, total) for lane in self._translation_lanes(rest))
         except asyncio.CancelledError:
             for sc in todo:
                 if sc.fit is not None:
@@ -1185,6 +1254,13 @@ class RenderJob(Dubber):
             scenes.append(Scene(len(scenes) + 1, self._order[k:k + n], k))
             k += n
         return scenes
+
+    def _translation_lanes(self, scenes: list[Scene], *, weights: tuple[float, ...] | None = None
+                           ) -> list[list[Scene]]:
+        """At most three contiguous lanes. Weighting their sizes changes only their two context boundaries; each
+        lane still awaits a scene's meaning review before requesting the next scene with its preceding Telugu.
+        Explicit weights are an internal benchmark hook, with balanced production defaults until compared."""
+        return [scenes[a:b] for a, b in _lane_bounds(len(scenes), LANE_WEIGHTS if weights is None else weights)]
 
     async def _lane(self, scenes: list[Scene], total: int, whole: bool = False) -> None:
         """One lane: its scenes in order, one at a time, each with `Dubber._scene` (the scene call, its review and one
@@ -1482,6 +1558,7 @@ class RenderJob(Dubber):
             # the class of the wording voiced, where it has one: the line cache's is the last occurrence's to be classed
             "coverage": coverage_json(c) if voiced_class(c, st.tier) in CLASSES else None,
             "tts": _tts_hash(texts), "voice": voice, "synthesis": self._take_inputs(n),
+            "durationPrompt": PROMPT_HASH,
             "takes": [{"key": self._take_key(text, voice, n), "spoken": w.spoken, "seconds": secs,
                        "pauses": [list(p) for p in pauses], "pace": pace, "failed": failed}
                       for text, w, secs, pauses, pace, failed in zip(texts, said.wordings, said.seconds, said.pauses,
@@ -2493,12 +2570,17 @@ class RenderJob(Dubber):
         self._fixup_rows = {r["key"]: r for r in fixups if isinstance(r.get("key"), str)}
         self._made, self._new = set(), []
         keys = {tuple(self._voice_row(k)): k for k in (self._key(sid) for sid in self.registry.speakers)}
+        replayed: set[str] = set()
         for r in rows:
             if (key := keys.get(tuple(r["voice"]))) is not None:
                 for tk, spoken, pace in r["made"]:
-                    if tk in self._made:
-                        continue
                     self._made.add(tk)
+                    # A changed text contract can change what an English map makes the TTS say even when the
+                    # displayed Telugu is unchanged. Keep identical audio reusable, but do not teach its old
+                    # Telugu-count/duration pairing to the current estimator (including legacy rows).
+                    if r.get("durationPrompt") != PROMPT_HASH or tk in replayed:
+                        continue
+                    replayed.add(tk)
                     if pace is not None:
                         self.estimator.observe(spoken, key, pace)
 
@@ -2597,6 +2679,7 @@ class RenderJob(Dubber):
 
     def _put_fixup(self, st: UnitState, key: str, kind: str, line: LineResult) -> None:
         row = {"key": key, "kind": kind, "line": self._line_key(st), "answer": line_json(line),
+               "model": self.tr.model, "prompt_hash": self.tr.prompt_hash,
                "coverage": coverage_json(line.coverage), "at": round(time.time(), 3)}
         with _disk("the fix-ups"):
             _append_row(self.render_dir / "fixups.jsonl", row)
@@ -2605,7 +2688,10 @@ class RenderJob(Dubber):
     def _fixup_line(self, st: UnitState, row: dict | None) -> LineResult | None:
         """A fixups.jsonl answer back as the line it was for, with its class; None when there is none (or it no longer
         validates)."""
-        if row is None or not isinstance(row.get("answer"), dict):
+        # A take refers to its fix-up by the stored key, bypassing a fresh _fixup_key lookup. Check the answer's
+        # provenance here too, so an older model/prompt cannot replace wording newly translated on a resume.
+        if (row is None or row.get("model") != self.tr.model or row.get("prompt_hash") != self.tr.prompt_hash
+                or not isinstance(row.get("answer"), dict)):
             return None
         line, _ = check_line(row["answer"], self._line_spec(st, ()))
         if line is not None:
@@ -2615,9 +2701,9 @@ class RenderJob(Dubber):
     async def _gpu_now(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> tuple[Any, float]:
         """`_on_gpu` for a call that finishes work already done (keeping a take just made, or reading one back), which a
         pause doesn't stop."""
+        queued_at = time.perf_counter()
         out, seconds = await super()._on_gpu(fn, *args, **kwargs)
-        if (acct := _STAGE.get()) is not None:
-            acct.gpu_s += seconds
+        self._gpu_work(fn, seconds, queued_at)
         return out, seconds
 
     # ---- Dubber's hooks, for the lanes ----------------------------------------------------------------------------
@@ -2926,6 +3012,26 @@ def _need(path: Path, need: float, what: str) -> None:
     free = shutil.disk_usage(_existing(path)).free
     if free < need:
         raise RenderError(f"{what} needs about {need / 1e9:.1f} GB of free disk space, and {free / 1e9:.1f} GB is free.")
+
+
+def _lane_bounds(n: int, weights: tuple[float, ...]) -> list[tuple[int, int]]:
+    """Partition ordered scenes without gaps or duplicate work, retaining a scene per lane when possible.
+    Equal weights reproduce the original integer-division partition; fewer than three scenes get their own lanes."""
+    if n < 0 or len(weights) != LANES or any(not math.isfinite(w) or w <= 0 for w in weights):
+        raise ValueError("lane sizes require a nonnegative scene count and three finite positive weights")
+    total = sum(weights)
+    if not math.isfinite(total):
+        raise ValueError("lane weights must have a finite sum")
+    if n < LANES:
+        return [(i, i + 1) for i in range(n)]
+    if len(set(weights)) == 1:
+        return [(i * n // LANES, (i + 1) * n // LANES) for i in range(LANES)]
+    edges = [0]
+    for i in range(1, LANES):
+        edge = int(n * (sum(weights[:i]) / total))
+        edges.append(max(edges[-1] + 1, min(edge, n - (LANES - i))))
+    edges.append(n)
+    return list(zip(edges, edges[1:]))
 
 
 def _take_row(r: dict) -> bool:

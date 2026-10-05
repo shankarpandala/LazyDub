@@ -18,6 +18,7 @@ import numpy as np
 from ..claude_cli import ClaudeCLIError, ClaudeReply, validate
 from ..speakers import DiarBlock
 from ..text.akshara import mixed_units
+from ..text.tenglish import anchored_english
 from ..types import SpeakerTurn, TimedWord
 from .base import Backend, Brief, Cancelled, Transcript
 from .claude_translator import ClaudeTranslator
@@ -110,7 +111,8 @@ def _fake_spoken(en: str) -> tuple[list[str], list[tuple[int, str]]]:
 
 
 def _wording(words: list[str], english: list[tuple[int, str]]) -> dict:
-    return {"spoken": " ".join(words), "english": [{"i": i, "en": e} for i, e in english if i < len(words)]}
+    spoken = " ".join(words)
+    return {"spoken": spoken, "english": anchored_english(spoken, english)}
 
 
 def _fake_line(line: dict, call: str = "scene") -> dict:

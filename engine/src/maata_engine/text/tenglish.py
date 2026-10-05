@@ -44,9 +44,10 @@ def latin_ratio(text: str) -> float:
 
 
 # ---- the English-word map -------------------------------------------------------------------------------
-# Case endings and postpositions a line may join to an English word (నెట్ఫ్లిక్స్లో, రౌటర్ని). The Latin rebuild says
-# them as a word of their own after the English (Netflix లో), as Latin-script Tenglish writes them. Longest first.
-_ENDINGS = ("లోని", "నుంచి", "వల్ల", "లో", "కి", "కు", "ని", "ను", "తో", "గా")
+# Attached Telugu endings make a bare Latin replacement uncertain (నెట్ఫ్లిక్స్లో, రౌటర్ని, ఐఎన్టీజేలు).
+# Keep these whole tokens in Telugu: guessing a stem can discard an inflection or part of a compound ending.
+_ENDINGS = ("ల్లోకి", "ల్లోని", "లతో", "లకు", "లని", "లను", "లోకి", "లోని", "నుంచి", "వల్ల",
+            "ల్లో", "లే", "లు", "లో", "కి", "కు", "ని", "ను", "తో", "గా")
 
 
 def _latin_word(word: str, en: str) -> str:
@@ -56,15 +57,29 @@ def _latin_word(word: str, en: str) -> str:
     while j > i and unicodedata.category(word[j - 1])[0] == "P":
         j -= 1
     lead, core, trail = word[:i], word[i:j], word[j:]
-    for end in _ENDINGS:  # a stem of at least 1.5 aksharas, so హలో or ఫ్లో keep their last syllable
+    for end in _ENDINGS:  # uncertain attached morphology stays Telugu; never guess and discard part of a word
         if core.endswith(end) and count_telugu(core[: -len(end)]) >= 1.5:
-            return f"{lead}{en} {end}{trail}"
+            return word
     return f"{lead}{en}{trail}"
 
 
+def anchored_english(spoken: str, english: Iterable[tuple[int, str]]) -> list[dict]:
+    """Serialize validated internal indices as exact surface anchors, never as model-counted positions.
+
+    An attached Telugu ending cannot safely be reconstructed from the bare English form. Leave that whole word
+    Telugu, including on cache round trips. The occurrence distinguishes identical whitespace tokens.
+    """
+    words = spoken.split()
+    return [{"word": words[i], "occurrence": words[:i].count(words[i]), "en": en}
+            for i, en in english if 0 <= i < len(words) and _latin_word(words[i], en) != words[i]]
+
+
 def latin_spoken(spoken: str, english: Iterable[tuple[int, str]]) -> str:
-    """`spoken` with each word the English map lists written as its Latin form, punctuation kept. An index past the
-    line's words is ignored (the validators drop those)."""
+    """Render validated internal map entries, preserving punctuation and declining attached Telugu inflections.
+
+    External replies cannot supply these indices: validators derive them from exact surface anchors. The dubber
+    permits replacements only on a tier whose actual Latin form passed semantic review.
+    """
     words = spoken.split()
     for i, en in english:
         if 0 <= i < len(words) and en.strip():

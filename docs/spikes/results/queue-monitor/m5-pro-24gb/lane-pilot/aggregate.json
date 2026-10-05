@@ -1,0 +1,1404 @@
+{
+  "scope": "Bounded original-text lane scheduling pilot; no audio, moving voicer frontier, or video completion claim",
+  "models": {
+    "scene": "gpt-6-luna",
+    "review": "gpt-6-luna",
+    "effort": "low",
+    "review_effort": "low",
+    "light_effort": "low"
+  },
+  "fallback": null,
+  "order": "ABBA",
+  "weights": {
+    "A": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "B": [
+      1.0,
+      1.5,
+      2.0
+    ]
+  },
+  "plans": {
+    "A": [
+      [
+        1,
+        2,
+        3
+      ],
+      [
+        4,
+        5,
+        6
+      ],
+      [
+        7,
+        8,
+        9
+      ]
+    ],
+    "B": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7,
+        8,
+        9
+      ]
+    ]
+  },
+  "prompt_hash": "ccfdc4088a39",
+  "review_hash": "91715954c710",
+  "fixture_sha256": "499f7e77dfc2ff9085100ba69b62eb7cd5c1cc18c70f377be8c5a852e1728617",
+  "limitations": [
+    "Two runs per arm maximum, below production measurement minimum five.",
+    "Provider prefix cache uncontrolled; fresh local text cache per arm.",
+    "No native-speaker/human listening evaluation; automated coverage does not establish meaning correctness.",
+    "Original fixture and generated text retained only under /tmp; no user transcript/audio used.",
+    "Only the first AB forms a complete pair; B2 is an extra weighted replication, not a second balanced pair.",
+    "Model outputs are stochastic and adaptive fit/correction counts differ; timing differences cannot be attributed to lane weights alone.",
+    "All completed arms have some selected other-tier coverage and fail strict quality eligibility; reported times are raw pilot observations only.",
+    "No1:2:4 arm was justified:1:1.5:2 already showed a slower tail and has not established an overall pipeline benefit.",
+    "Shared-host CPU/mock engine test suites ran during the calls; no competing live audio inference or GPU models. Thermal state remained nominal on AC, but local load was not fully isolated."
+  ],
+  "status": "bounded_partial",
+  "elapsed_s": 395.329112667001,
+  "runs": [
+    {
+      "sequence": 1,
+      "arm": "A",
+      "lane_weights": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "lane_scenes": [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ],
+        [
+          7,
+          8,
+          9
+        ]
+      ],
+      "status": "completed",
+      "first_contiguous_ready_seconds": 40.34204983399832,
+      "all_text_ready_seconds": 120.48953687500034,
+      "translation_stage_seconds": 120.48964229199919,
+      "ready_by_scene": {
+        "7": 25.442526374998124,
+        "1": 40.34204983399832,
+        "4": 59.38469720899957,
+        "8": 63.4920882089973,
+        "5": 90.02658700000029,
+        "2": 90.11135395900055,
+        "9": 102.68090433399993,
+        "3": 114.28184916700047,
+        "6": 120.48953687500034
+      },
+      "contiguous_ready": [
+        {
+          "elapsed_s": 40.34204983399832,
+          "scenes": 1,
+          "lines": 6,
+          "source_until_s": 30.0
+        },
+        {
+          "elapsed_s": 90.11135395900055,
+          "scenes": 2,
+          "lines": 12,
+          "source_until_s": 60.0
+        },
+        {
+          "elapsed_s": 114.28184916700047,
+          "scenes": 5,
+          "lines": 30,
+          "source_until_s": 150.0
+        },
+        {
+          "elapsed_s": 120.48953687500034,
+          "scenes": 9,
+          "lines": 54,
+          "source_until_s": 270.0
+        }
+      ],
+      "coverage": {
+        "C": 51,
+        "m": 0,
+        "P": 0,
+        "E": 0,
+        "otherTier": 3,
+        "unreviewed": 0,
+        "skipped": 0,
+        "lines": 54
+      },
+      "calls": 28,
+      "usage": {
+        "input_tokens": 242614,
+        "output_tokens": 11094,
+        "cache_read_tokens": 92160,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "quality_eligible": false,
+      "valid_hygiene": true,
+      "hygiene_start": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "hygiene_end": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "model_mismatch": false,
+      "corrections": {
+        "review_events": 9,
+        "retranslated_lines": 4,
+        "replaced_lines": 4
+      },
+      "call_metrics": [
+        {
+          "call": "scene",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.863,
+          "startup_s": 0.052,
+          "input_tokens": 9868,
+          "cache_read_tokens": 0,
+          "output_tokens": 878,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.977,
+          "startup_s": 0.054,
+          "input_tokens": 9853,
+          "cache_read_tokens": 0,
+          "output_tokens": 884,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.555,
+          "startup_s": 0.054,
+          "input_tokens": 4864,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 28.794,
+          "startup_s": 0.056,
+          "input_tokens": 9833,
+          "cache_read_tokens": 0,
+          "output_tokens": 1347,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.63,
+          "startup_s": 0.054,
+          "input_tokens": 4824,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.444,
+          "startup_s": 0.051,
+          "input_tokens": 4782,
+          "cache_read_tokens": 0,
+          "output_tokens": 130,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.904,
+          "startup_s": 0.052,
+          "input_tokens": 9900,
+          "cache_read_tokens": 0,
+          "output_tokens": 133,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.277,
+          "startup_s": 0.053,
+          "input_tokens": 9902,
+          "cache_read_tokens": 8960,
+          "output_tokens": 116,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.131,
+          "startup_s": 0.049,
+          "input_tokens": 10000,
+          "cache_read_tokens": 0,
+          "output_tokens": 796,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.319,
+          "startup_s": 0.054,
+          "input_tokens": 10077,
+          "cache_read_tokens": 2816,
+          "output_tokens": 747,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 15.669,
+          "startup_s": 0.056,
+          "input_tokens": 9986,
+          "cache_read_tokens": 0,
+          "output_tokens": 678,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.823,
+          "startup_s": 0.06,
+          "input_tokens": 4904,
+          "cache_read_tokens": 3840,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 21.216,
+          "startup_s": 0.054,
+          "input_tokens": 10049,
+          "cache_read_tokens": 2816,
+          "output_tokens": 962,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.388,
+          "startup_s": 0.055,
+          "input_tokens": 4931,
+          "cache_read_tokens": 0,
+          "output_tokens": 125,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.745,
+          "startup_s": 0.052,
+          "input_tokens": 4866,
+          "cache_read_tokens": 1792,
+          "output_tokens": 125,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 10.845,
+          "startup_s": 0.055,
+          "input_tokens": 10140,
+          "cache_read_tokens": 8960,
+          "output_tokens": 127,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.158,
+          "startup_s": 0.058,
+          "input_tokens": 10085,
+          "cache_read_tokens": 0,
+          "output_tokens": 110,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.574,
+          "startup_s": 0.053,
+          "input_tokens": 10110,
+          "cache_read_tokens": 0,
+          "output_tokens": 772,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.956,
+          "startup_s": 0.056,
+          "input_tokens": 9799,
+          "cache_read_tokens": 8960,
+          "output_tokens": 238,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 11.484,
+          "startup_s": 0.056,
+          "input_tokens": 19680,
+          "cache_read_tokens": 17920,
+          "output_tokens": 314,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.847,
+          "startup_s": 0.05,
+          "input_tokens": 4893,
+          "cache_read_tokens": 3840,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.436,
+          "startup_s": 0.055,
+          "input_tokens": 10189,
+          "cache_read_tokens": 8960,
+          "output_tokens": 757,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.712,
+          "startup_s": 0.055,
+          "input_tokens": 9708,
+          "cache_read_tokens": 8960,
+          "output_tokens": 155,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.803,
+          "startup_s": 0.054,
+          "input_tokens": 4892,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 16.024,
+          "startup_s": 0.054,
+          "input_tokens": 10181,
+          "cache_read_tokens": 8960,
+          "output_tokens": 684,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.52,
+          "startup_s": 0.053,
+          "input_tokens": 4881,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 10.336,
+          "startup_s": 0.053,
+          "input_tokens": 9708,
+          "cache_read_tokens": 0,
+          "output_tokens": 154,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.91,
+          "startup_s": 0.072,
+          "input_tokens": 9709,
+          "cache_read_tokens": 0,
+          "output_tokens": 124,
+          "error": null
+        }
+      ]
+    },
+    {
+      "sequence": 2,
+      "arm": "B",
+      "lane_weights": [
+        1.0,
+        1.5,
+        2.0
+      ],
+      "lane_scenes": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          5
+        ],
+        [
+          6,
+          7,
+          8,
+          9
+        ]
+      ],
+      "status": "completed",
+      "first_contiguous_ready_seconds": 47.680823083002906,
+      "all_text_ready_seconds": 144.7019877920029,
+      "translation_stage_seconds": 144.70207262500116,
+      "ready_by_scene": {
+        "3": 24.126342375002423,
+        "6": 30.271511667000595,
+        "1": 47.680823083002906,
+        "7": 67.78325804199994,
+        "4": 73.83566420800344,
+        "2": 87.89256475000002,
+        "8": 100.67802200000006,
+        "5": 133.1392349170019,
+        "9": 144.7019877920029
+      },
+      "contiguous_ready": [
+        {
+          "elapsed_s": 47.680823083002906,
+          "scenes": 1,
+          "lines": 6,
+          "source_until_s": 30.0
+        },
+        {
+          "elapsed_s": 87.89256475000002,
+          "scenes": 4,
+          "lines": 24,
+          "source_until_s": 120.0
+        },
+        {
+          "elapsed_s": 133.1392349170019,
+          "scenes": 8,
+          "lines": 48,
+          "source_until_s": 240.0
+        },
+        {
+          "elapsed_s": 144.7019877920029,
+          "scenes": 9,
+          "lines": 54,
+          "source_until_s": 270.0
+        }
+      ],
+      "coverage": {
+        "C": 44,
+        "m": 0,
+        "P": 0,
+        "E": 0,
+        "otherTier": 10,
+        "unreviewed": 0,
+        "skipped": 0,
+        "lines": 54
+      },
+      "calls": 30,
+      "usage": {
+        "input_tokens": 256666,
+        "output_tokens": 12106,
+        "cache_read_tokens": 110592,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "quality_eligible": false,
+      "valid_hygiene": true,
+      "hygiene_start": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "hygiene_end": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "model_mismatch": false,
+      "corrections": {
+        "review_events": 9,
+        "retranslated_lines": 5,
+        "replaced_lines": 5
+      },
+      "call_metrics": [
+        {
+          "call": "scene",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 18.296,
+          "startup_s": 0.064,
+          "input_tokens": 9865,
+          "cache_read_tokens": 0,
+          "output_tokens": 817,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 18.381,
+          "startup_s": 0.06,
+          "input_tokens": 9861,
+          "cache_read_tokens": 2816,
+          "output_tokens": 813,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 22.72,
+          "startup_s": 0.055,
+          "input_tokens": 9833,
+          "cache_read_tokens": 0,
+          "output_tokens": 1041,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.776,
+          "startup_s": 0.055,
+          "input_tokens": 4794,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.739,
+          "startup_s": 0.054,
+          "input_tokens": 4830,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.59,
+          "startup_s": 0.051,
+          "input_tokens": 4828,
+          "cache_read_tokens": 0,
+          "output_tokens": 127,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.182,
+          "startup_s": 0.05,
+          "input_tokens": 9516,
+          "cache_read_tokens": 0,
+          "output_tokens": 127,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.19,
+          "startup_s": 0.052,
+          "input_tokens": 9839,
+          "cache_read_tokens": 8960,
+          "output_tokens": 128,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 18.604,
+          "startup_s": 0.052,
+          "input_tokens": 9983,
+          "cache_read_tokens": 0,
+          "output_tokens": 806,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 11.205,
+          "startup_s": 0.061,
+          "input_tokens": 9622,
+          "cache_read_tokens": 0,
+          "output_tokens": 230,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.064,
+          "startup_s": 0.055,
+          "input_tokens": 4898,
+          "cache_read_tokens": 3840,
+          "output_tokens": 128,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.185,
+          "startup_s": 0.053,
+          "input_tokens": 9918,
+          "cache_read_tokens": 8960,
+          "output_tokens": 138,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 20.176,
+          "startup_s": 0.055,
+          "input_tokens": 10008,
+          "cache_read_tokens": 0,
+          "output_tokens": 918,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 37.938,
+          "startup_s": 0.052,
+          "input_tokens": 9985,
+          "cache_read_tokens": 0,
+          "output_tokens": 907,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.848,
+          "startup_s": 0.053,
+          "input_tokens": 9655,
+          "cache_read_tokens": 8960,
+          "output_tokens": 246,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.621,
+          "startup_s": 0.057,
+          "input_tokens": 4923,
+          "cache_read_tokens": 1792,
+          "output_tokens": 126,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.051,
+          "startup_s": 0.052,
+          "input_tokens": 4870,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.699,
+          "startup_s": 0.055,
+          "input_tokens": 10065,
+          "cache_read_tokens": 2816,
+          "output_tokens": 128,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 22.322,
+          "startup_s": 0.054,
+          "input_tokens": 10018,
+          "cache_read_tokens": 8960,
+          "output_tokens": 1044,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 9.311,
+          "startup_s": 0.058,
+          "input_tokens": 9841,
+          "cache_read_tokens": 8960,
+          "output_tokens": 328,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.071,
+          "startup_s": 0.055,
+          "input_tokens": 4886,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.627,
+          "startup_s": 0.057,
+          "input_tokens": 10105,
+          "cache_read_tokens": 2816,
+          "output_tokens": 855,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.583,
+          "startup_s": 0.053,
+          "input_tokens": 4855,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.354,
+          "startup_s": 0.064,
+          "input_tokens": 9786,
+          "cache_read_tokens": 2816,
+          "output_tokens": 240,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.936,
+          "startup_s": 0.053,
+          "input_tokens": 10133,
+          "cache_read_tokens": 8960,
+          "output_tokens": 882,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 16.916,
+          "startup_s": 0.057,
+          "input_tokens": 10049,
+          "cache_read_tokens": 8960,
+          "output_tokens": 181,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.416,
+          "startup_s": 0.058,
+          "input_tokens": 9773,
+          "cache_read_tokens": 7680,
+          "output_tokens": 135,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.628,
+          "startup_s": 0.054,
+          "input_tokens": 10056,
+          "cache_read_tokens": 8960,
+          "output_tokens": 210,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 16.164,
+          "startup_s": 0.055,
+          "input_tokens": 9878,
+          "cache_read_tokens": 0,
+          "output_tokens": 344,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 16.391,
+          "startup_s": 0.059,
+          "input_tokens": 9993,
+          "cache_read_tokens": 8960,
+          "output_tokens": 592,
+          "error": null
+        }
+      ]
+    },
+    {
+      "sequence": 3,
+      "arm": "B",
+      "lane_weights": [
+        1.0,
+        1.5,
+        2.0
+      ],
+      "lane_scenes": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          5
+        ],
+        [
+          6,
+          7,
+          8,
+          9
+        ]
+      ],
+      "status": "completed",
+      "first_contiguous_ready_seconds": 46.5145170830001,
+      "all_text_ready_seconds": 129.985417625001,
+      "translation_stage_seconds": 129.98548945800212,
+      "ready_by_scene": {
+        "6": 43.38637312500214,
+        "1": 46.5145170830001,
+        "3": 52.304376083000534,
+        "7": 59.44253962500079,
+        "4": 71.94793245799883,
+        "2": 85.48817037499975,
+        "8": 86.783252833,
+        "5": 105.58192237500043,
+        "9": 129.985417625001
+      },
+      "contiguous_ready": [
+        {
+          "elapsed_s": 46.5145170830001,
+          "scenes": 1,
+          "lines": 6,
+          "source_until_s": 30.0
+        },
+        {
+          "elapsed_s": 85.48817037499975,
+          "scenes": 4,
+          "lines": 24,
+          "source_until_s": 120.0
+        },
+        {
+          "elapsed_s": 105.58192237500043,
+          "scenes": 8,
+          "lines": 48,
+          "source_until_s": 240.0
+        },
+        {
+          "elapsed_s": 129.985417625001,
+          "scenes": 9,
+          "lines": 54,
+          "source_until_s": 270.0
+        }
+      ],
+      "coverage": {
+        "C": 50,
+        "m": 0,
+        "P": 0,
+        "E": 0,
+        "otherTier": 4,
+        "unreviewed": 0,
+        "skipped": 0,
+        "lines": 54
+      },
+      "calls": 26,
+      "usage": {
+        "input_tokens": 211133,
+        "output_tokens": 10411,
+        "cache_read_tokens": 63744,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "quality_eligible": false,
+      "valid_hygiene": true,
+      "hygiene_start": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "hygiene_end": {
+        "thermal_state": 0,
+        "power": "Now drawing from 'AC Power'"
+      },
+      "model_mismatch": false,
+      "corrections": {
+        "review_events": 9,
+        "retranslated_lines": 3,
+        "replaced_lines": 3
+      },
+      "call_metrics": [
+        {
+          "call": "scene",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.854,
+          "startup_s": 0.065,
+          "input_tokens": 9861,
+          "cache_read_tokens": 2816,
+          "output_tokens": 721,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 18.577,
+          "startup_s": 0.07,
+          "input_tokens": 9865,
+          "cache_read_tokens": 0,
+          "output_tokens": 742,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.84,
+          "startup_s": 0.061,
+          "input_tokens": 4800,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.624,
+          "startup_s": 0.052,
+          "input_tokens": 4814,
+          "cache_read_tokens": 0,
+          "output_tokens": 128,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 28.706,
+          "startup_s": 0.069,
+          "input_tokens": 9833,
+          "cache_read_tokens": 2816,
+          "output_tokens": 1229,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.688,
+          "startup_s": 0.053,
+          "input_tokens": 9822,
+          "cache_read_tokens": 2816,
+          "output_tokens": 115,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.578,
+          "startup_s": 0.06,
+          "input_tokens": 9804,
+          "cache_read_tokens": 0,
+          "output_tokens": 135,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 6,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 12.474,
+          "startup_s": 0.056,
+          "input_tokens": 9700,
+          "cache_read_tokens": 0,
+          "output_tokens": 398,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 1,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 17.794,
+          "startup_s": 0.052,
+          "input_tokens": 4812,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 18.947,
+          "startup_s": 0.056,
+          "input_tokens": 9965,
+          "cache_read_tokens": 2816,
+          "output_tokens": 844,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 3,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.911,
+          "startup_s": 0.065,
+          "input_tokens": 9587,
+          "cache_read_tokens": 8960,
+          "output_tokens": 219,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 7,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.137,
+          "startup_s": 0.057,
+          "input_tokens": 4931,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.324,
+          "startup_s": 0.055,
+          "input_tokens": 9954,
+          "cache_read_tokens": 0,
+          "output_tokens": 767,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 20.886,
+          "startup_s": 0.049,
+          "input_tokens": 9983,
+          "cache_read_tokens": 0,
+          "output_tokens": 917,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 4,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.103,
+          "startup_s": 0.055,
+          "input_tokens": 4844,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.651,
+          "startup_s": 0.057,
+          "input_tokens": 4919,
+          "cache_read_tokens": 3840,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 20.145,
+          "startup_s": 0.054,
+          "input_tokens": 9986,
+          "cache_read_tokens": 8960,
+          "output_tokens": 836,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 2,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.688,
+          "startup_s": 0.053,
+          "input_tokens": 9573,
+          "cache_read_tokens": 2816,
+          "output_tokens": 160,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 8,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.188,
+          "startup_s": 0.053,
+          "input_tokens": 4896,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 19.569,
+          "startup_s": 0.055,
+          "input_tokens": 10032,
+          "cache_read_tokens": 2816,
+          "output_tokens": 808,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 5.846,
+          "startup_s": 0.055,
+          "input_tokens": 4866,
+          "cache_read_tokens": 0,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 5,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.209,
+          "startup_s": 0.057,
+          "input_tokens": 9711,
+          "cache_read_tokens": 0,
+          "output_tokens": 226,
+          "error": null
+        },
+        {
+          "call": "scene",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 21.208,
+          "startup_s": 0.059,
+          "input_tokens": 10060,
+          "cache_read_tokens": 8960,
+          "output_tokens": 925,
+          "error": null
+        },
+        {
+          "call": "review",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 6.442,
+          "startup_s": 0.06,
+          "input_tokens": 4868,
+          "cache_read_tokens": 1792,
+          "output_tokens": 123,
+          "error": null
+        },
+        {
+          "call": "retranslate",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.227,
+          "startup_s": 0.057,
+          "input_tokens": 10010,
+          "cache_read_tokens": 0,
+          "output_tokens": 133,
+          "error": null
+        },
+        {
+          "call": "fit",
+          "scene": 9,
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 7.307,
+          "startup_s": 0.061,
+          "input_tokens": 9637,
+          "cache_read_tokens": 8960,
+          "output_tokens": 124,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "requested_order": "ABBA",
+  "executed_order": "ABB",
+  "bounded_stop_reason": "Fourth arm was skipped after three completed arms to keep the pilot within roughly eight minutes.",
+  "planned_order": "ABBA",
+  "actual_order": "ABB",
+  "production_default_changed": false,
+  "interpretation": "Raw bounded pilot observations only. These data establish neither a speedup nor equivalent semantic quality and do not justify a production default change. Balanced lanes remain the default.",
+  "semantic_audit": "semantic-audit.json",
+  "live_calls_finished": true
+}

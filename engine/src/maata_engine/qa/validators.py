@@ -4,7 +4,8 @@ Pure: no model, no I/O, so they run in cloud CI too. Three severities:
 - reject: the line can't be used and is asked for again: a requested id missing or given twice, or a `full` wording whose
   `spoken` breaks the Telugu-script contract (Latin letters or romanised Telugu, digits, ZWNJ/ZWJ, brackets, symbols,
   invisible characters, a letter of another script such as a Cyrillic a (U+0430) inside a word, or no Telugu at all);
-- repair: the line is kept without the broken part, and a flag says what went: an `english` entry that doesn't point at
+- repair: Telugu shaping joiners after a virama and before a Telugu letter are removed without changing words;
+  the line is kept without other broken parts, and a flag says what went: an `english` entry that doesn't point at
   a Telugu word or isn't an English word, an emphasis index out of range, a shorter or fuller wording that breaks the
   script contract or the akshara order, pieces that don't join back to `full`;
 - flag: suspect but kept: a glossary term not in its fixed spelling, a negation or a question lost or added, a number
@@ -23,10 +24,12 @@ from dataclasses import dataclass, field
 from ..backends.base import EMOTIONS, ENERGIES, TIERS, Delivery, GlossaryEntry, LineResult, LineSpec, Wording
 from ..text.akshara import count_telugu
 from ..text.normalize_te import number_to_telugu
+from ..text.tenglish import anchored_english
 
 PUNCT = frozenset(".,?!;:…'\"‘’“”-–—")  # all `spoken` may carry besides Telugu letters and spaces
 BRACKETS = frozenset("()[]{}<>")
 JOINERS = frozenset("\u200c\u200d")
+_SHAPING_JOINERS = re.compile(r"(?<=\u0c4d)[\u200c\u200d]+(?=[\u0c05-\u0c39\u0c58-\u0c61])")
 
 # Romanised Telugu: frequent function words and verb forms, and endings no English word has. Checked on lowercase
 # Latin words only, so names (Hindi, Peru) pass.
@@ -120,6 +123,8 @@ def script_problems(spoken: str) -> list[str]:
 def _english_word_problem(en: object) -> str | None:
     if not isinstance(en, str) or not en.strip():
         return "is empty"
+    if len(en.split()) != 1:
+        return "must be one English word"
     letters = [ch for ch in en if unicodedata.category(ch)[0] == "L"]
     other = sorted({_script(ch).title() for ch in letters if _script(ch) != "LATIN"})
     if other:
@@ -132,33 +137,47 @@ def _english_word_problem(en: object) -> str | None:
 
 
 def _english(raw: object, words: list[str]) -> tuple[tuple[tuple[int, str], ...], list[str]]:
-    """The valid entries of an `english` map, and a flag per entry dropped."""
+    """Resolve exact surface anchors locally. Legacy numeric maps never authorize a substitution."""
     out: dict[int, str] = {}
     flags: list[str] = []
     for item in raw if isinstance(raw, list) else []:
-        i, en = (item.get("i"), item.get("en")) if isinstance(item, dict) else (None, None)
-        if isinstance(i, float) and i.is_integer():
-            i = int(i)
-        if not isinstance(i, int) or isinstance(i, bool) or not 0 <= i < len(words) \
-                or not any(is_telugu_letter(ch) for ch in words[i]):
-            flags.append(f"english: {i!r} is not a word of the line")
-        elif i in out:
+        if not isinstance(item, dict) or "i" in item:
+            flags.append("english: unanchored legacy map dropped")
+            continue
+        word, occurrence, en = item.get("word"), item.get("occurrence"), item.get("en")
+        word = _spoken_text(word) if isinstance(word, str) else None
+        matches = [i for i, token in enumerate(words) if token == word]
+        if not isinstance(occurrence, int) or isinstance(occurrence, bool) or not 0 <= occurrence < len(matches) \
+                or not word or len(word.split()) != 1 or not any(is_telugu_letter(ch) for ch in word):
+            flags.append("english: exact word/occurrence not found")
+            continue
+        i = matches[occurrence]
+        if i in out:
             flags.append(f"english: word {i} listed twice")
         elif why := _english_word_problem(en):
             flags.append(f"english: {en!r} {why}")
+        elif not anchored_english(" ".join(words), [(i, en.strip())]):
+            flags.append(f"english: word {i} keeps its Telugu ending")
         else:
             out[i] = en.strip()
     return tuple(sorted(out.items())), flags
 
 
+def _spoken_text(text: str) -> str:
+    """Canonical word spacing and Telugu consonant shaping, without rewriting letters, digits or word boundaries."""
+    return _SHAPING_JOINERS.sub("", " ".join(text.split()))
+
+
 def wording(raw: object) -> tuple[Wording | None, list[str], list[str]]:
-    """(the wording, what rejects it, what was repaired). Whitespace is normalised to single spaces."""
+    """(the wording, what rejects it, what was repaired). Canonical text still passes the full script check."""
     if not isinstance(raw, dict) or not isinstance(raw.get("spoken"), str):
         return None, ["not a wording"], []
-    spoken = " ".join(raw["spoken"].split())
+    spoken = _spoken_text(raw["spoken"])
     if problems := script_problems(spoken):
         return None, problems, []
     english, flags = _english(raw.get("english"), spoken.split())
+    if _SHAPING_JOINERS.search(raw["spoken"]):
+        flags.insert(0, "ZWNJ/ZWJ normalized")
     return Wording(spoken, english), [], flags
 
 
@@ -185,7 +204,7 @@ def _ordered(tiers: dict[str, Wording]) -> tuple[dict[str, Wording], list[str]]:
 def _pieces(raw: object, spec: LineSpec, full: Wording) -> tuple[tuple[str, ...], list[str]]:
     if not raw:
         return (), []
-    pieces = tuple(" ".join(p.split()) for p in raw if isinstance(p, str)) if isinstance(raw, list) else ()
+    pieces = tuple(_spoken_text(p) for p in raw if isinstance(p, str)) if isinstance(raw, list) else ()
     if not spec.breaks:
         why = "the line has no breaks"
     elif not pieces or len(pieces) != len(raw) or not all(pieces):
@@ -278,10 +297,13 @@ def glossary_entries(raw: object) -> list[GlossaryEntry]:
         if not isinstance(item, dict):
             continue
         term, spoken = item.get("term"), item.get("spoken")
-        if not isinstance(term, str) or not term.strip() or not isinstance(spoken, str) or script_problems(spoken):
+        if not isinstance(term, str) or not term.strip() or not isinstance(spoken, str):
+            continue
+        spoken = _spoken_text(spoken)
+        if script_problems(spoken):
             continue
         note = item.get("note") if isinstance(item.get("note"), str) else ""
-        out.setdefault(term.strip().lower(), GlossaryEntry(term.strip(), " ".join(spoken.split()),
+        out.setdefault(term.strip().lower(), GlossaryEntry(term.strip(), spoken,
                                                            item.get("keep_english") is not False, note.strip()))
     return list(out.values())
 

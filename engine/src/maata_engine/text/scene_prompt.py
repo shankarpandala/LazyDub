@@ -17,10 +17,11 @@ import json
 from collections.abc import Sequence
 
 from ..backends.base import EMOTIONS, ENERGIES, Brief, GlossaryEntry, LineSpec, SceneRequest, VideoMeta, Wording
+from .tenglish import anchored_english, latin_spoken
 
 # Bump SHOTS_VERSION whenever the prompt, an example or a schema changes; PROMPT_HASH follows the content and keys the
 # per-line cache, so a change never serves lines made under the old prompt.
-SHOTS_VERSION = "scene-v4"  # v4: a complete first wording aimed at the available speech time, with meaning first
+SHOTS_VERSION = "scene-v5"  # exact word anchors; review the actual Latin TTS form before allowing substitutions
 DESCRIPTION_MAX = 2000  # characters of the video description placed in the brief
 
 ROLE = (
@@ -50,7 +51,8 @@ STYLE (formal; only when the message says "style": "formal")
 SCRIPT = """SCRIPT CONTRACT
 - Every "spoken" field is Telugu script only: no Latin letters, no digits (Telugu digits included), no zero-width joiners or non-joiners, no brackets, and no symbols such as % or $. Punctuation: . , ? ! ; : … - and quotes.
 - Write each English word the way Telugu speakers write it in Telugu script (సెట్టింగ్స్, నెట్ఫ్లిక్స్). A Telugu ending may join it (నెట్ఫ్లిక్స్లో) or follow as its own word (ఫ్రెండ్ కి).
-- List every English word, and every name or brand normally written in Latin script, in "english": "i" is the 0-based index of its word in "spoken" split on spaces (punctuation stays with its word), and "en" is that word in Latin script, as the Telugu line says it (ఎంజాయ్ → enjoy).
+- For each English word or name to render in Latin script, give an "english" entry: "word" copies its EXACT whitespace token from "spoken", including punctuation; "occurrence" is zero for the first occurrence of that exact token, one for the second; "en" is that single word's Latin form, as the Telugu line says it (ఎంజాయ్ → enjoy). Never count word positions or provide an index. Never map a Telugu meaning equivalent to an English word: మ్యాప్ may map to map, but పటం must stay Telugu.
+- Leave a word with any attached Telugu ending out of "english" (ఫ్రెండ్స్ కి may map ఫ్రెండ్స్; ఫ్రెండ్స్కి stays entirely Telugu). Keep the natural wording: do not detach endings just to populate the map. An empty map is fine; the Telugu-spelled English loans are still spoken.
 - Words Telugu has fully absorbed (బస్సు, సినిమా, గ్లాసు) and Indian names (హైదరాబాద్) are Telugu words: don't list them.
 - Never write Telugu words in Latin script."""
 
@@ -80,7 +82,7 @@ Reply with one JSON object: {"lines": [...], "glossary_additions": [...]}.
 
 
 def _w(spoken: str, *english: tuple[int, str]) -> dict:
-    return {"spoken": spoken, "english": [{"i": i, "en": en} for i, en in english]}
+    return {"spoken": spoken, "english": anchored_english(spoken, english)}
 
 
 def _d(emotion: str = "neutral", energy: str = "mid", question: bool = False, *emphasis: int) -> dict:
@@ -204,8 +206,10 @@ SYSTEM_TAIL = CONTRACT
 _WORDING = {"type": "object", "additionalProperties": False, "required": ["spoken", "english"],
             "properties": {"spoken": {"type": "string", "minLength": 1},
                            "english": {"type": "array", "items": {
-                               "type": "object", "additionalProperties": False, "required": ["i", "en"],
-                               "properties": {"i": {"type": "integer", "minimum": 0}, "en": {"type": "string"}}}}}}
+                               "type": "object", "additionalProperties": False, "required": ["word", "occurrence", "en"],
+                               "properties": {"word": {"type": "string", "minLength": 1},
+                                              "occurrence": {"type": "integer", "minimum": 0},
+                                              "en": {"type": "string"}}}}}}
 
 # §4.4, shared by the scene, fit, re-translate and rephrase calls (one schema, one prompt: one cache per model).
 SCENE_SCHEMA = {
@@ -369,7 +373,7 @@ def brief_message(meta: VideoMeta, transcript: Sequence[tuple[str, str]], previo
 # Its own system prompt and schema, byte-identical for every video (no brief: it judges meaning, not spellings), so its
 # calls share one prompt cache on the review model.
 REVIEW_SYSTEM = """You check a Telugu dub against its English, line by line, for meaning only: never style, word choice, spelling or length.
-The message is JSON. "lines" holds the lines to check, each {"id", "en", "te"}: the English and the Telugu said for it. "context_before" (earlier lines, with their Telugu when there is one) and "context_after_en" (the lines that follow) are context only: never return them.
+The message is JSON. "lines" holds the lines to check, each {"id", "en", "te", "tts"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. "context_before" (earlier lines, with their Telugu when there is one) and "context_after_en" (the lines that follow) are context only: never return them.
 The Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is "settings"). A line with "cut_off": true was interrupted in the English, and its Telugu is unfinished on purpose.
 Reply with every id in "lines" exactly once, with "class":
 - "C": complete: every fact, name, number, negation and question of the English is there, and nothing is added;
@@ -392,7 +396,8 @@ def review_message(req: SceneRequest, lines: Sequence[tuple[LineSpec, Wording]])
     """The review call's message: each line's English and the Telugu chosen for it, with the scene's context."""
     msg: dict = {"scene": req.scene, "call": "review",
                  "context_before": [{"en": en, "te": te} if te else {"en": en} for en, te in req.context_before],
-                 "lines": [{"id": s.id, "en": s.en, "te": w.spoken, **({"cut_off": True} if s.cut_off else {})}
+                 "lines": [{"id": s.id, "en": s.en, "te": w.spoken, "tts": latin_spoken(w.spoken, w.english),
+                            **({"cut_off": True} if s.cut_off else {})}
                            for s, w in lines],
                  "context_after_en": list(req.context_after_en)}
     return _json(msg)

@@ -40,7 +40,7 @@ from websockets.http11 import Request, Response
 from . import notify
 from . import settings as config
 from .backends import load_backend
-from .claude_cli import DEFAULT_MODEL, ClaudeCLI
+from .codex_cli import DEFAULT_MODEL, CodexCLI
 from .gpu import GpuScheduler
 from .playback import voice_sample
 from .render import (STAGES, RenderJob, RenderSettings, _read_json, _write_json, estimate, found_on_disk, left,
@@ -133,16 +133,17 @@ class Engine:
         self.stopped = asyncio.Event()           # the graceful stop is done: the server closes, the engine exits
 
     def claude_health(self) -> dict | None:
-        """The Claude CLI's state for `hello`, checked afresh on every connect (the user may have signed in or updated
-        since); None for the demo engine, which never calls Claude."""
-        return None if self.backend.name == "mock" else ClaudeCLI(self.cache_dir).health()
+        """The Codex CLI's state for the legacy `hello.claude` field, checked afresh on every connect.
+        None for the demo engine, which never calls a translation CLI."""
+        return None if self.backend.name == "mock" else CodexCLI(self.cache_dir).health()
 
     async def claude_hello(self) -> dict | None:
         try:
             return await asyncio.wait_for(asyncio.to_thread(self.claude_health), HEALTH_TIMEOUT)
         except asyncio.TimeoutError:  # the check runs on in its thread; the UI isn't kept waiting for it
             return {"installed": True, "version": None, "signedIn": None, "models": [], "model": DEFAULT_MODEL,
-                    "problem": "stalled", "message": f"Claude Code didn't answer within {HEALTH_TIMEOUT:.0f} s."}
+                    "provider": "codex", "problem": "stalled",
+                    "message": f"Codex CLI didn't answer within {HEALTH_TIMEOUT:.0f} s."}
 
     def process_request(self, conn: ServerConnection, req: Request) -> Response | None:
         u = urlparse(req.path)
@@ -362,7 +363,7 @@ class Engine:
             title = self.job.doc.get("title") if self.job is not None else ""
             until = (f" It goes on at {time.strftime('%H:%M', time.localtime(msg['resetsAt']))}."
                      if msg.get("resetsAt") else "")
-            self._notify(f"Claude is holding back {title or msg['videoId']}: {msg.get('message')}{until}")
+            self._notify(f"Codex is holding back {title or msg['videoId']}: {msg.get('message')}{until}")
         for c in list(self.clients):
             await c.send_json(msg)
 
