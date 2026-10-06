@@ -1,0 +1,30 @@
+{
+  "machine": "Apple M5 Pro 24 GB",
+  "change": "Transcript-free correction_outcomes on review traces",
+  "validation": {
+    "command": "engine/.venv/bin/python -m pytest engine/tests/test_claude_translator.py engine/tests/test_coverage.py engine/tests/test_diagnostics.py -q",
+    "passed": 190,
+    "failed": 0,
+    "test_wall_s": 12.69,
+    "mode": "CPU/mocked CLI, no production model or audio calls"
+  },
+  "coverage": [
+    "Accepted correction retains existing validators provenance and cached wording.",
+    "Length-guard rejection differs from deterministic meaning-flag rejection.",
+    "Exhausted candidate validation differs from a fatal corrective-call error.",
+    "Partial initial-review failure does not invent an attempted correction.",
+    "Explicit full fallback approval emits no correction outcome."
+  ],
+  "initial_test_adjustment": "An added assertion exposed an existing inaccurate test comment: an unchanged number flag not classified E by review is suppressed by redo_class, so the rejection was the length guard. Corrected the assertion/comment without changing production behavior.",
+  "privacy": "Only requested unit IDs and fixed reason labels are added. No transcript, Telugu, candidate, error-message, or media content is recorded.",
+  "unchanged": [
+    "Models and prompts",
+    "Cache hashes and approval policy",
+    "Quality checks and selection decisions",
+    "Call count and lane admission",
+    "Queue and completed exports"
+  ],
+  "independent_diff_review": "No actionable findings; only trace assignments after existing decisions.",
+  "deployment": "Existing background engine left running; telemetry takes effect on its next normal launch. No restart solely for instrumentation.",
+  "limitations": "This is diagnostic instrumentation, not a throughput or quality improvement claim. Existing P/E and timing underfill remain unresolved."
+}

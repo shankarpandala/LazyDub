@@ -759,3 +759,11 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   flag timing mismatch, not proven missing words or inaudible final audio; native listening and whole-export
   watermark detection remain unverified. The aggregate audit is `run-c1ce4699-quality.json` alongside the timing
   evidence. The 175-minute job started automatically in the same engine; the completed output was not redubbed.
+- **Correction diagnostics (2026-10-06):** future engine launches add `correction_outcomes` to review events:
+  requested line IDs mapped to fixed reasons (`accepted`, `not_longer`, `meaning_flag`, `no_valid_candidate`,
+  `call_error`, or `not_better`). Accepted means the existing deterministic decision, not a fresh semantic review.
+  An initial review failure does not count an unattempted correction, and a full fallback approval is excluded.
+  No source/candidate text is added. Selection, prompts, models, cache approval and call counts are unchanged;
+  190 focused tests pass, including partial-error and validation-exhaustion regressions. Evidence is in
+  `docs/spikes/results/queue-monitor/m5-pro-24gb/correction-review/telemetry-validation.json`.
+  The running queue is not restarted solely for this instrumentation.

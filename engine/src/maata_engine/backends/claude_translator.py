@@ -393,9 +393,14 @@ class ClaudeTranslator:
         except ClaudeCLIError as err:
             result.error = err
         replaced = []
+        # Record why a requested correction was kept or rejected, without recording source/candidate text.
+        # These describe the existing deterministic decision; "accepted" is not semantic approval.
+        correction_outcomes = {s.id: "no_valid_candidate" for s in again}
         for i, c in verdicts.items():
             new = redo.lines.get(i)
             if c.cls in REDO and new is None and result.error is not None and i not in fallback_approved:
+                if i in correction_outcomes:
+                    correction_outcomes[i] = "call_error"
                 continue  # its re-translation never came back: it is reviewed again next time
             effective = Coverage("C", tier="full", by="review", first=c.cls) if i in fallback_approved else c
             reviewed = _reviewed_maps(replace(lines[i], coverage=effective),
@@ -407,6 +412,13 @@ class ClaudeTranslator:
                 if rank(ours) < rank(c):
                     line = replace(new, coverage=ours)
                     replaced.append(i)
+                    correction_outcomes[i] = "accepted"
+                elif ours.cls == "E":
+                    correction_outcomes[i] = "meaning_flag"
+                elif c.cls == "P" and ours.cls == "P":
+                    correction_outcomes[i] = "not_longer"
+                else:
+                    correction_outcomes[i] = "not_better"
             result.lines[i] = line
             if cache is None:
                 self._store(specs[i], line)
@@ -421,6 +433,7 @@ class ClaudeTranslator:
         self._emit({"event": "review", "scene": req.scene, "lines": len(specs), "stored": len(specs) - len(todo),
                     "classes": {k: sum(1 for c in verdicts.values() if c.cls == k) for k in ("C", "m", "P", "E")},
                     "retranslated": sorted(x.id for x in again), "replaced": sorted(replaced),
+                    "correction_outcomes": correction_outcomes,
                     "fallback_offered": sorted(offered), "fallback_approved": sorted(fallback_approved),
                     "fallback_recheck_failed": sorted(fallback_recheck_failed),
                     "unreviewed": unreviewed, "calls": result.calls, "wall_s": round(result.seconds, 2),
