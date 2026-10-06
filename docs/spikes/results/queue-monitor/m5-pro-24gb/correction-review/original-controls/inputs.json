@@ -1,0 +1,261 @@
+{
+  "scope": "Six original authored synthetic controls; expected classes are author judgments, not native-human ground truth. Before P labels intentionally provided as test conditions, not fresh model verdicts.",
+  "cases": [
+    {
+      "id": 1,
+      "control": "shorter_complete_date",
+      "en": "Ravi will return the red book tomorrow.",
+      "before": "రవి ఎరుపు రంగులో ఉన్న పుస్తకాన్ని తిరిగి ఇచ్చేస్తాడు.",
+      "candidate": "రవి ఎర్ర పుస్తకాన్ని రేపు తిరిగి ఇస్తాడు.",
+      "missing": [
+        "tomorrow"
+      ],
+      "expected": [
+        "C"
+      ],
+      "expected_reason": "The compact repair restores tomorrow and retains actor, red book and return.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "tomorrow"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 21.0,
+      "candidate_units": 16.0,
+      "before_flags": {},
+      "candidate_flags": {},
+      "deterministic": {
+        "class": "P",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [
+          "tomorrow"
+        ],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    },
+    {
+      "id": 2,
+      "control": "shorter_complete_deadline",
+      "en": "Meena must bring both keys before noon.",
+      "before": "మీనా రెండు తాళంచెవులనూ తప్పకుండా తీసుకురావాల్సిన అవసరం ఉంది.",
+      "candidate": "మీనా మధ్యాహ్నంలోపు రెండు తాళంచెవులూ తేవాలి.",
+      "missing": [
+        "before noon"
+      ],
+      "expected": [
+        "C"
+      ],
+      "expected_reason": "The compact repair retains both keys and obligation, and restores the noon deadline.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "before noon"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 27.0,
+      "candidate_units": 17.0,
+      "before_flags": {
+        "negation": "negation: 0 in the English, 1 in the Telugu"
+      },
+      "candidate_flags": {},
+      "deterministic": {
+        "class": "P",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [
+          "before noon"
+        ],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    },
+    {
+      "id": 3,
+      "control": "longer_missing_clause",
+      "en": "The library opens at nine, but the reading room stays closed.",
+      "before": "లైబ్రరీ తొమ్మిదికి తెరుస్తారు.",
+      "candidate": "లైబ్రరీ తలుపులు తెరుచుకునే సమయం తొమ్మిది గంటలు.",
+      "missing": [
+        "but the reading room stays closed"
+      ],
+      "expected": [
+        "P",
+        "E"
+      ],
+      "expected_reason": "The whole reading-room contrast remains absent despite a longer paraphrase of opening time.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "but the reading room stays closed"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 11.0,
+      "candidate_units": 21.0,
+      "before_flags": {},
+      "candidate_flags": {},
+      "deterministic": {
+        "class": "C",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    },
+    {
+      "id": 4,
+      "control": "longer_lost_negation",
+      "en": "Ravi did not send the letter, but Meena sent the parcel.",
+      "before": "మీనా పార్సెల్ పంపింది.",
+      "candidate": "రవి ఉత్తరం పంపాడు, మీనా కూడా పార్సెల్ పంపించింది.",
+      "missing": [
+        "Ravi did not send the letter"
+      ],
+      "expected": [
+        "E"
+      ],
+      "expected_reason": "Ravi sent the letter reverses did not send. Old P omits that entire clause; shared negation flags can be suppressed.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "Ravi did not send the letter"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 7.5,
+      "candidate_units": 18.5,
+      "before_flags": {
+        "negation": "negation: 1 in the English, 0 in the Telugu"
+      },
+      "candidate_flags": {
+        "negation": "negation: 1 in the English, 0 in the Telugu"
+      },
+      "deterministic": {
+        "class": "C",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    },
+    {
+      "id": 5,
+      "control": "longer_wrong_numeric_scope",
+      "en": "Only two of the six boxes need labels.",
+      "before": "ఆరు పెట్టెలు ఉన్నాయి.",
+      "candidate": "ఆరు పెట్టెలకూ రెండు లేబుళ్లు చొప్పున పెట్టాలి.",
+      "missing": [
+        "Only two of the six boxes need labels"
+      ],
+      "expected": [
+        "E"
+      ],
+      "expected_reason": "Two of six boxes needing labels became two labels on every one of six boxes; both numerals remain present.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "Only two of the six boxes need labels"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 8.0,
+      "candidate_units": 17.0,
+      "before_flags": {
+        "number": "numbers not said: two"
+      },
+      "candidate_flags": {},
+      "deterministic": {
+        "class": "C",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    },
+    {
+      "id": 6,
+      "control": "longer_lost_uncertainty",
+      "en": "The repair may cost fifty rupees.",
+      "before": "మరమ్మతు ఖర్చు ఉండొచ్చు.",
+      "candidate": "మరమ్మతు చేయించుకోవడానికి మొత్తం యాభై రూపాయలు ఖర్చవుతాయి.",
+      "missing": [
+        "fifty rupees"
+      ],
+      "expected": [
+        "P",
+        "E"
+      ],
+      "expected_reason": "The amount is restored but may becomes a definite total cost.",
+      "before_coverage": {
+        "class": "P",
+        "by": "review",
+        "tier": "full",
+        "first": null,
+        "missing": [
+          "fifty rupees"
+        ],
+        "added": [],
+        "error": null
+      },
+      "before_units": 9.0,
+      "candidate_units": 25.0,
+      "before_flags": {
+        "number": "numbers not said: fifty"
+      },
+      "candidate_flags": {},
+      "deterministic": {
+        "class": "C",
+        "by": "validators",
+        "tier": "full",
+        "first": "P",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "script_problems": [],
+      "english_maps": []
+    }
+  ]
+}

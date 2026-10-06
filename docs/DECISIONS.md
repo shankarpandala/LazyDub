@@ -767,3 +767,12 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   190 focused tests pass, including partial-error and validation-exhaustion regressions. Evidence is in
   `docs/spikes/results/queue-monitor/m5-pro-24gb/correction-review/telemetry-validation.json`.
   The running queue is not restarted solely for this instrumentation.
+- **Original correction controls:** two fresh signed-in Codex review calls on six adversarial original cases
+  expose why length cannot establish meaning. The existing heuristic rejects a shorter repair restoring a date,
+  while accepting four longer candidates that omit a clause, reverse negation, change numeric scope, or lose
+  uncertainty. Both semantic-review replies accept the date repair and reject the four defective candidates.
+  A second shorter-deadline control also receives C, but its before-noon/by-noon boundary nuance is unresolved;
+  do not count authored-label agreement as independent correctness. Raw fixtures, prompts and both replies are
+  retained under `correction-review/original-controls/` in the same evidence directory. Prior P labels are
+  authored test conditions, not fresh production-review findings. This is mechanism evidence, not a measured
+  real-job error rate, speed comparison, native/audio validation, or approval to change the correction policy.
