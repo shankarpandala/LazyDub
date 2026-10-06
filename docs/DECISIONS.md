@@ -745,3 +745,14 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   Its tighter-window CPU check retains full and exposes a timing warning. It is not native listening or a full
   export test. Graceful maintenance preserves all 3,299 cache files and seven completed output hashes, then
   resumes the 71-minute job ahead of the queued 175-minute job in the temporary background supervisor.
+- **First completed long job (2026-10-06):** run `c1ce46998a60489087d54c2b25762c9d` finished the
+  71-minute job in 3,866.039 seconds after resuming, with cached preprocessing; this is not fresh end-to-end
+  throughput or a paired speed comparison. Main translation took 1,925.934 seconds and overlaps speech work.
+  All 590 text calls succeeded. Final coverage is 682 C, 5 m, 81 P and 3 E across 771 voiced lines;
+  651 classifications came from review and 120 from validators. There are 21 timing-long warnings, no skipped
+  or unreviewed lines, and the P/E findings remain unresolved. The MP4 has one Telugu audio track and Telugu
+  and English subtitles; container audio/video endpoints differ by about 7 ms, which does not establish
+  line-level synchronization. Stored export loudness is -16.03 LUFS with -1.73 dBTP and no export warning.
+  Output structure, size and hash are recorded in `run-c1ce4699-completed.json` in the evidence directory above.
+  Native listening, watermark detection on this whole export, and underfill acceptance are not established by
+  these checks. The 175-minute job started automatically in the same engine; the completed output was not redubbed.
