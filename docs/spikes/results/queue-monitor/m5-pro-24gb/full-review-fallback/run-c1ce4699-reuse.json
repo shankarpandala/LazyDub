@@ -1,0 +1,223 @@
+{
+  "schema": "completed-reuse-audit-v1",
+  "video_id": "xi-zHJL5bnI",
+  "run_id": "c1ce46998a60489087d54c2b25762c9d",
+  "audited_epoch": 1791258017.459381,
+  "completion": {
+    "status": "done",
+    "current_run_wall_s": 3866.039,
+    "unit_events": 771,
+    "unique_final_lines": 771,
+    "scene_events": 176,
+    "unique_initial_scenes": 176
+  },
+  "reviews": {
+    "all": {
+      "review_events": 237,
+      "reviewed_line_occurrences": 844,
+      "stored_line_occurrences": 2,
+      "primary_verdict_occurrences": {
+        "C": 506,
+        "P": 268,
+        "E": 65,
+        "m": 5
+      },
+      "full_offers": {
+        "line_occurrences": 300,
+        "unique_lines": 300,
+        "review_events": 141
+      },
+      "full_approvals": {
+        "line_occurrences": 93,
+        "unique_lines": 93,
+        "review_events": 65
+      },
+      "full_recheck_rejections": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      },
+      "correction_requests": {
+        "line_occurrences": 240,
+        "unique_lines": 216,
+        "review_events": 151
+      },
+      "correction_replacements": {
+        "line_occurrences": 150,
+        "unique_lines": 138,
+        "review_events": 116
+      },
+      "unreviewed": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      }
+    },
+    "initial_prevoice": {
+      "review_events": 176,
+      "reviewed_line_occurrences": 769,
+      "stored_line_occurrences": 2,
+      "primary_verdict_occurrences": {
+        "C": 467,
+        "P": 239,
+        "E": 58,
+        "m": 5
+      },
+      "full_offers": {
+        "line_occurrences": 300,
+        "unique_lines": 300,
+        "review_events": 141
+      },
+      "full_approvals": {
+        "line_occurrences": 93,
+        "unique_lines": 93,
+        "review_events": 65
+      },
+      "full_recheck_rejections": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      },
+      "correction_requests": {
+        "line_occurrences": 204,
+        "unique_lines": 204,
+        "review_events": 119
+      },
+      "correction_replacements": {
+        "line_occurrences": 127,
+        "unique_lines": 127,
+        "review_events": 93
+      },
+      "unreviewed": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      }
+    },
+    "voiced_followup": {
+      "review_events": 61,
+      "reviewed_line_occurrences": 75,
+      "stored_line_occurrences": 0,
+      "primary_verdict_occurrences": {
+        "C": 39,
+        "P": 29,
+        "E": 7
+      },
+      "full_offers": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      },
+      "full_approvals": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      },
+      "full_recheck_rejections": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      },
+      "correction_requests": {
+        "line_occurrences": 36,
+        "unique_lines": 36,
+        "review_events": 32
+      },
+      "correction_replacements": {
+        "line_occurrences": 23,
+        "unique_lines": 23,
+        "review_events": 23
+      },
+      "unreviewed": {
+        "line_occurrences": 0,
+        "unique_lines": 0,
+        "review_events": 0
+      }
+    },
+    "unique_lines_corrected_in_both_phases": 24
+  },
+  "final_wording": {
+    "approved_full_pin_unique_lines": 95,
+    "validator_classed_selected_tier_unique_lines": 120,
+    "validator_selected_classes": {
+      "C": 120
+    },
+    "coverage_voiced": {
+      "P": 81,
+      "C": 682,
+      "m": 5,
+      "E": 3
+    },
+    "wording_kinds": {
+      "fuller": 153,
+      "very_concise": 52,
+      "full": 431,
+      "concise": 79,
+      "piece:2": 26,
+      "retranslate": 23,
+      "rephrase": 6,
+      "piece:3": 1
+    },
+    "new_full_approval_ids_still_pinned_at_export": 93,
+    "final_full_pins_without_new_approval_event": 2,
+    "of_these_text_cache_hits": 2,
+    "of_these_matching_an_earlier_approved_same_source_speaker_in_this_run": 2
+  },
+  "reuse": {
+    "initial_voice_line_restorations": 44,
+    "voice_line_count": 771,
+    "final_pcm_reused_unique_lines": 38,
+    "final_pcm_created_unique_lines": 733,
+    "pcm_unknown_unique_lines": 0,
+    "final_text_cache_hit_unique_lines": 255,
+    "separated_blocks_reused": 72,
+    "separated_blocks_created": 0,
+    "brief_part_cache_hits": 2
+  },
+  "text_cli": {
+    "call_events": 590,
+    "calls_by_kind": {
+      "fit": 89,
+      "review": 237,
+      "retranslate": 151,
+      "rephrase": 15,
+      "scene": 98
+    },
+    "error_events": 0,
+    "retry_attempt_events": 0,
+    "models": [
+      "gpt-6-luna"
+    ],
+    "efforts": [
+      "low"
+    ],
+    "input_tokens": 5839155,
+    "output_tokens": 169763
+  },
+  "current_run_stage_wall_s": {
+    "fetch": 0.035,
+    "speakers": 0.006,
+    "transcript": 0.005,
+    "units": 0.022,
+    "brief": 0.01,
+    "voices": 6.072,
+    "separate": 0.262,
+    "video": 0.552,
+    "translate": 1925.934,
+    "voice_lines": 3777.558,
+    "finish": 3801.323,
+    "export": 58.451
+  },
+  "interpretation": [
+    "All counts are filtered by the exact current run_id; no prior-run event costs are added.",
+    "Initial reviews end no later than their scene initial-ready event; later same-scene reviews are voiced follow-ups.",
+    "Review line occurrences may repeat across phases; unique_lines deduplicates global unit IDs within the stated group.",
+    "correction_replacements means translator accepted a correction, not proof that its audio was retained; final selected-tier coverage/wording is reported separately.",
+    "voice_lines.restored counts successful take-row restorations when a line was first voiced; later fixups can replace that audio. It does not count unique physical NPZs or guarantee all44 remain unchanged at export.",
+    "pcm_made=false directly proves the final PCM was reused for that unique line; zero synthesis/render cost alone is not used as evidence of reuse.",
+    "unit.cache_hit is text cache lineage, not take/PCM reuse. Per-unit synthesis costs and stage.seconds can be historical, so only stage_timing.wall_s is used for current-run timing.",
+    "Semantic C is the production reviewer/validator outcome, not independent Telugu quality approval. No transcript, prompts, Telugu wording, missing-fact excerpts or media are saved.",
+    "95 final approved-full pins are not95 new approvals:93 IDs were approved in current review events;2 additional cached occurrences match earlier approved same-source/speaker lines within this run."
+  ],
+  "machine": "Apple M5 Pro 24 GB"
+}

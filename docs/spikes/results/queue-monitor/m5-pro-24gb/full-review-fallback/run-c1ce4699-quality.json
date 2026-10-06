@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "generated_utc": "2026-10-06T03:40:06.788134+00:00",
+  "video_id": "xi-zHJL5bnI",
+  "run_id": "c1ce46998a60489087d54c2b25762c9d",
+  "read_only_existing_reports": true,
+  "status": "done",
+  "resumed_run_wall_s": 3866.039,
+  "finalized_lines": 771,
+  "coverage": {
+    "C": 682,
+    "m": 5,
+    "P": 81,
+    "E": 3,
+    "otherTier": 0,
+    "unreviewed": 0,
+    "skipped": 0,
+    "lines": 771
+  },
+  "coverage_provenance": {
+    "review": 651,
+    "validators": 120
+  },
+  "final_report": {
+    "lines": 771,
+    "long": 21,
+    "unreviewed": 0,
+    "overdraft": 0.15,
+    "carried": 0.0
+  },
+  "manifest_stats": {
+    "lines": 771,
+    "coverage": {
+      "C": 0.885,
+      "m": 0.006,
+      "P": 0.105,
+      "E": 0.004,
+      "other_tier": 0.0,
+      "unreviewed": 0.0
+    },
+    "lag_p95": 0.207,
+    "rate_p90": 1.118,
+    "overdraft_s": 0.15,
+    "overdraft_carried_s": 0.0,
+    "fixups": 18
+  },
+  "encoded_aac_measurement": {
+    "loudness_lufs": -16.03,
+    "true_peak_dbtp": -1.73,
+    "loudness_range_lu": 4.66,
+    "target_lufs": -16.0,
+    "true_peak_ceiling_dbtp": -1.0,
+    "true_peak_pass": true,
+    "warning": null,
+    "method": "Production export decoded the encoded AAC and ran BS.1770 loudness/true-peak metering. This audit read its saved result; no new decode."
+  },
+  "timing_from_final_unit_intervals": {
+    "speech_lines": 771,
+    "end_error_p10": -1.64,
+    "end_error_p50": -0.12,
+    "end_error_p90": 0.4,
+    "end_early_1s_share": 0.166,
+    "long_lines": 128,
+    "long_end_error_p50": -1.54,
+    "overlap_speech_mean": 0.7717,
+    "silent_s_per_min": 7.4228,
+    "anchors": 39,
+    "anchor_err_p50": 0.02,
+    "anchor_err_p95": 0.1225,
+    "source_speech_union_s": 3516.237,
+    "source_speech_without_dub_voicing_s": 435.005,
+    "dub_voiced_union_s": 3509.456,
+    "lag_p95": 0.207,
+    "audio_rate_p90": 1.118,
+    "audio_rate_max": 1.25,
+    "over_rate_cap_lines": 0,
+    "early_more_than_1s_lines": 128
+  },
+  "timing_interpretation": "Speech-level comparisons use source diarized speech intervals and final planner voiced intervals (derived from take pauses), not whole-line duration ratios. Uncovered source time is a timing mismatch, not proof of omitted meaning or inaudible final mix. No ASR or native-listener confirmation.",
+  "waveform_guard_evidence": {
+    "all_final_lines_have_pcm": true,
+    "pcm_reused_lines": 38,
+    "pcm_generated_lines": 733,
+    "recorded_candidate_failure_counts": {
+      "short": 8
+    },
+    "limitation": "Selected natural waveforms are structurally checked for empty, malformed, nonfinite and numerical silence by production code; final traces do not contain a per-line positive QA certificate. Candidate failure costs can be restored history and are not current-run failure counts."
+  },
+  "checked": [
+    "771 final unit timing rows and matching manifest count",
+    "Final encoded AAC integrated loudness and true peak stored by export",
+    "Planner onset, speech end, rate cap and speech-overlap metrics from final interval records",
+    "Semantic classifications and review/validator provenance recorded for final selected wording"
+  ],
+  "unresolved": [
+    "84 retained P/E lines mean complete meaning fidelity is not established; validator C is not an independent semantic review.",
+    "No persisted full-output Telugu ASR/intelligibility or native listening assessment found in these final artifacts.",
+    "No persisted full-output watermark detection/confidence result; watermarking code and separate original-fixture tests do not certify this completed output.",
+    "Mux track-duration agreement is not a perceptual lip-sync or per-word alignment assessment.",
+    "Global safe encoded true peak does not exclude upstream distortion, residual original voice, or unnatural pauses.",
+    "Timing underfill is material but cannot be attributed to translation omissions or TTS truncation without line-level review."
+  ],
+  "source_artifacts": [
+    "render/job.json",
+    "render/manifest.json",
+    "units.jsonl filtered to current run_id"
+  ],
+  "no_content_copied": true,
+  "machine": "Apple M5 Pro 24 GB"
+}

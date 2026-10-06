@@ -754,5 +754,8 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   and English subtitles; container audio/video endpoints differ by about 7 ms, which does not establish
   line-level synchronization. Stored export loudness is -16.03 LUFS with -1.73 dBTP and no export warning.
   Output structure, size and hash are recorded in `run-c1ce4699-completed.json` in the evidence directory above.
-  Native listening, watermark detection on this whole export, and underfill acceptance are not established by
-  these checks. The 175-minute job started automatically in the same engine; the completed output was not redubbed.
+  Final source-speech and planner-voicing intervals show 128/771 lines ending over one second early and 7.423
+  seconds of uncovered source speech per source-speech minute, above the 3-second guide. These interval metrics
+  flag timing mismatch, not proven missing words or inaudible final audio; native listening and whole-export
+  watermark detection remain unverified. The aggregate audit is `run-c1ce4699-quality.json` alongside the timing
+  evidence. The 175-minute job started automatically in the same engine; the completed output was not redubbed.
