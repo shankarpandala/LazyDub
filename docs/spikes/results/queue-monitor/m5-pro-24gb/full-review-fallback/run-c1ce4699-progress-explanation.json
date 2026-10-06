@@ -1,0 +1,417 @@
+{
+  "observed_at": 1791255843.9201448,
+  "scope": "Live resumed production progress, not a fresh whole-video benchmark or a before/after speed claim. Earlier quota waiting belongs to another run.",
+  "job": {
+    "video_id": "xi-zHJL5bnI",
+    "status": "running",
+    "stage": "voice_lines",
+    "duration_s": 4296.13,
+    "queue_at": 1791223124.075826,
+    "state_age_s": 0.5,
+    "run_id": "c1ce46998a60489087d54c2b25762c9d",
+    "scope": "latest_run",
+    "scope_started_at": 1791253726.031,
+    "run_wall_s": null,
+    "observed_span_s": 2117.889,
+    "progress": {
+      "fetch": {
+        "state": "done",
+        "done": 69.5,
+        "total": 69.5,
+        "unit": "MB"
+      },
+      "speakers": {
+        "state": "done",
+        "done": 1,
+        "total": 1,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "state": "done",
+        "done": 4296.1,
+        "total": 4296.1,
+        "unit": "video s"
+      },
+      "units": {
+        "state": "done",
+        "done": 771,
+        "total": 771,
+        "unit": "lines"
+      },
+      "voices": {
+        "state": "done",
+        "done": 2,
+        "total": 2,
+        "unit": "speakers"
+      },
+      "brief": {
+        "state": "done",
+        "done": 2,
+        "total": 2,
+        "unit": "parts"
+      },
+      "separate": {
+        "state": "done",
+        "done": 4296.1,
+        "total": 4296.1,
+        "unit": "video s"
+      },
+      "translate": {
+        "state": "done",
+        "done": 771,
+        "total": 771,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "state": "running",
+        "done": 1499.4,
+        "total": 3759.9,
+        "unit": "speech s"
+      },
+      "finish": {
+        "state": "running",
+        "done": 304,
+        "total": 771,
+        "unit": "lines"
+      },
+      "video": {
+        "state": "done",
+        "done": 1005.9,
+        "total": 1005.9,
+        "unit": "MB"
+      },
+      "export": {
+        "state": "todo",
+        "done": 0,
+        "total": 0,
+        "unit": "video s"
+      }
+    },
+    "progress_delta": {
+      "fetch": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      },
+      "speakers": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "units": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voices": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "speakers"
+      },
+      "brief": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "parts"
+      },
+      "separate": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "translate": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "advanced": 85.3,
+        "interval_s": 102.934,
+        "units_per_second": 0.8287,
+        "unit": "speech s"
+      },
+      "finish": {
+        "advanced": 17.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.1652,
+        "unit": "lines"
+      },
+      "video": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      },
+      "export": {
+        "advanced": 0.0,
+        "interval_s": 102.934,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      }
+    },
+    "timings": {
+      "text_calls": [
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "fit",
+          "calls": 89,
+          "p50_s": 8.556,
+          "max_s": 26.563,
+          "successful_calls": 89,
+          "successful_p50_s": 8.556,
+          "successful_max_s": 26.563,
+          "summed_call_s": 860.787,
+          "active_union_s": 703.797,
+          "errors": {},
+          "input_tokens": 1131338,
+          "cached_input_tokens": 940032,
+          "total_input_tokens": 1131338,
+          "cached_input_fraction": 0.831
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "rephrase",
+          "calls": 3,
+          "p50_s": 11.132,
+          "max_s": 17.526,
+          "successful_calls": 3,
+          "successful_p50_s": 11.132,
+          "successful_max_s": 17.526,
+          "summed_call_s": 38.608,
+          "active_union_s": 38.608,
+          "errors": {},
+          "input_tokens": 35711,
+          "cached_input_tokens": 33024,
+          "total_input_tokens": 35711,
+          "cached_input_fraction": 0.925
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "retranslate",
+          "calls": 129,
+          "p50_s": 9.765,
+          "max_s": 40.993,
+          "successful_calls": 129,
+          "successful_p50_s": 9.765,
+          "successful_max_s": 40.993,
+          "summed_call_s": 1426.731,
+          "active_union_s": 1078.338,
+          "errors": {},
+          "input_tokens": 1661239,
+          "cached_input_tokens": 1279232,
+          "total_input_tokens": 1661239,
+          "cached_input_fraction": 0.77
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "review",
+          "calls": 199,
+          "p50_s": 6.911,
+          "max_s": 28.041,
+          "successful_calls": 199,
+          "successful_p50_s": 6.911,
+          "successful_max_s": 28.041,
+          "summed_call_s": 1674.907,
+          "active_union_s": 1272.247,
+          "errors": {},
+          "input_tokens": 1083686,
+          "cached_input_tokens": 476672,
+          "total_input_tokens": 1083686,
+          "cached_input_fraction": 0.44
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "scene",
+          "calls": 98,
+          "p50_s": 16.48,
+          "max_s": 28.461,
+          "successful_calls": 98,
+          "successful_p50_s": 16.48,
+          "successful_max_s": 28.461,
+          "summed_call_s": 1616.04,
+          "active_union_s": 1144.236,
+          "errors": {},
+          "input_tokens": 1271779,
+          "cached_input_tokens": 1000448,
+          "total_input_tokens": 1271779,
+          "cached_input_fraction": 0.787
+        }
+      ],
+      "stages": [
+        {
+          "stage": "fetch",
+          "wall_s": 0.035,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "speakers",
+          "wall_s": 0.006,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "transcript",
+          "wall_s": 0.005,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "units",
+          "wall_s": 0.022,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voices",
+          "wall_s": 6.072,
+          "gpu_s": 6.051,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "brief",
+          "wall_s": 0.01,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "separate",
+          "wall_s": 0.262,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "translate",
+          "wall_s": 1925.934,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voice_lines",
+          "wall_s": 2111.736,
+          "gpu_s": null,
+          "outcome": "in_progress",
+          "cached": null
+        },
+        {
+          "stage": "finish",
+          "wall_s": 2111.721,
+          "gpu_s": null,
+          "outcome": "in_progress",
+          "cached": null
+        },
+        {
+          "stage": "video",
+          "wall_s": 0.552,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        }
+      ],
+      "gpu_work": [
+        {
+          "stage": "transcript",
+          "operation": "release",
+          "calls": 1,
+          "run_s": 0.0,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "pack_take",
+          "calls": 286,
+          "run_s": 0.299,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "synthesize_takes",
+          "calls": 288,
+          "run_s": 612.248,
+          "queue_wait_s": 0.007
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "unpack_take",
+          "calls": 11,
+          "run_s": 0.01,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "vocode",
+          "calls": 373,
+          "run_s": 401.99,
+          "queue_wait_s": 0.005
+        },
+        {
+          "stage": "voices",
+          "operation": "prepare_voice_parts",
+          "calls": 2,
+          "run_s": 6.051,
+          "queue_wait_s": 0.0
+        }
+      ],
+      "finalized_units_in_scope": 304,
+      "finalized_coverage": {
+        "P": 29,
+        "C": 274,
+        "m": 1
+      },
+      "finalized_coverage_provenance": {
+        "review": 253,
+        "validators": 51
+      },
+      "skipped_events": 0,
+      "note": "Stage and model-call times overlap. Finalized units can include restored takes; their stored synthesis costs are deliberately not summed as work performed in this run. GPU work records completed scheduled operations only, not in-flight work or hardware utilization."
+    },
+    "output_ready": false,
+    "quality_report": null,
+    "coverage": {
+      "C": 649,
+      "m": 5,
+      "P": 72,
+      "E": 3,
+      "otherTier": 42,
+      "unreviewed": 0,
+      "skipped": 0,
+      "lines": 771
+    },
+    "has_error": false
+  },
+  "interpretation": {
+    "elapsed_s": 2117.889,
+    "text_processing_s": 1925.934,
+    "text_cli_calls": 518,
+    "completed_speech_operation_s": 1014.238,
+    "time_warning": "Text and voice work overlap; these durations must not be added. Completed scheduled operation time is not hardware utilization.",
+    "setup_reused": "Fetch, diarization, transcription, separation and source video are cached.",
+    "scheduling_evidence": "Earlier current-run audits show waiting for next-prefix scene readiness despite later ready scenes. Exact CLI enqueue wait is not yet directly instrumented.",
+    "next_priority": "Measure text admission wait and correction rejection reasons before changing ordering; evaluate rejected corrective candidates with bounded original semantic checks."
+  }
+}
