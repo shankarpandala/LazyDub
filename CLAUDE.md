@@ -34,6 +34,12 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   `engine/.venv/bin/python scripts/monitor-queue.py --out /tmp/maata-queue.json`.
   Streaming mix allocation is reduced without changing PCM; export progress includes the cancellable final
   audio-quality pass. Lane weights remain an internal experiment until measured against the balanced baseline.
+- Initial meaning review (ADR-027): an eligible existing full wording can replace a rejected short wording after
+  explicit semantic C, avoiding a generated correction. Explicitly qualified/uncertain sources keep the normal
+  corrective path. Full approval survives later fits and cache restoration. Scene-v5 wording can be reused under
+  scene-v7 only after clearing old approval/maps and re-reviewing; old audio cannot restore obsolete approval.
+  Original text and offline audio evidence is in the queue-monitor results. Successful-call timings now exclude
+  usage-limit rejection attempts; overnight holds are not processing throughput.
 - Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
   `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
   separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`

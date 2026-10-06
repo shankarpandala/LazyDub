@@ -39,7 +39,8 @@ from typing import Any, Coroutine
 
 from ..claude_cli import ClaudeCLIError, ClaudeReply
 from ..codex_cli import DEFAULT_EFFORT, DEFAULT_FALLBACK, DEFAULT_MODEL, CodexCLI
-from ..qa.coverage import REDO, check_review, coverage_from, coverage_json, finding, rank, redo_class
+from ..qa.coverage import (REDO, approved_full, check_review, check_review_fallbacks, coverage_from, coverage_json,
+                           finding, rank, redo_class, source_allows_full_fallback)
 from ..qa.validators import check_line, check_reply, glossary_entries
 from ..text.akshara import count_telugu
 from ..text.tenglish import anchored_english
@@ -59,6 +60,9 @@ CONCURRENCY = 3
 # CLI missing or too old, a stall or throttle `ask` already retried) is the user's to fix, so it raises.
 LADDER = frozenset({"bad_output", "timeout"})
 LINES_FILE, BRIEFS_FILE = "lines.jsonl", "briefs.jsonl"
+# Explicit wording-only compatibility: v7 changed review policy, not the translation generator or anchored-map
+# schema. Never extend this to another prompt implicitly. Old coverage and Latin substitutions are not inherited.
+WORDING_MIGRATIONS = {"9550fc5e1ac9": "ccfdc4088a39"}  # destination v7 -> source v5; rejected v6 is not compatible
 
 
 class _Late(Exception):
@@ -193,6 +197,8 @@ class _Jsonl:
 
 
 class ClaudeTranslator:
+    supports_full_fallback = True
+
     def __init__(self, cache_dir: Path, video_id: str, brief: Brief, *, style: str = "colloquial",
                  cli: CodexCLI | None = None, model: str = DEFAULT_MODEL, fallback_model: str | None = DEFAULT_FALLBACK,
                  effort: str | None = EFFORT, light_effort: str | None = LIGHT_EFFORT, concurrency: int = CONCURRENCY,
@@ -222,6 +228,9 @@ class ClaudeTranslator:
         video_dir = cache_dir / video_id
         video_dir.mkdir(parents=True, exist_ok=True)
         self._lines = _Jsonl(video_dir / LINES_FILE, prompt_hash=PROMPT_HASH, model=self.model)
+        previous = WORDING_MIGRATIONS.get(PROMPT_HASH)
+        self._legacy_wordings = (_Jsonl(video_dir / LINES_FILE, prompt_hash=previous, model=self.model).rows
+                                 if previous is not None else {})
         self._briefs = _Jsonl(video_dir / BRIEFS_FILE, prompt_hash=BRIEF_HASH, model=self.model)
 
     # ---- the brief -----------------------------------------------------------------------------------------------
@@ -305,10 +314,14 @@ class ClaudeTranslator:
 
     # ---- the coverage review (§4.6) ------------------------------------------------------------------------------
     async def review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str],
-                     cache: Container[int] | None = None) -> SceneResult:
+                     cache: Container[int] | None = None, *, fallbacks: Container[int] | None = None,
+                     fallback_check: Callable[[int], bool] | None = None) -> SceneResult:
         """The coverage review of scene `req`'s `lines`, each on the tier `chosen` for it, as a task `cancel` reaches as
         it reaches `req`. A line that has a class already (from the line cache) keeps it; the others go to one review
-        call, and the ids its reply lacks to one more. A line classed P or E gets one re-translation from its English
+        call, and the ids its reply lacks to one more. In an initial review (`cache=None`), `fallbacks` names eligible
+        existing full wordings to judge in the same call: only an explicit C after a selected P/E, still allowed by
+        `fallback_check` when given, pins full and avoids correction. Otherwise P or E gets one re-translation from
+        its English
         with the missing words named (an E line with what was wrong); the deterministic checks class that one, and it
         replaces the line only with a better class. Every class is stored with its line in the line cache (a
         re-translation only here, once judged); with `cache` (the review of the wordings voiced: OFFLINE-RENDER §2.10),
@@ -317,17 +330,28 @@ class ClaudeTranslator:
         The result holds the lines to use, each with its class (None where the review had no usable answer). A failure
         the user must fix leaves the lines it reached unreviewed and comes back in `error`: a P or E line whose
         re-translation never came back too. Nothing is stored for them, so a later showing reviews them."""
-        return await self._track(self._review(req, lines, chosen, cache), req)
+        # A voiced-wording review must never approve another wording without resynthesizing its audio. This
+        # bounded fallback is only for the initial review; cache=None is the existing pre-voice contract.
+        return await self._track(self._review(req, lines, chosen, cache, fallbacks=fallbacks,
+                                             fallback_check=fallback_check), req)
 
     async def _review(self, req: SceneRequest, lines: Mapping[int, LineResult], chosen: Mapping[int, str],
-                      cache: Container[int] | None = None) -> SceneResult:
+                      cache: Container[int] | None = None, *, fallbacks: Container[int] | None = None,
+                      fallback_check: Callable[[int], bool] | None = None) -> SceneResult:
         t0 = time.monotonic()
         result = SceneResult(req.scene, "review", lines=dict(lines))
         specs = {s.id: s for s in req.lines if s.id in lines}
         tiers = {i: t if (t := chosen.get(i)) in lines[i].tiers else "full" for i in specs}
         said = {i: lines[i].tiers[t] for i, t in tiers.items()}  # the wording each line would be voiced with
         todo = [s for s in specs.values() if lines[s.id].coverage is None]
+        offered = {s.id: lines[s.id].full for s in todo
+                   if cache is None and fallbacks is not None and s.id in fallbacks
+                   and source_allows_full_fallback(s.en)
+                   and tiers[s.id] != "full" and lines[s.id].full != said[s.id]}
         verdicts: dict[int, Coverage] = {}
+        fallback_complete: set[int] = set()
+        fallback_approved: set[int] = set()
+        fallback_recheck_failed: set[int] = set()
         why: dict[int, str] = {}
         again: list[LineSpec] = []
         redo = SceneResult(req.scene, "retranslate")
@@ -337,7 +361,8 @@ class ClaudeTranslator:
                 if not pending:
                     break
                 result.calls += 1
-                msg = review_message(req, [(s, said[s.id]) for s in pending])
+                available = {s.id: offered[s.id] for s in pending if s.id in offered}
+                msg = review_message(req, [(s, said[s.id]) for s in pending], available)
                 try:
                     reply = await self._ask("review", REVIEW_SYSTEM, msg, REVIEW_SCHEMA, self.review_effort,
                                             tags={"scene": req.scene, "lines": len(pending)}, cli=self.review_cli)
@@ -348,10 +373,21 @@ class ClaudeTranslator:
                     continue
                 got, why = check_review(reply.data, [s.id for s in pending])
                 verdicts.update({i: replace(c, tier=tiers[i]) for i, c in got.items()})
+                fallback_complete.update(check_review_fallbacks(reply.data, [i for i in available if i in got]))
+            for i in fallback_complete:
+                if verdicts[i].cls not in REDO:
+                    continue
+                try:
+                    allowed = fallback_check is None or bool(fallback_check(i))
+                except Exception:
+                    log.exception("scene %s: full fallback eligibility recheck failed for line %s", req.scene, i)
+                    allowed = False
+                (fallback_approved if allowed else fallback_recheck_failed).add(i)
             again = [replace(specs[i], missing=c.missing, problems=finding(c)) for i, c in verdicts.items()
-                     if c.cls in REDO]
+                     if c.cls in REDO and i not in fallback_approved]
             if again:  # the rest of the scene, as said, is their context
-                done = [(s, said[s.id].spoken) for s in specs.values() if s.id not in {x.id for x in again}]
+                done = [(s, (offered[s.id] if s.id in fallback_approved else said[s.id]).spoken)
+                        for s in specs.values() if s.id not in {x.id for x in again}]
                 await self._ladder(replace(req, call="retranslate", lines=tuple(again)), again, done, redo,
                                    (self._system, self.brief.version))
         except ClaudeCLIError as err:
@@ -359,9 +395,11 @@ class ClaudeTranslator:
         replaced = []
         for i, c in verdicts.items():
             new = redo.lines.get(i)
-            if c.cls in REDO and new is None and result.error is not None:
+            if c.cls in REDO and new is None and result.error is not None and i not in fallback_approved:
                 continue  # its re-translation never came back: it is reviewed again next time
-            reviewed = _reviewed_maps(replace(lines[i], coverage=c), tiers[i] if c.cls in ("C", "m") else None)
+            effective = Coverage("C", tier="full", by="review", first=c.cls) if i in fallback_approved else c
+            reviewed = _reviewed_maps(replace(lines[i], coverage=effective),
+                                      effective.tier if effective.cls in ("C", "m") else None)
             line = reviewed
             if new is not None:  # like with like: the new wording on the tier the review classed, else both `full`s
                 t = c.tier if c.tier in new.tiers else "full"
@@ -383,6 +421,8 @@ class ClaudeTranslator:
         self._emit({"event": "review", "scene": req.scene, "lines": len(specs), "stored": len(specs) - len(todo),
                     "classes": {k: sum(1 for c in verdicts.values() if c.cls == k) for k in ("C", "m", "P", "E")},
                     "retranslated": sorted(x.id for x in again), "replaced": sorted(replaced),
+                    "fallback_offered": sorted(offered), "fallback_approved": sorted(fallback_approved),
+                    "fallback_recheck_failed": sorted(fallback_recheck_failed),
                     "unreviewed": unreviewed, "calls": result.calls, "wall_s": round(result.seconds, 2),
                     "model": self.review_cli.model, "review_hash": REVIEW_HASH,
                     "error": getattr(result.error, "kind", None)})
@@ -398,6 +438,8 @@ class ClaudeTranslator:
             line = self._cached(s)
             if line is None:
                 todo.append(s)
+            elif approved_full(line):
+                result.lines[s.id] = line  # do not generate requested short tiers over explicit full approval
             elif all(t in line.tiers for t in s.want):
                 result.lines[s.id] = line
             else:
@@ -443,7 +485,8 @@ class ClaudeTranslator:
         for s in pending:
             why = "; ".join(s.problems) or "no usable answer"
             if base is not None and s.id in base:  # a cached line whose fit failed is still a good line
-                result.lines[s.id] = replace(base[s.id], flags=base[s.id].flags + ("fit failed",))
+                old = self._fit_base(s, base[s.id])
+                result.lines[s.id] = replace(old, flags=old.flags + ("fit failed",))
                 log.info("scene %s: line %s keeps its cached tiers; the fit failed: %s", req.scene, s.id, why)
             else:
                 result.skipped[s.id] = why
@@ -480,6 +523,8 @@ class ClaudeTranslator:
                 # Telugu-spelled loan, but do not let an unreviewed Latin replacement alter what the voice says.
                 line = _reviewed_maps(line)
             old = base.get(lid) if base is not None else None
+            if req.call == "fit" and old is not None:
+                old = self._fit_base(by_id[lid], old)
             if old is not None:
                 line = self._merged(old, line, by_id[lid], glossary)
             line.model = reply.model or self.model
@@ -499,12 +544,21 @@ class ClaudeTranslator:
                 result.glossary_additions.append(g)
         return checked.rejected
 
+    def _fit_base(self, spec: LineSpec, old: LineResult) -> LineResult:
+        # A meaning review can approve this same full wording while the fit awaits its reply. Both successful
+        # merges and a failed fit's return must preserve that current approval rather than the request snapshot.
+        current = self._cached(spec, any_brief=True)
+        return (current if current is not None and approved_full(current) and current.full.spoken == old.full.spoken
+                else old)
+
     def _merged(self, old: LineResult, new: LineResult, spec: LineSpec, glossary: Mapping[str, str]) -> LineResult:
         """A fit's answer folded into the line it fits: only the tiers `want` names are taken from it, each only where
         the akshara order still holds with every tier the line had (a wording asked for again replaces its own only
         then). The line's `full`, english map, pieces and delivery are kept: a fit never rewrites the natural line
         (§4.2), and the emphasis and pieces belong to that `full`. So is its coverage class, unless the fit replaced the
         very wording the review classed: the line is then unreviewed, and reviewed the next time it is shown."""
+        if approved_full(old):
+            return _authorized_maps(replace(old))  # a late/cached fit cannot supersede the approved full wording
         raw, fitted = line_json(old), line_json(new)
         left_out, taken = [], set()
         for k in (k for k in spec.want if k != "full" and k in fitted):
@@ -535,16 +589,26 @@ class ClaudeTranslator:
 
     def _cached(self, spec: LineSpec, any_brief: bool = False) -> LineResult | None:
         """The cached line for `spec`, if it still validates. A line made under brief v0 (the metadata alone: no
-        speaker genders, address forms or glossary) is made again once a brief is in use; v1's serve v2 (§4.7)."""
-        row = self._lines.rows.get(line_key(spec, self.style))
+        speaker genders, address forms or glossary) is made again once a brief is in use; v1's serve v2 (§4.7).
+        One explicitly compatible old prompt can supply wording only: it has no approval or Latin substitutions
+        until today's review runs. A current row always wins, even if corrupt, and the old file is never rewritten."""
+        key = line_key(spec, self.style)
+        row = self._lines.rows.get(key)
+        legacy = row is None
+        if legacy:
+            row = self._legacy_wordings.get(key)
         if row is None or (not any_brief and row.get("brief") == 0 and self.brief.version >= 1):
             return None
+        if not isinstance(row.get("line"), dict):
+            return None
+        if legacy and (type(row.get("brief")) is not int or row["brief"] < 0):
+            return None  # a legacy candidate with unknown brief provenance cannot pass the existing brief gate
         line, why = check_line(row["line"], replace(spec, want=()), self._glossary())
         if line is None:  # stored under looser checks than today's
             log.info("line cache entry for %s no longer validates: %s", spec.id, why)
             return None
         line.cached, line.model, line.brief_version, line.coverage = (True, row.get("answered_by"), row.get("brief"),
-                                                                     coverage_from(row.get("coverage")))
+                                                                     None if legacy else coverage_from(row.get("coverage")))
         return _authorized_maps(line)
 
     def _glossary(self) -> dict[str, str]:

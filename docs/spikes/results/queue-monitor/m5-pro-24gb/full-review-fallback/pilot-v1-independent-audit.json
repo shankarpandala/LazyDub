@@ -1,0 +1,615 @@
+{
+  "version": 1,
+  "observed_at": 1791253092.996332,
+  "report_path": "/tmp/maata-review-fallback-pilot/report.json",
+  "report_sha256": "ba8bf509f782464de1e22eb34e6d23ddbfc9961e6b6fd2cc874cacc3cccd0ebd",
+  "scope": "Independent inspection of all55 returned result rows, all98 returned tier wordings, reconstructed actual TTS for19 retained anchored mappings, and19 distinct generated correction wordings. All material is original. No live model/audio/GPU calls or source changes.",
+  "decision": "BLOCK_DEPLOYMENT_PENDING_UNCERTAINTY_GUARD_AND_VALIDATION",
+  "runs": [
+    {
+      "run_id": "A1",
+      "arm": "A",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        }
+      ],
+      "counts": {
+        "incomplete_selected_tier": 3,
+        "meaning_complete": 2
+      }
+    },
+    {
+      "run_id": "B2",
+      "arm": "B",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 5
+      }
+    },
+    {
+      "run_id": "B3",
+      "arm": "B",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 5
+      }
+    },
+    {
+      "run_id": "A4",
+      "arm": "A",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        }
+      ],
+      "counts": {
+        "incomplete_selected_tier": 3,
+        "meaning_complete": 2
+      }
+    },
+    {
+      "run_id": "A5",
+      "arm": "A",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        }
+      ],
+      "counts": {
+        "incomplete_selected_tier": 4,
+        "meaning_complete": 1
+      }
+    },
+    {
+      "run_id": "B6",
+      "arm": "B",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 5
+      }
+    },
+    {
+      "run_id": "B7",
+      "arm": "B",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 5
+      }
+    },
+    {
+      "run_id": "A8",
+      "arm": "A",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 2,
+        "incomplete_selected_tier": 3
+      }
+    },
+    {
+      "run_id": "A9",
+      "arm": "A",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "very_concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "concise",
+          "reported_class": "P",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "incomplete_selected_tier"
+        }
+      ],
+      "counts": {
+        "incomplete_selected_tier": 4,
+        "meaning_complete": 1
+      }
+    },
+    {
+      "run_id": "B10",
+      "arm": "B",
+      "rows": [
+        {
+          "case_id": "omitted_object_and_time",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertainty_is_not_negation",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "cache_and_duration_do_not_resurrect_omission",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "mapped_conditional",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "tight_mapped_both_condition",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_complete"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 5
+      }
+    },
+    {
+      "run_id": "controls11",
+      "arm": "controls",
+      "rows": [
+        {
+          "case_id": "both_candidates_wrong",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "no_distinct_fallback",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "natural_paraphrase",
+          "coverage_tier": "concise",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "missing_fallback_verdict",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "validators",
+          "approved_full": false,
+          "independent_semantics": "meaning_complete"
+        },
+        {
+          "case_id": "uncertain_fallback_is_not_complete",
+          "coverage_tier": "full",
+          "reported_class": "C",
+          "reported_by": "review",
+          "approved_full": true,
+          "independent_semantics": "meaning_error_lost_uncertainty"
+        }
+      ],
+      "counts": {
+        "meaning_complete": 4,
+        "meaning_error_lost_uncertainty": 1
+      }
+    }
+  ],
+  "totals": {
+    "runs": 11,
+    "positive_runs": 10,
+    "returned_rows": 55,
+    "returned_tier_wordings": 98,
+    "retained_map_entries": 19,
+    "map_or_recorded_tts_mismatches": 0,
+    "full_wordings_materially_complete": 54,
+    "full_wordings_materially_incorrect": 1,
+    "coverage_tier_meaning_complete": 37,
+    "coverage_tier_incomplete": 17,
+    "coverage_tier_meaning_error": 1
+  },
+  "positive_comparison": {
+    "A": {
+      "returned_rows": 25,
+      "coverage_tier_meaning_complete": 8,
+      "coverage_tier_incomplete": 17,
+      "semantic_review_C_full": 0,
+      "validator_C_full": 8
+    },
+    "B": {
+      "returned_rows": 25,
+      "coverage_tier_meaning_complete": 25,
+      "semantic_review_C_full": 24,
+      "validator_C_full": 1
+    },
+    "interpretation": "Inspected B positive full wordings preserve actor, objects, recurring day, rarity, weekday exception, only-after conditions and both-upload quantity. B3 uses a meaning-equivalent corrected restart wording with validator-only C; it has not passed semantic review. A retains17 incomplete coverage tiers although its returned full alternatives preserve the facts. This component harness does not determine which A wording a real timing selector would ultimately voice.",
+    "minor_language_observations": [
+      "All five A rarity corrections add a very intensifier, making rarity slightly stronger than the source.",
+      "A5/A9 corrections have minor colloquial case-marking omissions; intended actor and lesson remain clear."
+    ]
+  },
+  "negative_controls": {
+    "both_candidates_wrong": "Wrong existing full count assignments rejected; corrected full preserves both count/color assignments. Final C is validators only.",
+    "no_distinct_fallback": "Identical wrong candidate excluded; corrected full preserves negation. Final C is validators only.",
+    "natural_paraphrase": "Selected implicit-subject tally paraphrase is complete; semantic-review C retained.",
+    "missing_fallback_verdict": "Absent fallback verdict follows corrective path; corrected full retains exclusivity and actor. Final C is validators only.",
+    "uncertain_fallback_is_not_complete": "BLOCKER: full preserves the additional fifty-rupee amount but turns a possible cost into definite cost; review still returned C and optimization pinned full."
+  },
+  "maps": "All19 retained substitutions are intended exact loanword anchors in the two mapped positive cases. Actual Latin forms preserve the only-after condition, both-upload quantity, router suffix and action. No mapping creates the negative-control error; that control has no maps.",
+  "minimal_conservative_protection": [
+    "Veto this new fallback optimization for source lines bearing explicit modal/uncertainty cues; route the existing review/correction path regardless of whether the Telugu happens to contain an uncertainty-looking word.",
+    "Keep the veto in translator eligibility, so direct API callers cannot override it merely by supplying the offered id. Preserve strict C, same-call, unvoiced and local-duration gates for remaining eligible lines.",
+    "Remove meaningful uncertainty/hedges from the review prompt minor-drop category and explicitly mark lost modality as a meaning error. Prompt wording alone did not prevent this observed error.",
+    "Version the prompt/cache identity so prior rejected-policy full approvals cannot be reused under the stricter rule."
+  ],
+  "regression_acceptance": [
+    "Replay the exact recorded false-C response and verify no full approval marker is stored, a correction is requested and the known incorrect full is not pinned.",
+    "Cover may/might/could/maybe/perhaps/possibly/probably/likely and related explicit uncertainty forms, contractions and case variation. False-positive exclusions are acceptable because they only forego this optimization.",
+    "An uncertainty cue attached to an unrelated Telugu clause must not defeat the source-risk veto; do not use marker presence as semantic proof.",
+    "Retain positive condition/quantity and ordinary complete-wording cases, invalid/missing verdict controls, actual-map checks, late-fit/resume guards and visible overrun checks.",
+    "Bounded original real review controls must pass before deployment; inspect corrected output independently instead of treating validator C as semantic approval."
+  ],
+  "limits": [
+    "Source-keyword veto is conservative risk selection, not a complete semantic validator for every form of uncertainty.",
+    "All timing values are component observations with concurrent live queue work, not whole-pipeline speedups.",
+    "No native Telugu listening or audio prosody acceptance performed.",
+    "Validator C is reported separately and never counted as semantic approval."
+  ]
+}

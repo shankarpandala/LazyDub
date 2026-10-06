@@ -1,0 +1,419 @@
+{
+  "scope": "Resumed production run; source analysis and matching prior audio can be cached; not a fresh full-video benchmark or paired speedup comparison. No transcript or media included.",
+  "job": {
+    "video_id": "Is8XU3J5ZZE",
+    "status": "done",
+    "stage": "export",
+    "duration_s": 691.49,
+    "queue_at": null,
+    "state_age_s": 117.9,
+    "run_id": "cc414717eb6045a4a5e8f1085b94f11d",
+    "scope": "latest_run",
+    "scope_started_at": 1791225141.213,
+    "run_wall_s": 747.979,
+    "observed_span_s": 747.981,
+    "progress": {
+      "fetch": {
+        "state": "done",
+        "done": 11.2,
+        "total": 11.2,
+        "unit": "MB"
+      },
+      "speakers": {
+        "state": "done",
+        "done": 1,
+        "total": 1,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "state": "done",
+        "done": 691.5,
+        "total": 691.5,
+        "unit": "video s"
+      },
+      "units": {
+        "state": "done",
+        "done": 141,
+        "total": 141,
+        "unit": "lines"
+      },
+      "voices": {
+        "state": "done",
+        "done": 1,
+        "total": 1,
+        "unit": "speakers"
+      },
+      "brief": {
+        "state": "done",
+        "done": 1,
+        "total": 1,
+        "unit": "parts"
+      },
+      "separate": {
+        "state": "done",
+        "done": 691.5,
+        "total": 691.5,
+        "unit": "video s"
+      },
+      "translate": {
+        "state": "done",
+        "done": 141,
+        "total": 141,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "state": "done",
+        "done": 634.3,
+        "total": 634.3,
+        "unit": "speech s"
+      },
+      "finish": {
+        "state": "done",
+        "done": 141,
+        "total": 141,
+        "unit": "lines"
+      },
+      "video": {
+        "state": "done",
+        "done": 162.3,
+        "total": 162.3,
+        "unit": "MB"
+      },
+      "export": {
+        "state": "done",
+        "done": 691.4,
+        "total": 691.4,
+        "unit": "video s"
+      }
+    },
+    "progress_delta": {
+      "fetch": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      },
+      "speakers": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "units": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voices": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "speakers"
+      },
+      "brief": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "parts"
+      },
+      "separate": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "translate": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "advanced": 5.6,
+        "interval_s": 133.893,
+        "units_per_second": 0.0418,
+        "unit": "speech s"
+      },
+      "finish": {
+        "advanced": 8.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0597,
+        "unit": "lines"
+      },
+      "video": {
+        "advanced": 0.0,
+        "interval_s": 133.893,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      }
+    },
+    "timings": {
+      "text_calls": [
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "fit",
+          "calls": 1,
+          "p50_s": 8.453,
+          "max_s": 8.453,
+          "summed_call_s": 8.453,
+          "active_union_s": 8.453,
+          "errors": {},
+          "input_tokens": 10576,
+          "cached_input_tokens": 9984,
+          "total_input_tokens": 10576,
+          "cached_input_fraction": 0.944
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "rephrase",
+          "calls": 2,
+          "p50_s": 9.204,
+          "max_s": 9.716,
+          "summed_call_s": 18.407,
+          "active_union_s": 18.407,
+          "errors": {},
+          "input_tokens": 21494,
+          "cached_input_tokens": 19968,
+          "total_input_tokens": 21494,
+          "cached_input_fraction": 0.929
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "retranslate",
+          "calls": 32,
+          "p50_s": 10.433,
+          "max_s": 18.783,
+          "summed_call_s": 349.52,
+          "active_union_s": 247.406,
+          "errors": {},
+          "input_tokens": 365647,
+          "cached_input_tokens": 249344,
+          "total_input_tokens": 365647,
+          "cached_input_fraction": 0.682
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "review",
+          "calls": 39,
+          "p50_s": 6.144,
+          "max_s": 11.449,
+          "summed_call_s": 255.416,
+          "active_union_s": 205.759,
+          "errors": {},
+          "input_tokens": 186115,
+          "cached_input_tokens": 92160,
+          "total_input_tokens": 186115,
+          "cached_input_fraction": 0.495
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "scene",
+          "calls": 27,
+          "p50_s": 20.186,
+          "max_s": 26.059,
+          "summed_call_s": 540.494,
+          "active_union_s": 282.824,
+          "errors": {},
+          "input_tokens": 311065,
+          "cached_input_tokens": 202240,
+          "total_input_tokens": 311065,
+          "cached_input_fraction": 0.65
+        }
+      ],
+      "stages": [
+        {
+          "stage": "fetch",
+          "wall_s": 0.012,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "speakers",
+          "wall_s": 0.001,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "transcript",
+          "wall_s": 0.002,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "units",
+          "wall_s": 0.002,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voices",
+          "wall_s": 13.672,
+          "gpu_s": 13.66,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "brief",
+          "wall_s": 0.007,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "separate",
+          "wall_s": 0.231,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "translate",
+          "wall_s": 355.005,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voice_lines",
+          "wall_s": 722.456,
+          "gpu_s": 490.523,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "finish",
+          "wall_s": 725.221,
+          "gpu_s": 2.726,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "video",
+          "wall_s": 0.282,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "export",
+          "wall_s": 9.053,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        }
+      ],
+      "gpu_work": [
+        {
+          "stage": "finish",
+          "operation": "release",
+          "calls": 1,
+          "run_s": 2.726,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "transcript",
+          "operation": "release",
+          "calls": 1,
+          "run_s": 0.0,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "pack_take",
+          "calls": 150,
+          "run_s": 0.15,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "synthesize_takes",
+          "calls": 150,
+          "run_s": 283.655,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "unpack_take",
+          "calls": 4,
+          "run_s": 0.006,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "vocode",
+          "calls": 194,
+          "run_s": 206.713,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voices",
+          "operation": "prepare_voice_parts",
+          "calls": 1,
+          "run_s": 7.048,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voices",
+          "operation": "synthesize_mel",
+          "calls": 3,
+          "run_s": 5.492,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voices",
+          "operation": "vocode",
+          "calls": 1,
+          "run_s": 1.12,
+          "queue_wait_s": 0.0
+        }
+      ],
+      "finalized_units_in_scope": 141,
+      "finalized_coverage": {
+        "C": 120,
+        "P": 21
+      },
+      "finalized_coverage_provenance": {
+        "review": 110,
+        "validators": 31
+      },
+      "skipped_events": 0,
+      "note": "Stage and model-call times overlap. Finalized units can include restored takes; their stored synthesis costs are deliberately not summed as work performed in this run. GPU work records completed scheduled operations only, not in-flight work or hardware utilization."
+    },
+    "output_ready": true,
+    "quality_report": {
+      "lines": 141,
+      "long": 1,
+      "unreviewed": 0,
+      "overdraft": 0.0,
+      "carried": 0.0
+    },
+    "coverage": {
+      "C": 120,
+      "m": 0,
+      "P": 21,
+      "E": 0,
+      "otherTier": 0,
+      "unreviewed": 0,
+      "skipped": 0,
+      "lines": 141
+    },
+    "has_error": false
+  },
+  "observed_at": 1791226007.129445
+}

@@ -56,6 +56,7 @@ def _timings(events: list[dict], since: float, until: float) -> dict:
     text = []
     for (provider, model, kind), rows in sorted(calls.items()):
         durations = [_number(e.get("wall_s")) for e in rows]
+        successful = [_number(e.get("wall_s")) for e in rows if not e.get("error")]
         input_tokens = sum(_number(e.get("input_tokens")) for e in rows)
         cached = sum(_number(e.get("cache_read_tokens")) for e in rows)
         # Codex input usage includes cached tokens; Claude usage reports uncached input separately.
@@ -64,6 +65,9 @@ def _timings(events: list[dict], since: float, until: float) -> dict:
                        if provider in ("claude", "anthropic") or model.startswith("claude-") else None)
         text.append({"provider": provider, "model": model, "call": kind, "calls": len(rows),
                      "p50_s": round(statistics.median(durations), 3), "max_s": round(max(durations), 3),
+                     "successful_calls": len(successful),
+                     "successful_p50_s": round(statistics.median(successful), 3) if successful else None,
+                     "successful_max_s": round(max(successful), 3) if successful else None,
                      "summed_call_s": round(sum(durations), 3),
                      "active_union_s": _union([(max(since, e["t"] - d), min(until, e["t"]))
                                                for e, d in zip(rows, durations)]),

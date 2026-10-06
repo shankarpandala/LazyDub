@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import pytest
 
-from maata_engine.backends.base import Coverage, Wording
-from maata_engine.qa.coverage import (CLASSES, check_review, coverage_from, coverage_json, finding, rank, redo_class)
+from maata_engine.backends.base import Coverage, LineResult, Wording
+from maata_engine.qa.coverage import (CLASSES, approved_full, check_review, check_review_fallbacks, coverage_from,
+                                     coverage_json, finding, rank, redo_class, source_allows_full_fallback, voiced_class)
 
 
 def v(id_, cls, missing=(), added=(), error="none") -> dict:
@@ -42,6 +43,45 @@ def test_an_e_retranslation_is_told_what_was_wrong_a_p_one_only_the_missing_word
 
 
 UP = "గాలిపటం పైకి వెళ్తుంది."
+
+
+@pytest.mark.parametrize("en", [
+    "The replacement may cost another fifty rupees.",
+    "The replacement might cost more.", "The replacement could cost more.",
+    "This can fail during an upload.", "The second upload should finish first.",
+    "The second upload would finish first.", "Perhaps the second upload is done.",
+    "Maybe the second upload is done.", "The upload probably finished.",
+    "The upload possibly finished.", "The upload is likely complete.",
+    "The upload is unlikely to finish.", "Apparently the upload finished.",
+    "The upload reportedly finished.", "The upload seems complete.", "The upload appears complete.",
+    "The upload seemed complete.", "The upload appeared complete.",
+    "It takes approximately five minutes.", "It takes roughly five minutes.",
+    "The estimated wait is five minutes.", "Wait about five minutes.",
+    "The warning is rare.", "This warning RARELY appears.", "The upload usually finishes first.",
+    "The upload sometimes finishes first.", "The upload often finishes first.",
+    "The upload is almost complete.", "The upload is nearly complete.",
+])
+def test_qualified_sources_keep_normal_correction_instead_of_the_full_shortcut(en):
+    assert not source_allows_full_fallback(en)
+
+
+@pytest.mark.parametrize("en", [
+    "Restart the router only after both uploads finish.",
+    "Keep three copies and send the original on Friday.",
+    "Put the canvas behind the mayor's chair.",  # whole words: can/may fragments are not modals
+])
+def test_unqualified_sources_remain_eligible_for_explicit_semantic_and_timing_checks(en):
+    assert source_allows_full_fallback(en)
+
+
+def test_full_shortcut_exclusion_does_not_change_general_meaning_flags():
+    from maata_engine.qa.validators import meaning_flags
+
+    en = "The replacement may cost another fifty rupees."
+    missing_uncertainty = Wording("మార్చడానికి ఇంకో యాభై రూపాయలు అవుతుంది.")
+    assert not source_allows_full_fallback(en)
+    # The existing number/negation/question checks are intentionally unchanged; this new guard has narrower scope.
+    assert meaning_flags(en, missing_uncertainty) == {}
 
 
 @pytest.mark.parametrize("en,before,reviewed,new,cls,error", [
@@ -92,3 +132,42 @@ def test_an_older_or_broken_stored_class():
     assert coverage_from("m") == Coverage("m")  # a bare class, as the wave-1 hook stored it
     assert coverage_from(None) is None and coverage_from({"class": "Q"}) is None and coverage_json(None) is None
     assert coverage_from({"class": "E", "error": "bogus", "by": "someone", "first": "Z"}) == Coverage("E")
+
+
+@pytest.mark.parametrize("first", ["P", "E"])
+def test_approved_full_marker_round_trips_and_reports_actual_reviewed_class(first):
+    c = Coverage("C", tier="full", by="review", first=first)
+    line = LineResult(1, {"full": Wording(UP)}, coverage=coverage_from(coverage_json(c)))
+    assert approved_full(line)
+    assert voiced_class(line.coverage, "full", first=True) == "C"
+    assert voiced_class(line.coverage, "concise") == "other_tier"
+
+
+@pytest.mark.parametrize("c", [None, Coverage("C", tier="full"), Coverage("m", tier="full", first="P"),
+                              Coverage("C", tier="concise", first="P"),
+                              Coverage("C", tier="full", by="validators", first="P"),
+                              Coverage("C", tier="full", first="m")])
+def test_only_explicit_semantic_full_approval_is_pinned(c):
+    assert not approved_full(LineResult(1, {"full": Wording(UP)}, coverage=c))
+    assert not approved_full(LineResult(1, {}, coverage=Coverage("C", tier="full", first="P")))
+
+
+@pytest.mark.parametrize("fallback", [None, {}, "C", {"class": "C"},
+    {"class": "m", "missing": [], "added": [], "error": "none"},
+    {"class": "C", "missing": ["maybe"], "added": [], "error": "none"},
+    {"class": "C", "missing": [], "added": ["always"], "error": "none"},
+    {"class": "C", "missing": [], "added": [], "error": "number"},
+    {"class": "C", "missing": [], "added": [], "error": "none", "extra": True}])
+def test_missing_or_contradictory_full_verdict_never_authorizes_reuse(fallback):
+    row = {**v(1, "P", ["maybe"]), "fallback": fallback}
+    assert check_review_fallbacks({"lines": [row]}, [1]) == set()
+    assert check_review({"lines": [row]}, [1])[0][1].cls == "P"  # main verdict remains usable
+
+
+def test_fallback_verdict_must_be_unique_and_offered():
+    row = {**v(1, "P"), "fallback": {"class": "C", "missing": [], "added": [], "error": "none"}}
+    assert check_review_fallbacks({"lines": [row]}, [1]) == {1}
+    assert check_review_fallbacks({"lines": [row]}, [2]) == set()
+    assert check_review_fallbacks({"lines": [row, row]}, [1]) == set()
+    assert check_review_fallbacks({"lines": [{**row, "id": True}]}, [1]) == set()
+    assert check_review_fallbacks({"lines": None}, [1]) == set()

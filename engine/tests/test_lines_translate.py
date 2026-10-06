@@ -317,6 +317,73 @@ def test_otherwise_the_closest_from_below(tmp_path):
     assert not job._choose(st) and st.tier == "concise"
 
 
+@pytest.mark.parametrize("change,eligible", [("none", True), ("too_long", False), ("voicing", False),
+                                              ("voiced", False), ("full_selected", False), ("same_text", False)])
+async def test_initial_full_fallback_requires_unvoiced_distinct_text_and_current_planner_room(
+        tmp_path, monkeypatch, change, eligible):
+    job, st = band_case(tmp_path, {"full": 4.8, "concise": 4.0})
+    st.unit = replace(st.unit, text="Bring three copies by Friday, but do not send the original.")
+    full = Wording("శుక్రవారంలోగా మూడు కాపీలు తీసుకురండి, కానీ అసలు పత్రాన్ని పంపకండి.")
+    short = Wording("కాపీలు తీసుకురండి.")
+    st.line = LineResult(0, {"full": full, "concise": short})
+    full_seconds = 12.0 if change == "too_long" else 4.0 if change == "full_selected" else 4.8
+    if change == "same_text":
+        st.line.tiers["concise"] = full
+    st.voicing, st.voiced = change == "voicing", change == "voiced"
+    monkeypatch.setattr(job.estimator, "estimate", lambda text, key: full_seconds if text == full.spoken else 4.0)
+
+    class Review:
+        supports_full_fallback = True
+
+        async def review(self, req, lines, chosen, *, fallbacks, fallback_check):
+            assert fallbacks == ({0} if eligible else set())
+            assert fallback_check(0) is eligible
+            if eligible:
+                # The callback is evaluated at the eventual review result, not just when the request is queued.
+                st.voicing = True
+                assert not fallback_check(0)
+                st.voicing = False
+                monkeypatch.setattr(job.estimator, "estimate", lambda *_: 30.0)
+                assert not fallback_check(0)
+            return SceneResult(req.scene, "review", lines=lines)
+
+    job.tr = Review()
+    await job._review(SceneRequest(1, (job._spec(st),)), {0: st.line})
+
+
+@pytest.mark.parametrize("first", ["P", "E"])
+def test_semantically_approved_full_is_kept_when_estimated_pace_changes(tmp_path, first):
+    job, st = band_case(tmp_path, {"fuller": 3.9, "full": 12.0, "concise": 4.0, "very_concise": 2.0})
+    st.line.coverage = Coverage("C", tier="full", by="review", first=first)
+    assert not job._choose(st) and st.tier == "full"  # neither a fitting fuller nor known-bad concise can replace it
+    job._wording(st, job._key("S1"))
+    assert st.tier == "full" and st.telugu == st.line.full.spoken
+    assert job._fit_spec(st) is None and job._shorter_tier(st, job._key("S1"), 4.0) is None
+    assert set(st.line.tiers) == {"fuller", "full", "concise", "very_concise"}  # retain diagnostic alternatives
+
+
+async def test_fit_already_in_flight_cannot_replace_newly_approved_full(tmp_path):
+    job, st = band_case(tmp_path, {"full": 12.0, "concise": 4.0})
+    submitted, release = asyncio.Event(), asyncio.Event()
+    replacement = LineResult(0, {"full": Wording("కొత్త చిన్న వాక్యం.")})
+
+    class Fit:
+        async def submit(self, req):
+            submitted.set()
+            await release.wait()
+            return SceneResult(req.scene, req.call, lines={0: replacement})
+
+    job.tr = Fit()
+    pending = asyncio.create_task(job._fit(SceneRequest(1, (job._line_spec(st, ("concise",)),), "fit")))
+    await submitted.wait()
+    approved = replace(st.line, coverage=Coverage("C", tier="full", first="P"))
+    st.line = approved
+    job._choose(st)
+    release.set()
+    await pending
+    assert st.line is approved and st.tier == "full" and st.telugu == approved.full.spoken
+
+
 def test_a_line_short_of_its_slot_asks_a_fit_for_fuller_and_one_too_long_for_shorter_tiers(tmp_path):
     job, st = band_case(tmp_path, {"full": 2.0})
     assert not job._choose(st) and job._fit_spec(st).want == ("fuller",)

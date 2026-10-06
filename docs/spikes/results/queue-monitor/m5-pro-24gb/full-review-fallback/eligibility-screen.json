@@ -1,0 +1,490 @@
+{
+  "scope": "Read-only eligibility screen, not exact historical scheduler state or actual synthesized full durations",
+  "run_id": "cc414717eb6045a4a5e8f1085b94f11d",
+  "speed_cap": 1.25,
+  "targets": "19retained initial P short tiers",
+  "limitations": [
+    "Full fallback has not been semantically approved here.",
+    "Initial calibration models exact saved calibration but committed planner state at each original review was not recorded.",
+    "Empty planner and all-neighbor known wording approximate pre-voice feasibility; committed baseline simulates predicted durations, not actual takes.",
+    "Historical online estimator updates at each review are not reconstructed: takes row at is source onset, not wall timestamp. No current-observed estimator result is claimed."
+  ],
+  "screens": {
+    "initial_calibration_empty_planner": {
+      "n": 19,
+      "absorbable_n": 17,
+      "absorbable_ids": [
+        4,
+        15,
+        24,
+        30,
+        33,
+        49,
+        50,
+        51,
+        55,
+        63,
+        69,
+        89,
+        90,
+        92,
+        110,
+        114,
+        137
+      ],
+      "voice_parameters": {
+        "S1": {
+          "rate": 6.063925631680249,
+          "overhead": 1.0
+        }
+      },
+      "lines": [
+        {
+          "id": 4,
+          "full_pred_s": 4.133,
+          "selected_pred_s": 2.649,
+          "speech_s": 3.02,
+          "source_span_s": 3.02,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.143
+        },
+        {
+          "id": 15,
+          "full_pred_s": 3.474,
+          "selected_pred_s": 2.319,
+          "speech_s": 2.14,
+          "source_span_s": 2.14,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 24,
+          "full_pred_s": 4.71,
+          "selected_pred_s": 3.391,
+          "speech_s": 3.64,
+          "source_span_s": 3.64,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.173
+        },
+        {
+          "id": 30,
+          "full_pred_s": 10.235,
+          "selected_pred_s": 8.751,
+          "speech_s": 7.98,
+          "source_span_s": 7.98,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 33,
+          "full_pred_s": 7.431,
+          "selected_pred_s": 4.958,
+          "speech_s": 5.12,
+          "source_span_s": 5.12,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 36,
+          "full_pred_s": 4.133,
+          "selected_pred_s": 2.319,
+          "speech_s": 2.24,
+          "source_span_s": 2.24,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.347,
+          "rate": 1.25
+        },
+        {
+          "id": 49,
+          "full_pred_s": 3.474,
+          "selected_pred_s": 2.154,
+          "speech_s": 2.02,
+          "source_span_s": 2.02,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.236
+        },
+        {
+          "id": 50,
+          "full_pred_s": 5.288,
+          "selected_pred_s": 3.639,
+          "speech_s": 3.92,
+          "source_span_s": 3.92,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.188
+        },
+        {
+          "id": 51,
+          "full_pred_s": 4.298,
+          "selected_pred_s": 3.968,
+          "speech_s": 3.64,
+          "source_span_s": 3.64,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.188
+        },
+        {
+          "id": 55,
+          "full_pred_s": 3.721,
+          "selected_pred_s": 3.226,
+          "speech_s": 2.4,
+          "source_span_s": 2.4,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.21
+        },
+        {
+          "id": 63,
+          "full_pred_s": 5.123,
+          "selected_pred_s": 3.309,
+          "speech_s": 3.36,
+          "source_span_s": 3.36,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 69,
+          "full_pred_s": 3.391,
+          "selected_pred_s": 2.402,
+          "speech_s": 2.56,
+          "source_span_s": 2.56,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.184
+        },
+        {
+          "id": 89,
+          "full_pred_s": 3.803,
+          "selected_pred_s": 2.649,
+          "speech_s": 2.3,
+          "source_span_s": 2.3,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 90,
+          "full_pred_s": 3.968,
+          "selected_pred_s": 2.484,
+          "speech_s": 2.402,
+          "source_span_s": 2.74,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.188
+        },
+        {
+          "id": 92,
+          "full_pred_s": 6.112,
+          "selected_pred_s": 3.639,
+          "speech_s": 4.04,
+          "source_span_s": 4.04,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 110,
+          "full_pred_s": 4.875,
+          "selected_pred_s": 4.051,
+          "speech_s": 3.34,
+          "source_span_s": 3.34,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 114,
+          "full_pred_s": 8.421,
+          "selected_pred_s": 7.596,
+          "speech_s": 6.98,
+          "source_span_s": 6.98,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.153
+        },
+        {
+          "id": 128,
+          "full_pred_s": 9.41,
+          "selected_pred_s": 5.617,
+          "speech_s": 5.86,
+          "source_span_s": 5.86,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.818,
+          "rate": 1.25
+        },
+        {
+          "id": 137,
+          "full_pred_s": 5.123,
+          "selected_pred_s": 3.474,
+          "speech_s": 3.58,
+          "source_span_s": 3.58,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.248
+        }
+      ]
+    },
+    "initial_calibration_predicted_committed_baseline": {
+      "n": 19,
+      "absorbable_n": 13,
+      "absorbable_ids": [
+        4,
+        15,
+        24,
+        30,
+        33,
+        50,
+        51,
+        55,
+        69,
+        90,
+        110,
+        114,
+        137
+      ],
+      "voice_parameters": {
+        "S1": {
+          "rate": 6.063925631680249,
+          "overhead": 1.0
+        }
+      },
+      "lines": [
+        {
+          "id": 4,
+          "full_pred_s": 4.133,
+          "selected_pred_s": 2.649,
+          "speech_s": 3.02,
+          "source_span_s": 3.02,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.204
+        },
+        {
+          "id": 15,
+          "full_pred_s": 3.474,
+          "selected_pred_s": 2.319,
+          "speech_s": 2.14,
+          "source_span_s": 2.14,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 24,
+          "full_pred_s": 4.71,
+          "selected_pred_s": 3.391,
+          "speech_s": 3.64,
+          "source_span_s": 3.64,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.191
+        },
+        {
+          "id": 30,
+          "full_pred_s": 10.235,
+          "selected_pred_s": 8.751,
+          "speech_s": 7.98,
+          "source_span_s": 7.98,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.249
+        },
+        {
+          "id": 33,
+          "full_pred_s": 7.431,
+          "selected_pred_s": 4.958,
+          "speech_s": 5.12,
+          "source_span_s": 5.12,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 36,
+          "full_pred_s": 4.133,
+          "selected_pred_s": 2.319,
+          "speech_s": 2.24,
+          "source_span_s": 2.24,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.347,
+          "rate": 1.25
+        },
+        {
+          "id": 49,
+          "full_pred_s": 3.474,
+          "selected_pred_s": 2.154,
+          "speech_s": 2.02,
+          "source_span_s": 2.02,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.006,
+          "rate": 1.25
+        },
+        {
+          "id": 50,
+          "full_pred_s": 5.288,
+          "selected_pred_s": 3.639,
+          "speech_s": 3.92,
+          "source_span_s": 3.92,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.196
+        },
+        {
+          "id": 51,
+          "full_pred_s": 4.298,
+          "selected_pred_s": 3.968,
+          "speech_s": 3.64,
+          "source_span_s": 3.64,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.188
+        },
+        {
+          "id": 55,
+          "full_pred_s": 3.721,
+          "selected_pred_s": 3.226,
+          "speech_s": 2.4,
+          "source_span_s": 2.4,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 63,
+          "full_pred_s": 5.123,
+          "selected_pred_s": 3.309,
+          "speech_s": 3.36,
+          "source_span_s": 3.36,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.281,
+          "rate": 1.25
+        },
+        {
+          "id": 69,
+          "full_pred_s": 3.391,
+          "selected_pred_s": 2.402,
+          "speech_s": 2.56,
+          "source_span_s": 2.56,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.195
+        },
+        {
+          "id": 89,
+          "full_pred_s": 3.803,
+          "selected_pred_s": 2.649,
+          "speech_s": 2.3,
+          "source_span_s": 2.3,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.041,
+          "rate": 1.25
+        },
+        {
+          "id": 90,
+          "full_pred_s": 3.968,
+          "selected_pred_s": 2.484,
+          "speech_s": 2.402,
+          "source_span_s": 2.74,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 92,
+          "full_pred_s": 6.112,
+          "selected_pred_s": 3.639,
+          "speech_s": 4.04,
+          "source_span_s": 4.04,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.47,
+          "rate": 1.25
+        },
+        {
+          "id": 110,
+          "full_pred_s": 4.875,
+          "selected_pred_s": 4.051,
+          "speech_s": 3.34,
+          "source_span_s": 3.34,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        },
+        {
+          "id": 114,
+          "full_pred_s": 8.421,
+          "selected_pred_s": 7.596,
+          "speech_s": 6.98,
+          "source_span_s": 6.98,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.162
+        },
+        {
+          "id": 128,
+          "full_pred_s": 9.41,
+          "selected_pred_s": 5.617,
+          "speech_s": 5.86,
+          "source_span_s": 5.86,
+          "absorbs": false,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.821,
+          "rate": 1.25
+        },
+        {
+          "id": 137,
+          "full_pred_s": 5.123,
+          "selected_pred_s": 3.474,
+          "speech_s": 3.58,
+          "source_span_s": 3.58,
+          "absorbs": true,
+          "freeze_s": 0.0,
+          "overdraft_s": 0.0,
+          "rate": 1.25
+        }
+      ]
+    }
+  }
+}

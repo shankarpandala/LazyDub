@@ -26,9 +26,9 @@ BRIEF_V1 = Brief(1, META, "Kites and wind", "casual; the host says మీరు 
 def test_prompt_version_and_hash_are_pinned():
     # Changing the prompt, an example, the schema or the message layout moves the hash. When it does on purpose, bump
     # SHOTS_VERSION and update both pins here: the hash keys the line cache, so old lines are never served.
-    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v5", "ccfdc4088a39")
+    assert (sp.SHOTS_VERSION, sp.PROMPT_HASH) == ("scene-v7", "9550fc5e1ac9")
     assert sp.BRIEF_HASH == "42afefc5b3f2"  # keys the brief cache: a new brief prompt makes new briefs
-    assert sp.REVIEW_HASH == "91715954c710"  # review includes the exact Latin form sent to TTS
+    assert sp.REVIEW_HASH == "4cdb4f668364"  # meaningful uncertainty/qualification cannot be a minor drop
     assert sp.prompt_hash() == sp.PROMPT_HASH and sp.brief_hash() == sp.BRIEF_HASH
     assert sp.review_hash() == sp.REVIEW_HASH != sp.PROMPT_HASH  # the review's prompt is its own
 
@@ -244,6 +244,26 @@ def test_review_sees_a_bad_substitution_even_when_original_telugu_is_correct():
     assert "classify E even when te alone is correct" in sp.REVIEW_SYSTEM
 
 
+def test_full_fallback_review_includes_both_exact_forms_only_when_offered():
+    req = SceneRequest(1, (SPEC,))
+    selected = Wording("ఫోన్ ఉంది.")
+    full = Wording("ఫోన్ చేసే ఫ్రెండ్.", ((1, "phone"),))
+    msg = json.loads(sp.review_message(req, [(SPEC, selected)], {SPEC.id: full}))
+    assert msg["lines"][0]["fallback"] == {"te": full.spoken, "tts": "ఫోన్ phone ఫ్రెండ్."}
+    assert "fallback" not in json.loads(sp.review_message(req, [(SPEC, selected)], {99: full}))["lines"][0]
+    assert "same english" in sp.REVIEW_SYSTEM.lower() and "uncertainty" in sp.REVIEW_SYSTEM
+
+
+def test_optional_full_verdict_survives_codex_strict_schema_adapter():
+    from maata_engine.codex_cli import strict_schema
+
+    row = {"id": 1, "class": "P", "missing": ["Friday"], "added": [], "error": "none"}
+    for fallback in (None, {"class": "C", "missing": [], "added": [], "error": "none"}):
+        data = {"lines": [{**row, "fallback": fallback}]}
+        assert validate(data, sp.REVIEW_SCHEMA) == []
+        assert validate(data, strict_schema(sp.REVIEW_SCHEMA)) == []
+
+
 def test_the_review_system_prompt_is_fixed_and_names_every_class():
     assert "VIDEO BRIEF" not in sp.REVIEW_SYSTEM  # the same for every video: one prompt cache on the review model
     for cls in ('"C"', '"m"', '"P"', '"E"', '"missing"', '"added"', '"error"', '"cut_off"', '"context_before"'):
@@ -253,3 +273,11 @@ def test_the_review_system_prompt_is_fixed_and_names_every_class():
     assert validate({"lines": [{"id": 1, "class": "P", "missing": ["wind"], "added": [], "error": "none"}]},
                     sp.REVIEW_SCHEMA) == []
     assert validate({"lines": [{"id": 1, "class": "X", "missing": [], "added": [], "error": "none"}]}, sp.REVIEW_SCHEMA)
+
+
+def test_review_never_treats_meaningful_qualification_as_a_minor_hedge_drop():
+    minor = next(line for line in sp.REVIEW_SYSTEM.splitlines() if line.startswith('- "m":'))
+    assert "hedge" not in minor and "does not change the factual claim" in minor
+    assert '"may cost" must not become "will cost"' in sp.REVIEW_SYSTEM
+    assert '"rarely" must not disappear' in sp.REVIEW_SYSTEM
+    assert "classify P or E, never m or C" in sp.REVIEW_SYSTEM

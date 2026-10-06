@@ -31,8 +31,10 @@ for job in report["jobs"]:
         if p["state"] == "running":
             print(f"  {stage}: {p['done']}/{p['total']} {p['unit']}")
     for call in job["timings"]["text_calls"]:
-        print(f"  {call['model']} {call['call']}: {call['calls']} calls; median {call['p50_s']:.1f}s; "
-              f"max {call['max_s']:.1f}s; errors {call['errors']}")
+        latency = (f"successful median {call['successful_p50_s']:.1f}s; max {call['successful_max_s']:.1f}s"
+                   if call['successful_calls'] else "no successful calls")
+        print(f"  {call['model']} {call['call']}: {call['successful_calls']}/{call['calls']} successful; "
+              f"{latency}; errors {call['errors']}")
 print(f"Queued media: {report['queued_media_s'] / 3600:.2f} hours")
 if args.out:
     print(f"Report: {args.out.resolve()}")

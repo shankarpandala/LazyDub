@@ -24,8 +24,9 @@ from maata_engine.backends.base import (Brief, Coverage, GlossaryEntry, LineResu
                                         VideoMeta, Wording)
 from maata_engine.backends.claude_translator import ClaudeTranslator, brief_v0, parse_brief
 from maata_engine.backends.mock import MockClaude, MockSceneTranslator
-from maata_engine.claude_cli import ClaudeCLIError
+from maata_engine.claude_cli import ClaudeCLIError, ClaudeReply
 from maata_engine.codex_cli import CodexCLI
+from maata_engine.qa.coverage import approved_full
 from maata_engine.qa.validators import script_problems
 from maata_engine.text.akshara import count_telugu
 from maata_engine.text import scene_prompt as sp
@@ -1107,6 +1108,242 @@ async def test_a_fit_that_replaces_the_reviewed_wording_leaves_the_line_unreview
     n = len(tr.review_cli.calls)
     again = await tr.review(req, (await tr.translate(req)).lines, {1: "very_concise"})  # reviewed the next time
     assert len(tr.review_cli.calls) == n + 1 and again.lines[1].coverage == Coverage("C", tier="very_concise")
+
+
+FULL_C = {"class": "C", "missing": [], "added": [], "error": "none"}
+
+
+async def full_fallback_case(tmp_path, monkeypatch, *, primary="P", fallback=FULL_C, eligible=(1,),
+                             chosen="very_concise", cache=None, recheck=None, en=None, full=None):
+    """Original kite sentence with a fact-dropping short tier; scripted semantic verdicts, no model calls."""
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    line = LineResult(1, {"full": full or Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది.", ((0, "kite"),)),
+                          "very_concise": Wording("కైట్ పైకి.", ((0, "kite"),))}, brief_version=0, model="mock")
+    req, calls = SceneRequest(1, (replace(KITE, en=en or KITE.en),)), []
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        calls.append((call, json.loads(prompt)))
+        if call == "review":
+            row = {"id": 1, "class": primary, "missing": ["over the green hill"] if primary == "P" else [],
+                   "added": [], "error": "other" if primary == "E" else "none"}
+            if fallback != "absent":
+                row["fallback"] = fallback
+            data = {"lines": [row]}
+        else:
+            assert call == "retranslate"
+            data = {"lines": [ct.line_json(line)]}  # no improvement: keeps the original P short tier
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    result = await tr.review(req, {1: line}, {1: chosen}, cache=cache, fallbacks=eligible,
+                             fallback_check=recheck)
+    return tr, req, line, calls, result
+
+
+@pytest.mark.parametrize("primary", ["P", "E"])
+async def test_explicit_complete_full_reuses_existing_wording_in_same_review(tmp_path, monkeypatch, primary):
+    tr, req, original, calls, result = await full_fallback_case(tmp_path, monkeypatch, primary=primary)
+    line = result.lines[1]
+    assert [call for call, _ in calls] == ["review"] and result.calls == 1
+    assert approved_full(line) and line.coverage.first == primary and line.full == original.full
+    assert line.tiers["very_concise"].spoken == original.tiers["very_concise"].spoken  # diagnostic wording kept
+    assert line.tiers["very_concise"].english == ()  # only actual reviewed full may use Latin replacements
+    offered = calls[0][1]["lines"][0]["fallback"]
+    assert offered == {"te": original.full.spoken,
+                       "tts": "kite పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది."}
+    fresh = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    cached = fresh.cached(KITE)
+    assert approved_full(cached) and cached.full == line.full
+    # A new scene requesting another short tier must not generate it over a persisted full approval.
+    out = await fresh.translate(replace(req, lines=(replace(KITE, want=("full", "concise", "very_concise")),)))
+    assert approved_full(out.lines[1]) and out.calls == 0 and fresh.cli.calls == []
+
+
+@pytest.mark.parametrize("fallback", ["absent", None, {"class": "C"},
+    {**FULL_C, "class": "m"}, {**FULL_C, "class": "P"}, {**FULL_C, "class": "E"},
+    {**FULL_C, "missing": ["maybe"]}, {**FULL_C, "error": "number"}])
+async def test_unusable_full_verdict_retains_existing_correction_path(tmp_path, monkeypatch, fallback):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, fallback=fallback)
+    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert not approved_full(result.lines[1]) and result.lines[1].coverage.cls == "P"
+
+
+@pytest.mark.parametrize("kw", [{"eligible": ()}, {"cache": set()}, {"cache": {1}}, {"chosen": "full"}])
+async def test_unoffered_or_voiced_full_verdict_cannot_skip_correction(tmp_path, monkeypatch, kw):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, **kw)
+    assert "fallback" not in calls[0][1]["lines"][0]
+    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert not approved_full(result.lines[1])
+
+
+@pytest.mark.parametrize("primary", ["C", "m"])
+async def test_acceptable_selected_tier_is_not_replaced_by_an_unsolicited_full_verdict(tmp_path, monkeypatch, primary):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, primary=primary)
+    assert len(calls) == 1 and not approved_full(result.lines[1])
+    assert result.lines[1].coverage == Coverage(primary, tier="very_concise")
+
+
+@pytest.mark.parametrize("full", [None, Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్లవచ్చు.")])
+async def test_modal_source_never_shortcuts_redo_even_when_reviewer_claims_full_c(tmp_path, monkeypatch, full):
+    # The live negative control incorrectly approved a full that dropped "may". Veto both that answer and a
+    # full retaining the uncertainty; this guarded scope does not delegate the shortcut decision to its verdict.
+    _, _, _, calls, result = await full_fallback_case(
+        tmp_path, monkeypatch, en="The kite may climb slowly over the green hill.", full=full)
+    assert "fallback" not in calls[0][1]["lines"][0]
+    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert not approved_full(result.lines[1])
+
+
+@pytest.mark.parametrize("raises", [False, True])
+async def test_full_fallback_rechecks_live_eligibility_before_skipping_redo(tmp_path, monkeypatch, raises):
+    checked = []
+
+    def changed(i):
+        checked.append(i)
+        if raises:
+            raise RuntimeError("changed planner")
+        return False
+
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, recheck=changed)
+    assert checked == [1] and [call for call, _ in calls] == ["review", "retranslate"]
+    assert result.lines[1].coverage.cls == "P" and not approved_full(result.lines[1])
+
+
+async def test_full_approval_does_not_depend_on_another_lines_correction_succeeding(tmp_path, monkeypatch):
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    req = SceneRequest(1, (KITE, replace(KITE, id=2)))
+    original = {i: LineResult(i, {"full": Wording(LONG), "very_concise": Wording(SHORT)}) for i in (1, 2)}
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        if call == "review":
+            return ClaudeReply("", {"lines": [{"id": i, "class": "P", "missing": ["over the green hill"],
+                "added": [], "error": "none", "fallback": FULL_C if i == 1 else None} for i in (1, 2)]}, 0.0)
+        assert json.loads(prompt)["context_done"][-1]["te"] == LONG
+        raise ClaudeCLIError("usage_limit", "test limit")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    result = await tr.review(req, original, {1: "very_concise", 2: "very_concise"}, fallbacks={1})
+    assert result.error.kind == "usage_limit" and approved_full(result.lines[1])
+    assert result.lines[2].coverage is None and approved_full(tr.cached(KITE))
+
+
+@pytest.mark.parametrize("fit_fails", [False, True])
+async def test_fit_in_flight_cannot_overwrite_a_new_full_approval(tmp_path, monkeypatch, fit_fails):
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    old = LineResult(1, {"full": Wording(LONG), "very_concise": Wording(SHORT)}, brief_version=0)
+    tr._store(KITE, old)
+    pinned = replace(old, coverage=Coverage("C", tier="full", first="P"))
+
+    async def ask(call, *args, **kwargs):
+        assert call == "fit"
+        tr._store(KITE, pinned)  # review completes while an earlier fit awaited the provider
+        data = {"lines": [] if fit_fails else [ct.line_json(replace(old, tiers={**old.tiers, "concise": Wording(MID)}))]}
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    spec = replace(KITE, want=("concise",), current=LONG, overflow=6.0)
+    result = await tr.translate(SceneRequest(1, (spec,), "fit"))
+    assert approved_full(result.lines[1]) and approved_full(tr.cached(KITE))
+    assert "concise" not in result.lines[1].tiers and result.lines[1].full == old.full
+
+
+def legacy_wording_row(tmp_path, *, prompt="ccfdc4088a39", brief=1):
+    """Known v5 anchored text on disk, including an old approval that must never migrate."""
+    directory = tmp_path / "migration"
+    directory.mkdir(exist_ok=True)
+    line = LineResult(1, {"full": Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది.", ((0, "kite"),)),
+                          "very_concise": Wording("కైట్ పైకి.", ((0, "kite"),))}, model="mock", brief_version=brief,
+                      coverage=Coverage("C", tier="full", first="P"))
+    row = {"key": ct.line_key(KITE, "colloquial"), "prompt_hash": prompt, "model": "mock",
+           "answered_by": "mock", "brief": brief, "line": ct.line_json(line),
+           "coverage": {"class": "C", "tier": "full", "by": "review", "first": "P"}}
+    path = directory / "lines.jsonl"
+    path.write_text(json.dumps(row, ensure_ascii=False) + "\n", encoding="utf-8")
+    return line, row, path
+
+
+def test_wording_migration_requires_the_same_generator_policy(monkeypatch):
+    assert ct.WORDING_MIGRATIONS == {sp.PROMPT_HASH: "ccfdc4088a39"}
+    # The destination changed review policy/version only. A future actual generator edit must remove this reuse
+    # permission, even if someone updates the destination pin; it cannot inherit compatibility by convenience.
+    monkeypatch.setattr(sp, "SHOTS_VERSION", "scene-v5")
+    assert sp.prompt_hash() == "ccfdc4088a39"
+
+
+async def test_known_v5_wording_reuses_generation_but_requires_fresh_review(tmp_path):
+    original, _, path = legacy_wording_row(tmp_path)
+    before = path.read_bytes()
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    spec = replace(KITE, want=("full", "very_concise"))
+    req = SceneRequest(1, (spec,))
+    cached = tr.cached(spec)
+    assert cached.cached and cached.coverage is None and not approved_full(cached)
+    assert all(w.english == () for w in cached.tiers.values())
+    assert {t: w.spoken for t, w in cached.tiers.items()} == {t: w.spoken for t, w in original.tiers.items()}
+    result = await tr.translate(req)
+    assert result.calls == 0 and tr.cli.calls == [] and path.read_bytes() == before
+    reviewed = await tr.review(req, result.lines, {1: "very_concise"})
+    assert [c["call"] for c in tr.cli.calls] == ["review"]  # old C/full never skips this call
+    assert tr.cli.calls[0]["message"]["lines"][0]["tts"] == original.tiers["very_concise"].spoken
+    assert reviewed.lines[1].coverage == Coverage("C", tier="very_concise")
+    assert path.read_bytes().startswith(before)  # old rows and progress remain recoverable, append-only
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    assert len(rows) == 2 and rows[1]["prompt_hash"] == sp.PROMPT_HASH
+    fresh = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    assert fresh.cached(spec).coverage == reviewed.lines[1].coverage
+
+
+@pytest.mark.parametrize("bad", [None, {}, {"full": {"spoken": "Latin only", "english": []}}])
+def test_corrupt_current_row_cannot_resurrect_older_wording_or_approval(tmp_path, bad):
+    _, row, path = legacy_wording_row(tmp_path)
+    current = {**row, "prompt_hash": sp.PROMPT_HASH, "line": bad}
+    with path.open("a") as f:
+        f.write(json.dumps(current) + "\n")
+    before = path.read_bytes()
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    assert tr.cached(KITE) is None and path.read_bytes() == before
+
+
+def test_current_wording_and_approval_win_even_if_legacy_row_was_appended_later(tmp_path):
+    _, row, path = legacy_wording_row(tmp_path)
+    current_line = LineResult(1, {"full": Wording(LONG)})
+    current = {**row, "prompt_hash": sp.PROMPT_HASH, "line": ct.line_json(current_line)}
+    path.write_text(json.dumps(current) + "\n" + json.dumps(row) + "\n")
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    cached = tr.cached(KITE)
+    assert cached.full.spoken == LONG and approved_full(cached)
+
+
+@pytest.mark.parametrize("change", ["old_prompt", "rejected_v6", "future_prompt", "model", "style", "speaker",
+                                    "english", "video"])
+def test_wording_migration_is_limited_to_exact_known_provenance(tmp_path, monkeypatch, change):
+    prompt = {"old_prompt": "pre-anchor-v4", "rejected_v6": "b17b25dc4e91"}.get(change, "ccfdc4088a39")
+    legacy_wording_row(tmp_path, prompt=prompt)
+    cli, kwargs, spec = MockClaude(), {}, KITE
+    if change == "future_prompt":
+        monkeypatch.setattr(ct, "PROMPT_HASH", "future-generator")
+    elif change == "model":
+        cli.model = "other-model"
+    elif change == "style":
+        kwargs["style"] = "formal"
+    elif change == "speaker":
+        spec = replace(spec, speaker="S2")
+    elif change == "english":
+        spec = replace(spec, en="The kite does not climb over the hill.")
+    tr = ClaudeTranslator(tmp_path, "other-video" if change == "video" else "migration", Brief(1, META),
+                          cli=cli, **kwargs)
+    assert tr.cached(spec) is None
+
+
+@pytest.mark.parametrize("old_brief,new_brief,usable", [(0, 0, True), (0, 1, False), (1, 2, True),
+                                                       (None, 1, False), (True, 1, False)])
+def test_wording_migration_preserves_brief_compatibility_gate(tmp_path, old_brief, new_brief, usable):
+    legacy_wording_row(tmp_path, brief=old_brief)
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(new_brief, META), cli=MockClaude())
+    cached = tr.cached(KITE)
+    assert (cached is not None) is usable
+    if usable:
+        assert cached.coverage is None and all(not w.english for w in cached.tiers.values())
 
 
 # ---- the mock ----------------------------------------------------------------------------------------------------------

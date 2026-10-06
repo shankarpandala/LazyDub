@@ -14,14 +14,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from ..backends.base import EMOTIONS, ENERGIES, Brief, GlossaryEntry, LineSpec, SceneRequest, VideoMeta, Wording
 from .tenglish import anchored_english, latin_spoken
 
 # Bump SHOTS_VERSION whenever the prompt, an example or a schema changes; PROMPT_HASH follows the content and keys the
 # per-line cache, so a change never serves lines made under the old prompt.
-SHOTS_VERSION = "scene-v5"  # exact word anchors; review the actual Latin TTS form before allowing substitutions
+SHOTS_VERSION = "scene-v7"  # veto qualified-source fallback; invalidate the earlier full-approval policy's caches
 DESCRIPTION_MAX = 2000  # characters of the video description placed in the brief
 
 ROLE = (
@@ -376,27 +376,37 @@ REVIEW_SYSTEM = """You check a Telugu dub against its English, line by line, for
 The message is JSON. "lines" holds the lines to check, each {"id", "en", "te", "tts"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. "context_before" (earlier lines, with their Telugu when there is one) and "context_after_en" (the lines that follow) are context only: never return them.
 The Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is "settings"). A line with "cut_off": true was interrupted in the English, and its Telugu is unfinished on purpose.
 Reply with every id in "lines" exactly once, with "class":
-- "C": complete: every fact, name, number, negation and question of the English is there, and nothing is added;
-- "m": a minor drop only: an intensifier, a hedge, a filler or discourse marker, "okay", a trailing backchannel;
+- "C": complete: every fact, name, number, negation, question and meaningful qualification of the English is there, and nothing is added;
+- "m": a minor drop only: a conversational filler or discourse marker, "okay", a trailing backchannel, or emphasis that does not change the factual claim;
 - "P": a content phrase or clause of the English is missing;
 - "E": a meaning error: a negation lost or added, a number, name or question changed, or content that isn't in the English.
-With it: "missing", the English words (as the English has them) whose meaning is not in the Telugu, empty for "C"; "added", Telugu content that isn't in the English, said in English; "error", the kind of an "E" error, else "none"."""
+Uncertainty, conditions, frequency and bounds qualify a factual claim. If a meaningful qualification is lost or certainty is strengthened, classify P or E, never m or C: "may cost" must not become "will cost", and "rarely" must not disappear.
+With it: "missing", the English words (as the English has them) whose meaning is not in the Telugu, empty for "C"; "added", Telugu content that isn't in the English, said in English; "error", the kind of an "E" error, else "none".
+Some input lines also offer "fallback": an existing full wording with its own "te" and actual "tts". Only when the main wording is P or E, check that fallback against the SAME English and context, including its actual TTS form. Return its verdict in "fallback" with "class", "missing", "added" and "error"; otherwise omit it or return null. C requires every meaning detail, including uncertainty, conditions and quantities, with no additions; use empty missing/added and error none. Do not assume a longer wording is complete. Judge natural Telugu paraphrases and implicit subjects by meaning, not literal word matches. Do not rewrite, copy or generate a translation."""
+
+_REVIEW_FINDING = {"class": {"enum": ["C", "m", "P", "E"]},
+                   "missing": {"type": "array", "items": {"type": "string"}},
+                   "added": {"type": "array", "items": {"type": "string"}},
+                   "error": {"enum": ["none", "negation", "number", "name", "question", "addition", "other"]}}
 
 REVIEW_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["lines"],
     "properties": {"lines": {"type": "array", "items": {
         "type": "object", "additionalProperties": False, "required": ["id", "class", "missing", "added", "error"],
-        "properties": {"id": {"type": "integer"}, "class": {"enum": ["C", "m", "P", "E"]},
-                       "missing": {"type": "array", "items": {"type": "string"}},
-                       "added": {"type": "array", "items": {"type": "string"}},
-                       "error": {"enum": ["none", "negation", "number", "name", "question", "addition", "other"]}}}}}}
+        "properties": {"id": {"type": "integer"}, **_REVIEW_FINDING,
+                       "fallback": {"type": ["object", "null"], "additionalProperties": False,
+                                    "required": list(_REVIEW_FINDING), "properties": _REVIEW_FINDING}}}}}}
 
 
-def review_message(req: SceneRequest, lines: Sequence[tuple[LineSpec, Wording]]) -> str:
+def review_message(req: SceneRequest, lines: Sequence[tuple[LineSpec, Wording]],
+                   fallbacks: Mapping[int, Wording] | None = None) -> str:
     """The review call's message: each line's English and the Telugu chosen for it, with the scene's context."""
     msg: dict = {"scene": req.scene, "call": "review",
                  "context_before": [{"en": en, "te": te} if te else {"en": en} for en, te in req.context_before],
                  "lines": [{"id": s.id, "en": s.en, "te": w.spoken, "tts": latin_spoken(w.spoken, w.english),
+                            **({"fallback": {"te": fallbacks[s.id].spoken,
+                                             "tts": latin_spoken(fallbacks[s.id].spoken, fallbacks[s.id].english)}}
+                               if fallbacks and s.id in fallbacks else {}),
                             **({"cut_off": True} if s.cut_off else {})}
                            for s, w in lines],
                  "context_after_en": list(req.context_after_en)}
@@ -427,7 +437,8 @@ def brief_hash() -> str:
 
 def review_hash() -> str:
     probe = SceneRequest(0, (), "review", (("<en>", "<te>"), ("<en>", None)), ("<next>",))
-    layout = review_message(probe, [(LineSpec(0, "S1", "<en>", 0.0, 1.0, 1.0, 5.0, cut_off=True), Wording("<te>"))])
+    layout = review_message(probe, [(LineSpec(0, "S1", "<en>", 0.0, 1.0, 1.0, 5.0, cut_off=True), Wording("<te>"))],
+                            {0: Wording("<full>")})
     return _digest(REVIEW_SYSTEM, REVIEW_SCHEMA, layout)
 
 

@@ -704,3 +704,44 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   through the normal engine CLI with its stdin lifeline. The temporary supervisor's metadata is local at
   `~/Library/Caches/Maata/monitoring/background-engine.json`. Stop that supervisor gracefully before launching the
   native app after unlock, to prevent two engines from sharing the same queue.
+
+## ADR-027 — Reuse a reviewed complete wording before generating a correction
+
+- **Decision (2026-10-06):** for the initial review only, offer the existing full wording alongside a selected
+  shorter wording when the unchanged local timing planner predicts it can be absorbed. If the shorter wording
+  receives P/E and the full wording explicitly receives C, recheck timing eligibility and select the reviewed full
+  wording. Review both Telugu and actual Latin TTS text. Missing, malformed, inconsistent or non-C fallback
+  verdicts retain the existing correction path. Voiced-wording review cannot switch to an unsynthesized fallback.
+- **Preserve approval:** an exact `C / review / full / first P-or-E` marker persists the decision. Later fits,
+  duration estimates, optional shortening/rephrasing and old non-full takes cannot undo it. A real overrun keeps
+  the normal speed cap and a visible timing warning. A fit that began before approval re-reads current cache
+  approval before either merging a reply or returning its failed-fit result.
+- **Rejected candidate:** the first original-text pilot showed useful reuse, but a negative control incorrectly
+  received C after dropping “may.” That candidate was not deployed. The final shortcut excludes explicitly
+  modal/uncertain source sentences, even if their full wording appears correct; these keep the normal correction
+  path. The review prompt now treats meaningful uncertainty, frequency and bounds as content, not minor filler.
+  This exclusion is conservative admission control, not a claim that token checks prove semantic equivalence.
+- **Preserve cached work:** only the explicitly compatible scene-v5 generator hash may supply validated wording
+  under the final policy. Clear its old coverage and Latin maps and run a fresh meaning review; retain the
+  Telugu-spelled loanwords. Current rows are authoritative, including when invalid. Never inherit intermediate
+  rejected-policy approvals, other models, older index-based maps, old fixup decisions or unknown brief provenance.
+  Cache files are append-only; completed outputs and preprocessing remain intact. Exact compatible TTS/audio
+  remains reusable, while an actual changed TTS input must be synthesized again.
+- **Measurement:** successful text-call latency is now separate from fast usage-limit rejection attempts. Run
+  wall time containing the overnight usage-limit hold is not processing throughput. Original fixed-wording
+  comparisons and sanitized queue evidence live in `docs/spikes/results/queue-monitor/m5-pro-24gb/full-review-fallback/`.
+  Component timing is not whole-video speed, and validator-only C is not independent semantic approval.
+- **Remaining acceptance:** native Telugu listening and the ADR-026 early-ending/underfill issue remain open.
+  This policy introduces no slowdown, fuller rephrase, new audio model, changed precision or relaxed quality gate.
+- **Validation and deployment:** 1,306 unique engine tests are covered by passing runs (241 translation/QA,
+  215 render/line, 849 other tests, plus the new diagnostics regression; the separate five-test diagnostics run
+  overlaps four of the 849). The release app builds. Five fresh-cache trials per arm on four identical original
+  eligible examples reduced review-plus-correction calls from two to one and the observed median from 19.693 to
+  13.900 seconds. All 20 candidate positives have semantic full C; all six controls avoid fallback approval.
+  Provider load and concurrent queue work were uncontrolled, and baseline returned wording quality differed;
+  this component result is not an end-to-end throughput claim. Raw rejected and final pilots are both retained.
+  The offline original Apple-TTS smoke keeps full, uses rate 1.157 under its 1.2 cap, has no waveform failure,
+  detects the watermark in natural and timed audio, and restores identical PCM with no text or synthesis calls.
+  Its tighter-window CPU check retains full and exposes a timing warning. It is not native listening or a full
+  export test. Graceful maintenance preserves all 3,299 cache files and seven completed output hashes, then
+  resumes the 71-minute job ahead of the queued 175-minute job in the temporary background supervisor.

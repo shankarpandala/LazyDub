@@ -1,0 +1,91 @@
+{
+  "en": "Restart the router only after both uploads finish.",
+  "full": {
+    "spoken": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని రీస్టార్ట్ చేయండి.",
+    "english": [
+      [
+        4,
+        "restart"
+      ]
+    ]
+  },
+  "concise": {
+    "spoken": "అప్లోడ్ పూర్తయ్యాక రౌటర్ని రీస్టార్ట్ చేయండి.",
+    "english": [
+      [
+        3,
+        "restart"
+      ]
+    ]
+  },
+  "review": {
+    "lines": [
+      {
+        "id": 0,
+        "class": "P",
+        "missing": [
+          "both uploads",
+          "only"
+        ],
+        "added": [],
+        "error": "none",
+        "fallback": {
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none"
+        }
+      }
+    ]
+  },
+  "actual_prompt": {
+    "id": 4,
+    "en": "Restart the router only after both uploads finish.",
+    "te": "అప్లోడ్ పూర్తయ్యాక రౌటర్ని రీస్టార్ట్ చేయండి.",
+    "tts": "అప్లోడ్ పూర్తయ్యాక రౌటర్ని restart చేయండి.",
+    "fallback": {
+      "te": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని రీస్టార్ట్ చేయండి.",
+      "tts": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని restart చేయండి."
+    }
+  },
+  "output": {
+    "id": 4,
+    "full": {
+      "spoken": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని రీస్టార్ట్ చేయండి.",
+      "english": [
+        {
+          "word": "రీస్టార్ట్",
+          "occurrence": 0,
+          "en": "restart"
+        }
+      ]
+    },
+    "concise": {
+      "spoken": "అప్లోడ్ పూర్తయ్యాక రౌటర్ని రీస్టార్ట్ చేయండి.",
+      "english": []
+    },
+    "delivery": {
+      "emotion": "neutral",
+      "energy": "mid",
+      "question": false,
+      "emphasis": []
+    },
+    "coverage": {
+      "class": "C",
+      "by": "review",
+      "tier": "full",
+      "first": "P",
+      "missing": [],
+      "added": [],
+      "error": null
+    },
+    "approved_full": true,
+    "full_tts": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని restart చేయండి."
+  },
+  "provenance": {
+    "pilot_trial": 2,
+    "model": "gpt-6-luna",
+    "prompt_hash": "9550fc5e1ac9",
+    "review_hash": "4cdb4f668364"
+  }
+}

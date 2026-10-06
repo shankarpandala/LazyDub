@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "observed_at": 1791253423.120148,
+  "status": "source_review_clear_v2_bounded_original_text_check_passes",
+  "scope": "Independent read-only source review; original deterministic local stubs only. No model/GPU/audio calls, source edits or queue mutations.",
+  "clean_checks": [
+    "Explicit known v5 wording-only migration enforces matching generator, model, speaker/source/style key, video directory and brief compatibility.",
+    "Current keyed row remains authoritative even when its line is invalid; fallback does not resurrect a legacy row.",
+    "Legacy coverage and all legacy Latin maps are cleared, and cache reads leave append-only files unchanged.",
+    "Successful provider-call median/max exclude error attempts while all-attempt counts/times and error breakdown remain available."
+  ],
+  "findings": [
+    {
+      "id": "failed_v1_approval_policy_identity",
+      "status": "resolved_independently_rechecked",
+      "evidence": "The in-progress guard still used the failed v1 pilot scene hash b17b25dc4e91. Current-hash approval can enter through cached _scene before the new offered-set source veto.",
+      "requested_fix": "Final policy identity must invalidate old failed-policy approvals; maintain the explicit v5 wording-only destination mapping."
+    },
+    {
+      "id": "legacy_take_coverage_restoration",
+      "status": "resolved_independently_rechecked",
+      "reference": "engine/src/maata_engine/render.py:1634",
+      "evidence": {
+        "cleared_coverage_before": true,
+        "restored_class": "C",
+        "restored_by": "review",
+        "voiced_review_would_skip": true
+      },
+      "trigger": "A matching legacy-v5 take is restored when new coverage is missing or belongs to another tier. _restore currently reimports old take coverage without policy provenance.",
+      "requested_fix": "Reuse valid audio/PCM but import take coverage only under current policy provenance; otherwise leave the restored tier unreviewed."
+    }
+  ],
+  "prior_behavioral_failure": "V1 original control falsely accepted lost may; retained separately in /tmp/maata-review-fallback-pilot/independent-quality-audit.json.",
+  "limits": [
+    "Native listening/audio acceptance remains outside this source and text audit.",
+    "No whole-pipeline performance acceptance inferred."
+  ],
+  "final_identity": {
+    "version": "scene-v7",
+    "prompt_hash": "9550fc5e1ac9",
+    "review_hash": "4cdb4f668364",
+    "wording_migration": {
+      "9550fc5e1ac9": "ccfdc4088a39"
+    },
+    "failed_v6_hash_excluded": "b17b25dc4e91"
+  },
+  "resolution_checks": [
+    "Final v7 scene identity differs from the failed v1 pilot v6 identity; explicit migration accepts only known v5 generation, clearing old coverage/maps.",
+    "Source uncertainty veto is applied centrally in translator offered-set construction. An unsolicited full C for an excluded source is ignored; direct caller opt-in cannot override it.",
+    "Meaningful qualification is no longer permitted as reviewer minor-drop; missing may/rarely receives P/E instructions.",
+    "Pure-local restoration reproductions for absent/v5/v6 policy all retain identical audio row while remaining unreviewed; current-v7 row alone can restore its C.",
+    "Inspected8 no-synthesis restoration regression combinations also route absent/other-tier classes to normal voiced review.",
+    "No remaining concrete source regression found in migration, modality gate, restored coverage or successful-call latency reporting."
+  ],
+  "final_source_sha256": {
+    "engine/src/maata_engine/backends/claude_translator.py": "27f00c19d388db56d13eaac91792b2b8a460e6ba83f685209603a1cade20ac54",
+    "engine/src/maata_engine/qa/coverage.py": "cd2bac8c9e005246876d3c2562d08b609a8ce58bf83d5729a3f7c300f6571ff4",
+    "engine/src/maata_engine/text/scene_prompt.py": "b9ad4327c3e1e7137e482b0a801f9ef1b374b5a04c4647d0fe92012c4d507b38",
+    "engine/src/maata_engine/render.py": "436e585ec136010461a85c0ccaf949eaf51736f0d78ba4811718045c1e657f03",
+    "engine/src/maata_engine/diagnostics.py": "40e95b9c1c64a421323e598a7ee78ba6bd57d6518e5f7a40d77405274766c3d3",
+    "scripts/monitor-queue.py": "0d51e8c107b8a664c8394be6a64b25c18b592693f31af5562137c99b270ea2af"
+  },
+  "v2_behavioral_audit": "/tmp/maata-review-fallback-pilot-v2/independent-quality-audit.json"
+}

@@ -2590,6 +2590,123 @@ async def test_the_wording_voiced_is_the_one_reviewed_unless_it_left_the_band_an
     assert st.tier == "full"
 
 
+def approved_full_job(tmp_path, *, approved: bool):
+    """One original sentence, with a complete full tier and a short tier missing the count, deadline and negation."""
+    tts = MelTTS(rate=2.0)
+    job = job_for(tmp_path, backend(tts=tts))
+    job.render_dir.mkdir(parents=True, exist_ok=True)
+    job.audio = np.zeros(12 * 16_000, np.float32)
+    job.tr = MockSceneTranslator(tmp_path, VID, render.brief_v0(render.VideoMeta("Original test", "Maata tests")))
+    unit = render.SourceUnit(0, "S1", 1.0, 5.0,
+                             "Bring three copies by Friday, but do not send the original.")
+    full = Wording("శుక్రవారంలోగా మూడు కాపీలు తీసుకురండి, కానీ అసలు పత్రాన్ని పంపకండి.")
+    concise = Wording("కాపీలు తీసుకురండి.")
+    c = Coverage("C", tier="full", first="P") if approved else Coverage("P", tier="concise")
+    st = render.UnitState(unit, 7.0, speech_s=4.0, scene=1,
+                          line=LineResult(0, {"full": full, "concise": concise}, coverage=c),
+                          tier="full" if approved else "concise")
+    job._index([st])
+    job._budget = 3.0
+    return job, st, tts
+
+
+async def test_approved_full_overrun_keeps_reviewed_meaning_and_blocks_optional_rephrases(tmp_path, monkeypatch):
+    job, st, tts = approved_full_job(tmp_path, approved=True)
+    # The reviewed full was predicted to fit. Actual synthesis is deliberately much slower, with a tempting
+    # shorter tier present: timing must show the overrun instead of silently dropping the facts again.
+    assert job._absorbs(st, 4.8)
+    monkeypatch.setattr(job.estimator, "estimate", lambda text, key: 4.8 if text == st.line.full.spoken else 4.0)
+    assert not await job._voice_line(st)
+    assert st.plan.needs_shorter and st.take_s > 7.0
+    assert tts.batches == [(st.line.full.spoken, render._takes_n(st))]
+    assert st.tier == st.take["wording"] == "full" and st.take["fixups"] == 0
+    assert st.line.coverage == Coverage("C", tier="full", first="P")
+    assert set(st.line.tiers) == {"full", "concise"}
+
+    job._dubbing = True
+    before = st.take
+    shorter = LineResult(0, {"full": st.line.tiers["concise"]})
+    # A rephrase admitted before approval must be rejected at execution too, without charging unused work.
+    fix = render._Fix(st, shorter, "full", "rephrase", "queued-before-review",
+                      asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert not fix.done.result()
+    assert not await job._fixup(st, shorter, "full", "rephrase", "after-review")
+    assert job._fixes == [] and st.take is before and job._resynths == 0
+    await job._settle(render.Scene(1, [st], 0, reviewed=True))
+    assert job.tr.cli.calls == [] and len(tts.batches) == 1
+    assert job.flags == {0: ["long"]} and st.line.coverage.cls == "C"
+
+
+@pytest.mark.parametrize("old_wording", ["concise", "rephrase", "retranslate"])
+async def test_paused_short_take_cannot_override_approved_full_and_full_pcm_survives_resume(
+        tmp_path, monkeypatch, old_wording):
+    old, before, old_tts = approved_full_job(tmp_path, approved=False)
+    monkeypatch.setattr(old.estimator, "estimate", lambda text, key: 4.0 if text == before.line.tiers["concise"].spoken
+                        else 4.8)
+    assert not await old._voice_line(before)
+    assert before.take["wording"] == "concise" and old_tts.batches == [(before.telugu, render._takes_n(before))]
+    if old_wording in render.FIXUP_WORDINGS:
+        fixed = LineResult(0, {"full": before.line.tiers["concise"]})
+        old._put_fixup(before, "old-short-fix", old_wording, fixed)
+        old._put_row(before, {**before.take, "wording": old_wording, "tier": "full", "fixup": "old-short-fix"})
+        assert next(old._rows_for(before))[0]["wording"] == old_wording  # a valid old fixup, not a torn-row fixture
+    rejected_row = before.take
+    old.pause()
+
+    current, st, tts = approved_full_job(tmp_path, approved=True)
+    # Approval persists in the production line cache, while the interrupted render still has its old short take.
+    current.tr._store(current._line_spec(st, ("full", "concise")), st.line)
+    fixups = _read_rows(current.render_dir / "fixups.jsonl")
+    current._load_takes(take_rows(tmp_path), fixups)
+    assert await current._restorable(st) is None
+    assert not await current._voice_line(st)
+    assert st.tier == "full" and st.take["tts"] != rejected_row["tts"]
+    assert tts.batches == [(st.line.full.spoken, render._takes_n(st))]
+    final = current._plan(st, render._said_of(st.take), render.TimelinePlanner(current.planner.s))
+    pcm_key = current._pcm_key(st, final)
+    await current._final_pcm(st, final, pcm_key)
+    pcm = (current.render_dir / "pcm" / f"{pcm_key}.npy").read_bytes()
+    # Even a later old short row cannot take precedence over the approved full row on another resume.
+    render._append_row(current.render_dir / "takes.jsonl", rejected_row)
+    current.pause()
+
+    again, restored, tts2 = approved_full_job(tmp_path, approved=False)
+    restored.line = again.tr.cached(again._line_spec(restored, ("full", "concise")))
+    assert render.approved_full(restored.line)
+    again._load_takes(take_rows(tmp_path), fixups)
+    assert await again._voice_line(restored)
+    assert restored.tier == "full" and restored.take == st.take and tts2.batches == []
+    plan = again._plan(restored, render._said_of(restored.take), render.TimelinePlanner(again.planner.s))
+    assert plan == final and again._pcm_key(restored, plan) == pcm_key
+    await again._final_pcm(restored, plan, pcm_key)
+    assert tts2.vocoded == [] and again.flags == current.flags == {0: ["long"]}
+    assert (again.render_dir / "pcm" / f"{pcm_key}.npy").read_bytes() == pcm
+    assert restored.line.coverage == Coverage("C", tier="full", first="P")
+
+
+@pytest.mark.parametrize("provenance", [None, "ccfdc4088a39", "b17b25dc4e91", "current"])
+@pytest.mark.parametrize("current_class", [None, "other_tier"])
+async def test_restored_audio_does_not_resurrect_old_policy_coverage(tmp_path, provenance, current_class):
+    """No synthesis: a failed initial review or review of another tier cannot inherit an old audio row's C."""
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    coverage = Coverage("C", tier="concise") if current_class == "other_tier" else None
+    st.line = replace(st.line, coverage=coverage)
+    row = {"wording": "full", "coverage": render.coverage_json(Coverage("C", tier="full")), "fixups": 0,
+           "takes": [{"key": "same-audio", "seconds": 4.0, "pauses": [], "pace": 4.0, "failed": None}],
+           "durationPrompt": render.PROMPT_HASH if provenance == "current" else provenance}
+    job._restore(st, row, st.line, "full", [st.line.full])
+    assert st.take is row and st.tier == "full" and st.take_s == 4.0  # the exact audio row stays reusable
+    if provenance == "current":
+        assert st.line.coverage == Coverage("C", tier="full")
+    else:
+        assert st.line.coverage == coverage
+        assert render.voiced_class(st.line.coverage, st.tier) in ("unreviewed", "other_tier")
+    assert not await job._review_voiced(render.Scene(1, [st], 0, reviewed=True))
+    assert [c["call"] for c in job.tr.cli.calls] == ([] if provenance == "current" else ["review"])
+    assert st.line.coverage == Coverage("C", tier="full")
+
+
 async def test_a_line_restored_from_its_take_row_asks_for_no_fit(tmp_path, monkeypatch):
     """On a resume the line cache serves every scene, and a pick made at a pace the takes have since moved could want a
     tier the line lacks: a line with a take row that still matches is voiced as that row says, so it asks for none."""

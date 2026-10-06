@@ -86,3 +86,21 @@ def test_token_cache_fraction_uses_provider_specific_accounting(tmp_path):
     assert calls["gpt-6-luna"]["cached_input_fraction"] == .8
     assert calls["claude-haiku-4-5-20251001"]["cached_input_fraction"] == .8
     assert calls["unknown"]["cached_input_fraction"] is None
+
+
+def test_usage_limit_rejections_do_not_masquerade_as_fast_successes(tmp_path):
+    write_job(tmp_path, [
+        {"t": 110, "event": "claude", "call": "scene", "wall_s": 20},
+        {"t": 120, "event": "claude", "call": "scene", "wall_s": 30},
+        *[{"t": 130 + i, "event": "claude", "call": "scene", "wall_s": 2, "error": "usage_limit"}
+          for i in range(5)],
+        {"t": 140, "event": "claude", "call": "review", "wall_s": 2, "error": "usage_limit"},
+    ])
+    calls = {r["call"]: r for r in snapshot(tmp_path, now=150)["jobs"][0]["timings"]["text_calls"]}
+    assert calls["scene"]["p50_s"] == 2  # historical all-attempt metric remains explicitly available
+    assert calls["scene"]["successful_calls"] == 2
+    assert calls["scene"]["successful_p50_s"] == 25
+    assert calls["scene"]["successful_max_s"] == 30
+    assert calls["review"]["successful_calls"] == 0
+    assert calls["review"]["successful_p50_s"] is None
+    assert calls["review"]["successful_max_s"] is None

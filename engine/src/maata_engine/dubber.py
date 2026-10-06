@@ -32,7 +32,7 @@ from .backends.base import (SR_ANALYSIS, Backend, LineResult, LineSpec, SceneReq
 from .claude_cli import ClaudeCLIError
 from .gpu import BACKGROUND, VOICE, GpuScheduler
 from .qa import take as take_qa
-from .qa.coverage import CLASSES, voiced_class
+from .qa.coverage import CLASSES, approved_full, voiced_class
 from .segment import sentence_end
 from .speakers import SpeakerRegistry
 from .text import asr_guard, tenglish
@@ -508,6 +508,10 @@ class Dubber:
         from the Telugu script, whichever script the TTS reads, for the voice `key` (by default the speaker's voice now).
         Returns (the tier, whether it fits: in the band, or absorbed)."""
         key = key or self._key(st.unit.speaker)
+        if approved_full(line):
+            pred = self.estimator.estimate(line.full.spoken, key)
+            fits = BAND[0] * st.speech_s <= pred <= BAND[1] * st.speech_s or self._absorbs(st, pred)
+            return "full", fits  # timing cannot choose the shorter wording that the same review found incomplete
         tiers = [t for t in TIERS_BY_FULLNESS if t in line.tiers]
         pred = {t: self.estimator.estimate(line.tiers[t].spoken, key) for t in tiers}
         lo, hi = BAND[0] * st.speech_s, BAND[1] * st.speech_s
@@ -543,6 +547,8 @@ class Dubber:
         pick is `full`, which a fit never rewrites, a `fuller` closer to the slot instead, from the pick. Under it with
         nothing longer: `fuller`, for a speech-dense slot."""
         u, line = st.unit, st.line
+        if approved_full(line):
+            return None  # preserve the complete wording; a new unreviewed fit cannot reverse that decision
         start = line.tiers[st.tier]  # the fit's `current`: the wording its tiers are made from
         if self.estimator.estimate(start.spoken, self._key(u.speaker)) > BAND[1] * st.speech_s:
             want = tuple(t for t in ("concise", "very_concise") if t not in line.tiers)
@@ -653,9 +659,16 @@ class Dubber:
                                             and line.coverage.tier == tier else Wording(w.spoken)
                                             for tier, w in line.tiers.items()}) for i, line in answer.items()}
         chosen = {i: self._pick(self.units[i], line)[0] for i, line in lines.items()}
+        def fallback_ok(lid: int) -> bool:
+            st, line = self.units.get(lid), lines.get(lid)
+            return (st is not None and line is not None and not (st.voicing or st.voiced)
+                    and chosen.get(lid) != "full" and line.full != line.tiers.get(chosen.get(lid))
+                    and self._absorbs(st, self.estimator.estimate(line.full.spoken, self._key(st.unit.speaker))))
+        fallback_kw = ({"fallbacks": {i for i in lines if fallback_ok(i)}, "fallback_check": fallback_ok}
+                       if getattr(self.tr, "supports_full_fallback", False) else {})
         asked = time.monotonic()
         try:
-            res = await self.tr.review(req, lines, chosen)
+            res = await self.tr.review(req, lines, chosen, **fallback_kw)
         except asyncio.CancelledError:
             if _cancelling():
                 raise
@@ -692,6 +705,8 @@ class Dubber:
         for lid, line in res.lines.items():
             st = self.units.get(lid)
             if st is not None and st.line is not None and not (st.voicing or st.voiced):
+                if approved_full(st.line):
+                    continue  # a fit submitted before the complete fallback was approved may arrive afterwards
                 st.line = line
                 self._choose(st)
         self._wake.set()
@@ -961,6 +976,8 @@ class Dubber:
         the most complete shorter one predicted within the band of `seconds`, else the shortest; None when it has none
         shorter than its tier."""
         size = lambda t: count_units(st.line.tiers[t].spoken)  # noqa: E731
+        if approved_full(st.line):
+            return None
         shorter = [t for t in st.line.tiers if size(t) < size(st.tier)]
         if not shorter:
             return None

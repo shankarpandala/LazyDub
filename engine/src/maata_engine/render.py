@@ -68,7 +68,7 @@ from .dubber import (BAND, BRIEF_TRIES, CALIBRATION_TE, CHUNK, CHUNK_PAD, CONTEX
 from .gpu import GpuScheduler
 from .models import load_lock
 from .qa import take as take_qa
-from .qa.coverage import CLASSES, coverage_from, coverage_json, voiced_class
+from .qa.coverage import CLASSES, approved_full, coverage_from, coverage_json, voiced_class
 from .qa.validators import check_line
 from .resolve import VIDEO_FORMAT, ResolveError, ResolvedVideo, Resolver, audio_start, decode_audio_to, decode_stereo
 from .settings import default_output_dir
@@ -1535,6 +1535,9 @@ class RenderJob(Dubber):
         """The wording to voice (§2.9): the tier the review classed (the one chosen, while unreviewed), unless at the
         voice's pace now it has left the band and another tier fits (`_pick`, priced on W)."""
         c = st.line.coverage
+        if approved_full(st.line):
+            st.tier, st.telugu = "full", self._tts_text(st.line.full)
+            return
         tier = c.tier if c is not None and c.tier in st.line.tiers else st.tier
         pred = self.estimator.estimate(st.line.tiers[tier].spoken, key)
         if not BAND[0] * st.speech_s <= pred <= BAND[1] * st.speech_s:
@@ -1601,6 +1604,11 @@ class RenderJob(Dubber):
             got = self._row_wording(st, row)
             if got is None:
                 continue
+            if approved_full(st.line):
+                # A matching older short take or wording adjustment must not undo the current meaning review.
+                # An identical full take (whole or in pieces) remains reusable with today's approved coverage.
+                if row["wording"] in FIXUP_WORDINGS or got[1] != "full" or got[0].full != st.line.full:
+                    continue
             texts = [self._tts_text(w) for w in got[2]]
             if (_tts_hash(texts) == row["tts"]
                     and [t["key"] for t in row["takes"]] == [self._take_key(text, voice, n) for text in texts]):
@@ -1624,8 +1632,11 @@ class RenderJob(Dubber):
         placed on W again in onset order (CPU only). Its natural audio isn't in memory: its PCM vocodes the take again
         from its file. Still too long, it is flagged, and (in a wording of its own) queued for its scene's rephrase
         again, whose answer fixups.jsonl has."""
-        if voiced_class(line.coverage, tier) not in CLASSES and isinstance(row.get("coverage"), dict):
+        if (voiced_class(line.coverage, tier) not in CLASSES and row.get("durationPrompt") == PROMPT_HASH
+                and isinstance(row.get("coverage"), dict)):
             line = replace(line, coverage=coverage_from(row["coverage"]))  # the line cache's is another occurrence's
+        # Identical audio from an older text/review policy is reusable, but its semantic approval is not. Preserve
+        # today's absent/other-tier class so the voiced-wording review checks the restored wording under this policy.
         said = _said_of(row, words)
         st.line, st.tier, st.telugu = line, tier, self._tts_text(line.tiers[tier])
         st.plan, st.take, st.take_s, st.voiced = self._plan(st, said), row, said.total, True
@@ -1644,7 +1655,7 @@ class RenderJob(Dubber):
         try:
             # Different scenes can queue rephrases while a budget slot is still free. The dub loop owns spending,
             # so check again when the queued work actually executes. Meaning corrections keep their separate path.
-            if fix.kind == "rephrase" and not self._budget_left():
+            if fix.kind == "rephrase" and (approved_full(st.line) or not self._budget_left()):
                 return
             cost = VoiceCost()
             seconds = target_seconds(self._slot(st), self.planner.s)
@@ -1690,7 +1701,7 @@ class RenderJob(Dubber):
     async def _fixup(self, st: UnitState, line: LineResult, tier: str, kind: str, key: str) -> bool:
         """Hand a fix-up take to the dub loop, which voices it ahead of new lines. Returns whether it was kept; False at
         once when the loop has stopped (a pause)."""
-        if not self._dubbing:
+        if not self._dubbing or (kind == "rephrase" and approved_full(st.line)):
             return False
         fix = _Fix(st, line, tier, kind, key, asyncio.get_running_loop().create_future())
         self._fixes.append(fix)
@@ -1707,7 +1718,8 @@ class RenderJob(Dubber):
         nor is a line restored in a scene an earlier run settled (a `settled` row in fixups.jsonl): its rephrase was
         decided then, against that run's estimator and plan, and a resume doesn't decide it again."""
         before = self._settled_key(sc) in self._fixup_rows
-        long = [st for st in sc.lines if st.unit.id in self._long and st.take["wording"] not in FIXUP_WORDINGS
+        long = [st for st in sc.lines if st.unit.id in self._long and not approved_full(st.line)
+                and st.take["wording"] not in FIXUP_WORDINGS
                 and not (before and st.unit.id in self._restored)]
         kept, held, failed = 0, False, False
         try:

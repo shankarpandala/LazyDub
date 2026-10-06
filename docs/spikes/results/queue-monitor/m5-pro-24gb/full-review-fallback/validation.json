@@ -1,0 +1,69 @@
+{
+  "engine_tests": {
+    "focused_translation_coverage_prompt_and_maps": 241,
+    "other_cpu_mock": 849,
+    "render_and_lines": 215,
+    "diagnostics_separate_recheck": 5,
+    "diagnostics_note": "Broad run collected before the new diagnostics regression: 849+241+215+1 unique. The five-test diagnostics recheck overlaps four broad tests. Current full collection:1306.",
+    "unique_total_passed": 1306
+  },
+  "build": {
+    "command": "PATH=/opt/homebrew/bin:$PATH npm run tauri build -- --bundles app",
+    "status": "passed",
+    "release_compile_s": 37.04
+  },
+  "text_pilot": {
+    "A": {
+      "n": 5,
+      "median_wall_s": 19.693200209003408,
+      "call_counts": [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "approved_counts": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "B": {
+      "n": 5,
+      "median_wall_s": 13.900456374998612,
+      "call_counts": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "approved_counts": [
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    }
+  },
+  "audio": {
+    "status": "passed",
+    "outbound_network": "denied by sandbox-exec",
+    "model_downloads": false,
+    "native_listening": "not performed",
+    "remaining_issue": "ADR-026 original 60-second end-to-end underfill/early-ending issue remains open"
+  },
+  "source_hashes": {
+    "engine/src/maata_engine/render.py": "436e585ec136010461a85c0ccaf949eaf51736f0d78ba4811718045c1e657f03",
+    "engine/src/maata_engine/diagnostics.py": "40e95b9c1c64a421323e598a7ee78ba6bd57d6518e5f7a40d77405274766c3d3",
+    "engine/src/maata_engine/dubber.py": "de457f26207f1e27458b6dfa1ea1f51a5b9172c7c61f02d19e6e6501913d8538",
+    "engine/src/maata_engine/backends/claude_translator.py": "27f00c19d388db56d13eaac91792b2b8a460e6ba83f685209603a1cade20ac54",
+    "engine/src/maata_engine/backends/base.py": "8ff2e010d6421f28ff9cec4575bc61b4a821d56f73dc7fdf0c348d9527fb3cd3",
+    "engine/src/maata_engine/qa/coverage.py": "cd2bac8c9e005246876d3c2562d08b609a8ce58bf83d5729a3f7c300f6571ff4",
+    "engine/src/maata_engine/text/scene_prompt.py": "b9ad4327c3e1e7137e482b0a801f9ef1b374b5a04c4647d0fe92012c4d507b38"
+  }
+}
