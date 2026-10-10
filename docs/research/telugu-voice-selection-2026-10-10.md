@@ -107,3 +107,9 @@ run verifies worker timeouts, empty output and cancellation cannot silently skip
 The app was gracefully restarted to activate that fix; all 117 captured cached-audio files survived unchanged and
 only the already-running new test resumed. Full-suite and final-patch source hashes are recorded separately in
 `integration-validation.json`. These tests establish software behavior, not native-speaker acceptance.
+
+The client-started 7:55 test subsequently completed: 65 rendered lines, no skipped lines, H.264 video/AAC audio and
+both subtitle streams. Its final labels are 57 C, 1 m and 7 P, with one long-timing flag. These are reported coverage
+labels, not independent acoustic acceptance; the completed file must still be heard. Export loudness was -16.02 LUFS
+and -1.80 dBTP with the background bed. Whole-export watermark/native listening and underfill remain unverified.
+The output hash and sanitized results are in `user-test-completed.json`. It is preserved, not automatically redubbed.
