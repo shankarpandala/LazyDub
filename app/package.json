@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prepare-runtime": "python3 ../scripts/prepare-runtime.py",
+    "prebuild": "npm run prepare-runtime",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",

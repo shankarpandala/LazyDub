@@ -20,7 +20,8 @@ from fakes import bare_job, pcm, put, trace, voice  # noqa: E402
 from maata_engine.backends.base import Backend, LineResult, Wording  # noqa: E402
 from maata_engine.backends.mock import MockDiarizer, MockSceneTranslator, MockTranscriber, MockTTS  # noqa: E402
 from maata_engine.dubber import Dubber, UnitState, VoiceCost, _marks  # noqa: E402
-from maata_engine.render import _read_rows  # noqa: E402
+from maata_engine.render import RenderError, _read_rows  # noqa: E402
+from maata_engine.qa.take import UnusableAudioError  # noqa: E402
 from maata_engine.timing import pauses as pz  # noqa: E402
 from maata_engine.timing.duration import VoiceKey  # noqa: E402
 from maata_engine.timing.planner import V1, Plan, PlannerSettings, rate_ceiling  # noqa: E402
@@ -205,6 +206,82 @@ async def test_a_tts_that_cant_batch_says_a_line_once(tmp_path):
     _, dur, pace, failed = await job._take(st, LINE, {"f0": 140.0}, VoiceKey("S1", 0.5, 0.5, "r"), 5.0, cost, n=3)
     assert cost.takes == cost.takes_n == 1 and cost.failures == ["short"] and failed == "short"  # judged, never retaken
     assert pace == dur and cost.retakes == 0
+
+
+class AudioFaultTTS(BatchTTS):
+    """A healthy token decoder whose vocoder can fail independently of token duration."""
+
+    def __init__(self, faults):
+        super().__init__()
+        self.faults, self.vocoded = list(faults), []
+
+    def vocode(self, take, rate=1.0):
+        self.vocoded.append(take)
+        fault = self.faults.pop(0) if self.faults else None
+        if fault == "silent":
+            return np.zeros_like(take.samples)
+        if fault == "nonfinite":
+            return np.full_like(take.samples, np.nan)
+        return super().vocode(take, rate)
+
+
+async def test_selected_audio_qa_does_not_vocode_unused_candidates(tmp_path):
+    tts = AudioFaultTTS([])
+    job = bare_job(tmp_path, tts)
+    st = a_line(job, 0, 0.0, 3.0)
+    cost = VoiceCost()
+    got = await job._said_take(st, LINE, {"f0": 140.0}, VoiceKey("S1"), 5.0, cost, 3, st.speech_s)
+    assert tts.calls == [3] and len(tts.vocoded) == 1
+    assert got[5] is None and cost.retakes == 0 and cost.failures == []
+
+
+async def test_broken_selected_audio_uses_an_existing_candidate_before_synthesizing_again(tmp_path):
+    tts = AudioFaultTTS(["nonfinite", None])
+    job = bare_job(tmp_path, tts)
+    st = a_line(job, 0, 0.0, 3.0)
+    cost = VoiceCost()
+    got = await job._said_take(st, LINE, {"f0": 140.0}, VoiceKey("S1"), 5.0, cost, 2, st.speech_s)
+    assert tts.calls == [2] and len(tts.vocoded) == 2 and cost.retakes == 0
+    assert cost.failures == ["audio_nonfinite"] and got[5] is None and np.isfinite(got[2]).all()
+    assert got[4] == pytest.approx(got[1])  # the broken candidate cannot teach the estimator
+
+
+async def test_all_broken_audio_gets_one_fresh_take_and_can_recover(tmp_path):
+    tts = AudioFaultTTS(["silent", "silent", None])
+    job = bare_job(tmp_path, tts)
+    st = a_line(job, 0, 0.0, 3.0)
+    cost = VoiceCost()
+    got = await job._said_take(st, LINE, {"f0": 140.0}, VoiceKey("S1"), 5.0, cost, 2, st.speech_s)
+    assert tts.calls == [2, 1] and len(tts.vocoded) == 3 and cost.retakes == 1
+    assert got[5] is None and cost.failures == ["audio_silent", "audio_silent"]
+
+
+async def test_repeated_broken_audio_stops_with_a_resumable_error_and_never_caches_it(tmp_path):
+    tts = AudioFaultTTS(["silent"] * 5)
+    job = bare_job(tmp_path, tts)
+    st = a_line(job, 0, 0.0, 3.0)
+    cost = VoiceCost()
+    with pytest.raises(RenderError, match="Resume to try it again") as error:
+        await job._said_take(st, LINE, {"f0": 140.0}, VoiceKey("S1"), 5.0, cost, 2, st.speech_s)
+    assert isinstance(error.value.__cause__, UnusableAudioError)
+    assert tts.calls == [2, 1] and len(tts.vocoded) == 3 and cost.retakes == 1
+    assert not list((job.render_dir / "takes").glob("*.npz"))
+
+
+async def test_broken_deterministic_audio_is_not_repeated(tmp_path):
+    class SilentTTS(MockTTS):
+        calls = 0
+
+        def synthesize(self, *args, **kwargs):
+            self.calls += 1
+            return np.zeros(3 * self.sample_rate, np.float32)
+
+    tts = SilentTTS()
+    job = bare_job(tmp_path, tts)
+    st = a_line(job, 0, 0.0, 3.0)
+    with pytest.raises(RenderError):
+        await job._said_take(st, LINE, {"f0": 140.0}, VoiceKey("S1"), 5.0, VoiceCost(), 3, st.speech_s)
+    assert tts.calls == 1
 
 
 async def test_a_shorter_wording_is_voiced_instead_only_when_its_take_passes(tmp_path):

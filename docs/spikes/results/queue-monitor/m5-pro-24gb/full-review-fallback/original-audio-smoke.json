@@ -1,0 +1,157 @@
+{
+  "status": "passed",
+  "started_at": 1791253671.9019752,
+  "scope": "Offline, original-text policy check with production Apple TTS; run only with the queue stopped.\n\nExample (from the repository root, after the supervisor has stopped):\n  sandbox-exec -p '(version 1)(allow default)(deny network-outbound)'     engine/.venv/bin/python /tmp/maata-approved-full-apple.py     --approval /tmp/maata-full-audio-approval-v2.json --out /tmp/maata-approved-full-apple-run\n\nUses a previously recorded live review of this exact original pair. No CLI, remote calls, source media, downloads,\nor output files from the user's queue are used. This exercises the core RenderJob calibration/take/PCM resume path,\nnot queue lifecycle, native listening, ASR accuracy, or whole-video performance.\n",
+  "approval_sha256": "4af07e3570b09acae0b34307dfe8daddbd3a36fc56b4d3c0edcef5d3e81da21c",
+  "approval_provenance": {
+    "pilot_trial": 2,
+    "model": "gpt-6-luna",
+    "prompt_hash": "9550fc5e1ac9",
+    "review_hash": "4cdb4f668364"
+  },
+  "current_prompt_hash": "9550fc5e1ac9",
+  "current_review_hash": "4cdb4f668364",
+  "git_head": "131a82e7bc66d3b3e6ba338a386314efeaeaa0f9",
+  "working_diff_sha256": "12622a2c4677de16748cd03220b57d2342a963f4c677ce4328a71b4b5e68da62",
+  "script_sha256": "2be535bbfe7989d4b0d9789325785be18ca1925f6f0c14b1fc037190f2119471",
+  "seed": 42,
+  "backend": {
+    "name": "apple",
+    "device": "mps",
+    "cfm_steps": 10,
+    "cfg_weight": 0.5,
+    "exaggeration": 0.5,
+    "t3_dtype": "torch.bfloat16"
+  },
+  "calibration": {
+    "seconds": 3.305386791995261,
+    "usable_takes": 3,
+    "rate": 12.415062287655722,
+    "overhead": 0.8907943747624483
+  },
+  "eligibility": {
+    "speech_s": 2.037868136815342,
+    "gap_s": 0.0,
+    "full_pred_s": 2.3003724819460283,
+    "short_pred_s": 2.0990041809198026,
+    "initial_choice": "concise",
+    "full_absorbed": true
+  },
+  "recorded_review_replayed": [
+    "review"
+  ],
+  "voice_wall_s": 2.138570041002822,
+  "audio": {
+    "natural": {
+      "samples": 65280,
+      "seconds": 2.72,
+      "finite": true,
+      "peak": 0.702172577381134,
+      "rms": 0.14936782899320158,
+      "rms_dbfs": -16.514858625411176,
+      "fraction_abs_ge_1": 0.0,
+      "watermark_confidence": 1.0,
+      "production_audio_failure": null
+    },
+    "timed": {
+      "samples": 56400,
+      "seconds": 2.35,
+      "finite": true,
+      "peak": 0.66455078125,
+      "rms": 0.13671911422402075,
+      "rms_dbfs": -17.28341527971745,
+      "fraction_abs_ge_1": 0.0,
+      "watermark_confidence": 1.0,
+      "production_audio_failure": null
+    },
+    "take_failure": null,
+    "candidate_failures": [],
+    "natural_wav": "/private/tmp/maata-approved-full-apple-v2-run/approved-full-natural.wav",
+    "timed_wav": "/private/tmp/maata-approved-full-apple-v2-run/approved-full-timed.wav"
+  },
+  "placement": {
+    "plan": {
+      "id": 0,
+      "start": 9.845587245331782,
+      "rate": 1.1569021287387677,
+      "wall": 2.3511064008199996,
+      "lag": -0.15441275466821835,
+      "freeze": 0.0,
+      "overdraft": 0.0,
+      "needs_shorter": false,
+      "freeze_at": null,
+      "carried": 0.0,
+      "excess": 0.3088255093364385,
+      "parts": [],
+      "voiced": [
+        [
+          9.897,
+          12.188
+        ]
+      ],
+      "said": "whole"
+    },
+    "flags": {},
+    "speed_cap": 1.2,
+    "effective_cap": 1.2,
+    "coverage": {
+      "class": "C",
+      "by": "review",
+      "tier": "full",
+      "first": "P",
+      "missing": [],
+      "added": [],
+      "error": null
+    },
+    "syntheses": [
+      {
+        "text": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని restart చేయండి.",
+        "n": 3
+      }
+    ],
+    "fixups": 0
+  },
+  "resume": {
+    "take_restored": true,
+    "pcm_identical": true,
+    "pcm_sha256": "1dd554b9043a48a0f3d2059e569b1533a751c370139c9e5d22b058260359604e",
+    "new_syntheses": 0,
+    "new_text_calls": 0,
+    "same_plan": true,
+    "same_flags": true
+  },
+  "counterfactual_tight_window": {
+    "scope": "CPU placement of measured full audio; not original eligibility",
+    "speech_s": 1.5111111111111113,
+    "tightening_factor": 1.5,
+    "plan": {
+      "id": 0,
+      "start": 9.7,
+      "rate": 1.2,
+      "wall": 2.266666666666667,
+      "lag": -0.3000000000000007,
+      "freeze": 0.0,
+      "overdraft": 0.0,
+      "needs_shorter": true,
+      "freeze_at": null,
+      "carried": 0.0,
+      "excess": 0.6055555555555561,
+      "parts": [],
+      "voiced": [
+        [
+          9.75,
+          11.958
+        ]
+      ],
+      "said": "whole"
+    },
+    "flags": {
+      "0": [
+        "long"
+      ]
+    },
+    "kept_tier": "full",
+    "new_syntheses": 0
+  },
+  "ended_at": 1791253688.618528
+}

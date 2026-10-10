@@ -1,6 +1,6 @@
-"""The Claude scene translator (ARCHITECTURE §4) against a fake `claude` that answers from the message it is given.
+"""The scene translator against a fake `codex` that answers from the message it is given.
 
-FAKE_MODE is a comma-separated script: the n-th `-p` call plays the n-th mode (the last one repeats). A review call
+FAKE_MODE is a comma-separated script: the n-th `exec` call plays the n-th mode (the last one repeats). A review call
 finds every line complete unless FAKE_REVIEW (JSON: id -> [class, missing, error]) says otherwise. All English and
 Telugu here is original test text.
 """
@@ -24,41 +24,54 @@ from maata_engine.backends.base import (Brief, Coverage, GlossaryEntry, LineResu
                                         VideoMeta, Wording)
 from maata_engine.backends.claude_translator import ClaudeTranslator, brief_v0, parse_brief
 from maata_engine.backends.mock import MockClaude, MockSceneTranslator
-from maata_engine.claude_cli import ClaudeCLIError
+from maata_engine.claude_cli import ClaudeCLIError, ClaudeReply
+from maata_engine.codex_cli import CodexCLI
+from maata_engine.qa.coverage import approved_full
 from maata_engine.qa.validators import script_problems
 from maata_engine.text.akshara import count_telugu
 from maata_engine.text import scene_prompt as sp
+
+MODEL = "gpt-6-luna"
 
 FAKE = r"""#!@PYTHON@
 import fcntl, json, os, signal, sys, time
 argv = sys.argv[1:]
 if argv[:1] == ["--version"]:
-    print(os.environ.get("FAKE_VERSION", "2.1.281 (Claude Code)"))
+    print(os.environ.get("FAKE_VERSION", "codex-cli 0.160.0"))
+    sys.exit(0)
+if argv[:2] == ["login", "status"]:
+    print("Logged in using ChatGPT")
     sys.exit(0)
 def on_int(sig, _):
     open(os.environ["FAKE_SIGNALS"], "a").write("SIGINT\n")
     time.sleep(float(os.environ.get("FAKE_STOP_DELAY", "0")))  # a CLI that takes a while to stop
     sys.exit(130)
 signal.signal(signal.SIGINT, on_int)
-prompt = sys.stdin.read()
+envelope = json.loads(sys.stdin.read())
+prompt = envelope["input"]
+schema = json.load(open(argv[argv.index("--output-schema") + 1]))
 path = os.environ["FAKE_RECORD"]
 with open(path, "a+") as f:
     fcntl.flock(f, fcntl.LOCK_EX)
     f.seek(0)
     n = sum(1 for _ in f)
-    f.write(json.dumps({"argv": argv, "stdin": prompt, "pid": os.getpid(), "t0": time.time()}) + "\n")
+    f.write(json.dumps({"argv": argv, "stdin": prompt, "pid": os.getpid(), "t0": time.time(),
+                        "system": envelope["instructions"], "schema": schema}) + "\n")
 modes = os.environ.get("FAKE_MODE", "ok").split(",")
 mode = modes[min(n, len(modes) - 1)]
 msg = json.loads(prompt)
 model = argv[argv.index("--model") + 1]
 
 def finish(data=None, text="", error=None):
-    print(json.dumps({"type": "system", "subtype": "init", "model": model}), flush=True)
-    res = {"type": "result", "subtype": "success", "is_error": bool(error), "result": error or text,
-           "usage": {"input_tokens": 10, "output_tokens": 20}, "modelUsage": {model: {"outputTokens": 20}}}
-    if data is not None:
-        res["structured_output"] = data
-    print(json.dumps(res, ensure_ascii=False), flush=True)
+    print(json.dumps({"type": "thread.started", "thread_id": "fake"}), flush=True)
+    print(json.dumps({"type": "turn.started"}), flush=True)
+    if error:
+        print(json.dumps({"type": "turn.failed", "error": {"message": error}}), flush=True)
+    else:
+        print(json.dumps({"type": "item.completed", "item": {"type": "agent_message", "text":
+                         json.dumps(data, ensure_ascii=False) if data is not None else text}}, ensure_ascii=False), flush=True)
+        print(json.dumps({"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 0,
+                                                              "output_tokens": 20}}), flush=True)
     open(os.environ["FAKE_ENDS"], "a").write(json.dumps({"pid": os.getpid(), "t1": time.time()}) + "\n")
     sys.exit(1 if error else 0)
 
@@ -77,7 +90,9 @@ if msg.get("call") == "review":
     verdicts = json.loads(os.environ.get("FAKE_REVIEW", "{}"))
     out = []
     for line in msg["lines"]:
-        cls, missing, error = verdicts.get(str(line["id"]), ["C", [], "none"])
+        # Generic fake corrections are marked by words_for; focused tests script real semantic defects below.
+        verdict = ["C", [], "none"] if line["te"].startswith("మళ్ళీ") else verdicts.get(str(line["id"]), ["C", [], "none"])
+        cls, missing, error = verdict
         out.append({"id": line["id"], "class": cls, "missing": missing, "added": [], "error": error})
     finish({"lines": out[:-1] if mode == "drop_last" else out})
 
@@ -98,7 +113,8 @@ def words_for(line):
     return words, english
 
 def wording(words, english):
-    return {"spoken": " ".join(words), "english": [{"i": i, "en": e} for i, e in english if i < len(words)]}
+    return {"spoken": " ".join(words), "english": [
+        {"word": words[i], "occurrence": words[:i].count(words[i]), "en": e} for i, e in english if i < len(words)]}
 
 def answer(line):
     words, english = words_for(line)
@@ -119,6 +135,8 @@ if mode == "latin_first":
     lines[0]["full"]["spoken"] = "ఇది test వాక్యం."
 if mode == "cyrillic_first":
     lines[0]["full"]["spoken"] = "ఇది క్ల\u0430స్ వాక్యం."
+if mode == "shaping_first":
+    lines[0]["full"] = wording(["అప్\u200cడేట్", "చేశాం."], [(0, "update")])
 if mode == "dupe_first":
     lines.append(lines[0])
 if mode == "extra":
@@ -127,7 +145,7 @@ if mode == "full_only":
     lines = [{k: v for k, v in x.items() if k not in ("fuller", "concise", "very_concise")} for x in lines]
 if mode == "reword":  # a fit that rewrites full too, with its own delivery
     for x in lines:
-        x["full"] = wording(["వేరే"] + x["full"]["spoken"].split(), [(e["i"] + 1, e["en"]) for e in x["full"]["english"]])
+        x["full"] = {"spoken": "వేరే " + x["full"]["spoken"], "english": x["full"]["english"]}
         x["delivery"] = {"emotion": "sad", "energy": "low", "emphasis": [0]}
 data = {"lines": lines}
 if mode == "glossary":
@@ -148,7 +166,7 @@ def specs(ids=(1, 2), want=("full",), speaker="S1", **kw) -> tuple[LineSpec, ...
 
 @pytest.fixture()
 def fake(tmp_path, monkeypatch):
-    exe = tmp_path / "claude"
+    exe = tmp_path / "codex"
     exe.write_text(FAKE.replace("@PYTHON@", sys.executable))
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     record, ends, signals = tmp_path / "record.jsonl", tmp_path / "ends.jsonl", tmp_path / "signals"
@@ -171,6 +189,7 @@ def fake(tmp_path, monkeypatch):
         out = [json.loads(x) for x in record.read_text().splitlines()]
         for c in out:
             c["msg"] = json.loads(c["stdin"])
+            c["config"] = dict(c["argv"][i + 1].split("=", 1) for i, arg in enumerate(c["argv"][:-1]) if arg == "-c")
             c["arg"] = lambda flag, argv=c["argv"]: argv[argv.index(flag) + 1] if flag in argv else None
         return out
 
@@ -195,22 +214,37 @@ async def test_scene_call_defaults_and_message(fake):
     res = await tr.translate(SceneRequest(5, specs(), context_before=(("Hello there.", "నమస్కారం."),),
                                           context_after_en=("Next line.",)))
     (call,) = fake.calls()
-    assert call["arg"]("--model") == "claude-opus-5-5" and call["arg"]("--effort") == "medium"
-    assert call["arg"]("--fallback-model") == "claude-sonnet-5"
-    assert call["arg"]("--system-prompt") == sp.system_prompt(brief_v0(META))
-    assert json.loads(call["arg"]("--json-schema")) == sp.SCENE_SCHEMA
+    assert call["arg"]("--model") == MODEL
+    assert call["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in call["argv"]
+    assert tr.effort == tr.light_effort == tr.review_effort == "low"
+    assert isinstance(tr.cli, CodexCLI) and isinstance(tr.review_cli, CodexCLI)
+    assert call["system"] == sp.system_prompt(brief_v0(META))
+    assert set(call["schema"]["properties"]) == set(sp.SCENE_SCHEMA["properties"])
     assert call["stdin"] == sp.user_message(SceneRequest(5, specs(), "scene", (("Hello there.", "నమస్కారం."),),
                                                          ("Next line.",)))
     assert set(res.lines) == {1, 2} and res.skipped == {} and res.calls == 1
     one = res.lines[1]
     assert one.full == Wording("కైట్ వాక్యం కము ఇది.", ((0, "kite"),))
-    assert one.model == "claude-opus-5-5" and one.brief_version == 0 and not one.cached and one.flags == ()
+    assert one.model == MODEL and one.brief_version == 0 and not one.cached and one.flags == ()
 
 
-async def test_the_fallback_is_used_only_when_the_cli_can_run_it(fake):
-    fake.env.setenv("FAKE_VERSION", "2.1.250 (Claude Code)")
-    await fake.make().translate(SceneRequest(1, specs((1,))))
-    assert "--fallback-model" not in fake.calls()[-1]["argv"]
+def test_the_codex_transport_has_no_cross_model_fallback(fake):
+    with pytest.raises(ValueError):
+        fake.make(fallback_model="another-model")
+    assert not fake.calls()
+
+
+async def test_codex_telugu_shaping_joiner_is_repaired_before_retry_and_cache(fake):
+    fake.env.setenv("FAKE_MODE", "shaping_first")
+    req = SceneRequest(1, (replace(specs((1,))[0], en="We updated it."),))
+    tr = fake.make()
+    result = await tr.translate(req)
+    assert result.calls == 1 and not result.skipped and len(fake.calls()) == 1
+    assert result.lines[1].full == Wording("అప్డేట్ చేశాం.", ((0, "update"),))
+    assert "full ZWNJ/ZWJ normalized" in result.lines[1].flags
+    cached = await fake.make().translate(req)
+    assert not cached.calls and cached.lines[1].cached and len(fake.calls()) == 1
+    assert cached.lines[1].full == replace(result.lines[1].full, english=())  # cached before a semantic review
 
 
 async def test_usage_is_recorded_per_cli_call_and_per_request(fake):
@@ -218,12 +252,12 @@ async def test_usage_is_recorded_per_cli_call_and_per_request(fake):
     await tr.translate(SceneRequest(5, specs()))
     (usage,) = cli_events(fake.events)
     assert usage["call"] == "scene" and usage["scene"] == 5 and usage["lines"] == 2 and usage["output_tokens"] == 20
-    assert usage["model"] == "claude-opus-5-5" and usage["effort"] == "medium"
+    assert usage["model"] == MODEL and usage["effort"] == "low"
     (ev,) = [e for e in fake.events if e["event"] == "translate"]
     assert {k: ev[k] for k in ("call", "scene", "lines", "cached", "answered", "skipped", "calls", "model", "prompt_hash",
                                "brief", "error", "dropped")} == \
         {"call": "scene", "scene": 5, "lines": 2, "cached": 0, "answered": 2, "skipped": [], "calls": 1,
-         "model": "claude-opus-5-5", "prompt_hash": sp.PROMPT_HASH, "brief": 0, "error": None, "dropped": False}
+         "model": MODEL, "prompt_hash": sp.PROMPT_HASH, "brief": 0, "error": None, "dropped": False}
 
 
 # ---- the line cache --------------------------------------------------------------------------------------------------
@@ -234,7 +268,7 @@ async def test_a_rewatch_makes_no_call(fake):
     again = await fake.make().translate(SceneRequest(9, specs((3, 1, 2))))  # another run, another scene cut
     assert len(fake.calls()) == 1 and again.calls == 0
     assert all(x.cached for x in again.lines.values()) and again.lines[1].full.spoken == "కైట్ వాక్యం కము ఇది."
-    assert again.lines[1].model == "claude-opus-5-5" and again.lines[1].brief_version == 0
+    assert again.lines[1].model == MODEL and again.lines[1].brief_version == 0
 
 
 @pytest.mark.parametrize("change", ["speaker", "style", "model", "prompt", "video"])
@@ -246,7 +280,7 @@ async def test_the_cache_misses_when_its_key_changes(fake, monkeypatch, change):
     elif change == "style":
         kw["style"] = "formal"
     elif change == "model":
-        kw.update(model="claude-sonnet-5", fallback_model="claude-opus-5-5")
+        kw.update(model="gpt-6.1-sol")
     elif change == "prompt":
         monkeypatch.setattr(ct, "PROMPT_HASH", "0123456789ab")
     else:
@@ -275,7 +309,7 @@ async def test_a_call_records_the_brief_it_was_sent_with_even_if_a_swap_lands_me
     await fake.started()
     tr.use_brief(Brief(1, META, topic="kites"))
     res = await task
-    assert fake.calls()[0]["arg"]("--system-prompt") == sp.system_prompt(brief_v0(META))
+    assert fake.calls()[0]["system"] == sp.system_prompt(brief_v0(META))
     assert res.lines[1].brief_version == 0
     (row,) = [json.loads(r) for r in (fake.tmp / "cache" / "vid1" / "lines.jsonl").read_text().splitlines()]
     assert row["brief"] == 0
@@ -305,11 +339,13 @@ async def test_a_tier_the_cache_lacks_goes_to_one_fit_call(fake):
     await tr.translate(SceneRequest(1, specs((1, 2))))
     res = await tr.translate(SceneRequest(1, specs((1, 2), want=("full", "concise"))))
     fit = fake.calls()[-1]
-    assert len(fake.calls()) == 2 and fit["msg"]["call"] == "fit" and fit["arg"]("--effort") == "low"
+    assert len(fake.calls()) == 2 and fit["msg"]["call"] == "fit"
+    assert fit["arg"]("--model") == MODEL and fit["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in fit["argv"]
     assert [(x["id"], x["want"], x["current"]) for x in fit["msg"]["lines"]] == \
         [(1, ["concise"], "కైట్ వాక్యం కము ఇది."), (2, ["concise"], "వాక్యం గము ఇది.")]
     assert fit["msg"]["lines"][0]["overflow_aksharas"] == round(count_telugu("కైట్ వాక్యం కము ఇది.") - 9.0) == -2
     assert res.lines[1].tiers["concise"].spoken == "కైట్ వాక్యం కము" and "full" in res.lines[1].tiers
+    assert res.lines[1].tiers["concise"].english == ()  # a new fit has not had its substitution reviewed
     third = await tr.translate(SceneRequest(1, specs((1, 2), want=("full", "concise"))))
     assert len(fake.calls()) == 2 and all(x.cached for x in third.lines.values())
 
@@ -321,10 +357,30 @@ async def test_a_fit_takes_only_the_tiers_it_was_asked_for_and_never_rewrites_fu
     res = await tr.translate(SceneRequest(1, specs((1,), want=("full", "concise"))))
     assert fake.calls()[-1]["msg"]["call"] == "fit"
     line = res.lines[1]
-    assert line.full == first.full == Wording("కైట్ వాక్యం కము ఇది.", ((0, "kite"),))
+    assert first.full == Wording("కైట్ వాక్యం కము ఇది.", ((0, "kite"),))
+    assert line.full == replace(first.full, english=())  # a fit cannot restore an unreviewed cached substitution
     assert line.delivery == first.delivery and line.tiers["concise"].spoken == "కైట్ వాక్యం కము"
     again = (await fake.make().translate(SceneRequest(1, specs((1,), want=("full", "concise"))))).lines[1]
-    assert again.cached and again.full == first.full and again.delivery == first.delivery and len(fake.calls()) == 2
+    assert again.cached and again.full == line.full and again.delivery == first.delivery and len(fake.calls()) == 2
+
+
+async def test_unreviewed_cached_english_map_cannot_return_through_review_failure_or_fit(fake):
+    tr = fake.make()
+    req = SceneRequest(1, specs((1,)))
+    initial = await tr.translate(req)
+    assert initial.lines[1].full.english and initial.lines[1].coverage is None
+    stored = next(iter(rows(fake).values()))
+    assert stored["line"]["full"]["english"]  # exercise an actual mapped, unreviewed cache row
+    fake.env.setenv("FAKE_MODE", "not_signed_in")
+    failed = await tr.review(req, initial.lines, {1: "full"})
+    assert failed.error.kind == "not_signed_in"
+    expected = replace(initial.lines[1].full, english=())
+    assert failed.lines[1].full == expected
+    assert tr.cached(req.lines[0]).full == expected
+    fake.env.setenv("FAKE_MODE", "reword")
+    fitted = await tr.translate(SceneRequest(1, specs((1,), want=("full", "concise"))))
+    assert fitted.lines[1].full == expected and fitted.lines[1].tiers["concise"].english == ()
+    assert fake.make().cached(req.lines[0]).full == expected  # safe across a process/cache reload
 
 
 async def test_the_sessions_fit_of_a_chosen_shorter_tier_adds_that_tier_only(fake):
@@ -441,8 +497,9 @@ async def test_retranslate_names_the_missing_words_and_leaves_the_line_cache_to_
     await tr.translate(SceneRequest(1, specs((1,))))
     res = await tr.translate(SceneRequest(1, specs((1,), missing=("over the hill",)), "retranslate"))
     call = fake.calls()[-1]
-    assert call["msg"]["lines"][0]["missing"] == ["over the hill"] and call["arg"]("--effort") == "medium"
-    assert res.lines[1].full.spoken == "మళ్ళీ కైట్ వాక్యం కము ఇది." and res.lines[1].full.english == ((1, "kite"),)
+    assert call["msg"]["lines"][0]["missing"] == ["over the hill"]
+    assert call["arg"]("--model") == MODEL and call["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in call["argv"]
+    assert res.lines[1].full.spoken == "మళ్ళీ కైట్ వాక్యం కము ఇది." and res.lines[1].full.english == ()
     again = await tr.translate(SceneRequest(1, specs((1,))))  # not judged yet: the cache keeps the line it had
     assert again.lines[1].cached and again.lines[1].full.spoken == "కైట్ వాక్యం కము ఇది."
 
@@ -454,9 +511,22 @@ async def test_a_rephrase_is_queued_not_awaited_and_carries_the_qa_finding(fake)
     assert isinstance(task, asyncio.Task)
     res = await task
     call = fake.calls()[-1]
-    assert call["msg"]["call"] == "rephrase" and call["arg"]("--effort") == "low"
+    assert call["msg"]["call"] == "rephrase"
+    assert call["arg"]("--model") == MODEL and call["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in call["argv"]
     assert call["msg"]["lines"][0]["failing"] == "వాక్యం గము ఇది." and call["msg"]["lines"][0]["finding"]["cer"] == 0.41
     assert not res.dropped and res.lines[2].full.spoken == "మళ్ళీ వాక్యం గము ఇది."
+
+
+@pytest.mark.parametrize("call", ["fit", "retranslate", "rephrase"])
+async def test_new_adjusted_wordings_cannot_substitute_english_before_a_meaning_review(fake, call):
+    tr = fake.make()
+    initial = await tr.translate(SceneRequest(1, specs((1,))))
+    assert initial.lines[1].full.english  # the fake proposes an anchored map
+    wanted = ("concise",) if call == "fit" else ("full",)
+    spec = replace(specs((1,), want=wanted)[0], current=initial.lines[1].full.spoken)
+    answer = await tr.translate(SceneRequest(1, (spec,), call))
+    assert answer.lines[1].tiers[wanted[0]].spoken
+    assert answer.lines[1].tiers[wanted[0]].english == ()
 
 
 async def test_a_rephrase_that_misses_its_deadline_is_dropped_and_its_usage_logged(fake):
@@ -487,6 +557,64 @@ async def test_rephrase_answers_are_not_stored(tmp_path):
 
 
 # ---- concurrency and cancellation ------------------------------------------------------------------------------------
+async def test_call_slots_recompute_priority_and_keep_equal_priorities_fifo():
+    priorities = {1: 0, 2: 5, 3: 0}
+    slots = ct._CallSlots(1, lambda call, scene: priorities[scene])
+    order = []
+
+    async def work(scene):
+        async with slots.hold("scene", scene):
+            order.append(scene)
+
+    async with slots.hold("scene", 1):
+        tasks = [asyncio.create_task(work(scene)) for scene in (1, 2, 3)]
+        await asyncio.sleep(0)  # all three are queued behind the running call
+        priorities[2] = -1     # the voicer's frontier changed while the calls were waiting
+    await asyncio.gather(*tasks)
+    assert order == [2, 1, 3] and slots.active == 0
+
+
+async def test_cancelling_a_just_granted_call_hands_its_slot_to_the_next_waiter():
+    slots = ct._CallSlots(1, lambda call, scene: 0)
+    await slots.acquire("scene", 0)
+    first = asyncio.create_task(slots.acquire("scene", 1))
+    next_one = asyncio.create_task(slots.acquire("scene", 2))
+    await asyncio.sleep(0)
+    slots.release()  # grants first, whose task has not resumed yet
+    first.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await first
+    await asyncio.wait_for(next_one, 1)
+    assert slots.active == 1
+    slots.release()
+    async with slots.hold("review", 3):
+        assert slots.active == 1
+    assert slots.active == 0
+
+
+async def test_reviews_and_fits_can_pass_future_scene_calls_without_preempting_a_process(fake):
+    fake.env.setenv("FAKE_MODE", "ok,slow,ok")
+    tr = fake.make(concurrency=1)
+    req = SceneRequest(1, specs((1,)))
+    lines = (await tr.translate(req)).lines
+    running = tr.submit(SceneRequest(99, specs((99,))))
+    await fake.started(2)
+    tr.call_priority = lambda call, scene: {"review": 0, "fit": 1}.get(call, 2)
+    future = tr.submit(SceneRequest(20, specs((20,))))
+    fit = tr.submit(SceneRequest(2, (replace(specs((2,), want=("concise",))[0],
+                                          current="వాక్యం గము ఇది.", overflow=2.0),), "fit"))
+    review = asyncio.create_task(tr.review(req, lines, {1: "full"}))
+    for _ in range(5):
+        await asyncio.sleep(0)  # each public request reaches the shared admission queue
+    assert len(fake.calls()) == 2 and not running.done()  # priority never cancels an in-flight call
+    running.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await running
+    await asyncio.gather(future, fit, review)
+    assert [(c["msg"]["call"], c["msg"]["scene"]) for c in fake.calls()[2:]] == [
+        ("review", 1), ("fit", 2), ("scene", 20)]
+
+
 async def test_at_most_n_calls_run_at_once(fake):
     fake.env.setenv("FAKE_MODE", "pause")
     fake.env.setenv("FAKE_PAUSE", "0.6")
@@ -556,12 +684,12 @@ async def test_glossary_additions_travel_in_later_messages_until_a_brief_swap(fa
     assert [g.term for g in res.glossary_additions] == ["Kite"]  # the Latin "string" spelling was dropped
     await tr.translate(SceneRequest(2, specs((2,))))
     assert fake.calls()[-1]["msg"]["glossary_recent"] == [{"term": "Kite", "spoken": "కైట్"}]
-    assert '"term":"Kite"' not in fake.calls()[-1]["arg"]("--system-prompt")  # not in the cached prompt yet
+    assert '"term":"Kite"' not in fake.calls()[-1]["system"]  # not in the cached prompt yet
     tr.use_brief(Brief(1, META, topic="kites", glossary=(GlossaryEntry("wind", "గాలి", False),)))
     await tr.translate(SceneRequest(3, specs((3,))))
     last = fake.calls()[-1]
     assert last["msg"]["glossary_recent"] == []
-    assert '{"term":"Kite","spoken":"కైట్","keep_english":true}' in last["arg"]("--system-prompt")
+    assert '{"term":"Kite","spoken":"కైట్","keep_english":true}' in last["system"]
     assert [g.term for g in tr.brief.glossary] == ["wind", "Kite"]
 
 
@@ -575,7 +703,7 @@ async def test_glossary_additions_survive_every_brief_swap(fake):
     await tr.translate(SceneRequest(2, specs((2,))))
     last = fake.calls()[-1]
     assert tr.brief.version == 2 and [g.term for g in tr.brief.glossary] == ["wind", "Kite"]
-    assert '{"term":"Kite","spoken":"కైట్","keep_english":true}' in last["arg"]("--system-prompt")
+    assert '{"term":"Kite","spoken":"కైట్","keep_english":true}' in last["system"]
     assert last["msg"]["glossary_recent"] == []
 
 
@@ -592,7 +720,9 @@ async def test_brief_v1_is_one_call_cached_by_its_transcript(fake):
     transcript = [("S1", ENGLISH[0]), ("S2", ENGLISH[1])]
     v1 = await tr.make_brief(META, transcript)
     call = fake.calls()[-1]
-    assert call["arg"]("--system-prompt") == sp.BRIEF_SYSTEM and json.loads(call["arg"]("--json-schema")) == sp.BRIEF_SCHEMA
+    assert call["system"] == sp.BRIEF_SYSTEM and set(call["schema"]["properties"]) == set(sp.BRIEF_SCHEMA["properties"])
+    assert call["arg"]("--model") == MODEL and call["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in call["argv"]
+    assert cli_events(fake.events, call="brief")[0]["effort"] == "low"
     assert call["msg"]["transcript"][0] == {"speaker": "S1", "en": ENGLISH[0]}
     assert v1.version == 1 and [g.term for g in v1.glossary] == ["kite"]  # the Latin spelling was dropped
     assert [(s.id, s.gender) for s in v1.speakers] == [("S1", "female"), ("S2", "female")]
@@ -650,29 +780,30 @@ async def reviewed(fake, ids=(1, 2), chosen="full", tr=None, **kw):
     return tr, req, res, await tr.review(req, res.lines, {i: chosen for i in res.lines})
 
 
-async def test_the_review_is_one_call_on_its_own_model_prompt_and_schema(fake):
+async def test_the_review_uses_codex_with_its_own_prompt_and_schema(fake):
     tr, req, res, out = await reviewed(fake)
     scene, review = fake.calls()
-    assert review["arg"]("--model") == "claude-sonnet-5" and review["arg"]("--effort") == "high"
-    assert review["arg"]("--fallback-model") == "claude-opus-5-5"
-    assert review["arg"]("--system-prompt") == sp.REVIEW_SYSTEM
-    assert json.loads(review["arg"]("--json-schema")) == sp.REVIEW_SCHEMA
+    assert scene["arg"]("--model") == review["arg"]("--model") == MODEL
+    assert review["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in review["argv"]
+    assert review["system"] == sp.REVIEW_SYSTEM
+    assert set(review["schema"]["properties"]) == set(sp.REVIEW_SCHEMA["properties"])
     assert review["stdin"] == sp.review_message(req, [(s, res.lines[s.id].full) for s in req.lines])
     assert review["msg"]["context_before"] == [{"en": "Look up there.", "te": "అటు చూడండి."}]
     assert out.error is None and out.calls == 1
     assert {i: x.coverage for i, x in out.lines.items()} == {i: Coverage("C", tier="full") for i in (1, 2)}
     assert out.lines[1].full == res.lines[1].full
     (usage,) = cli_events(fake.events, call="review")
-    assert usage["model"] == "claude-sonnet-5" and usage["effort"] == "high" and usage["scene"] == 3
+    assert usage["model"] == MODEL and usage["effort"] == "low" and usage["scene"] == 3
     (ev,) = [e for e in fake.events if e["event"] == "review"]
     assert ev["classes"] == {"C": 2, "m": 0, "P": 0, "E": 0} and ev["unreviewed"] == [] and ev["error"] is None
     assert ev["review_hash"] == sp.REVIEW_HASH
+    assert ev["correction_outcomes"] == {}
 
 
 async def test_the_review_model_and_effort_are_configurable(fake):
-    await reviewed(fake, review_model="claude-opus-5-5", review_fallback=None, review_effort="low")
+    await reviewed(fake, review_model="gpt-6.1-sol", review_fallback=None, review_effort="medium")
     review = fake.calls()[-1]
-    assert review["arg"]("--model") == "claude-opus-5-5" and review["arg"]("--effort") == "low"
+    assert review["arg"]("--model") == "gpt-6.1-sol" and review["config"]["model_reasoning_effort"] == '"medium"'
     assert "--fallback-model" not in review["argv"]
 
 
@@ -687,25 +818,27 @@ async def test_classes_are_stored_with_the_line_and_a_rewatch_reviews_nothing(fa
 async def test_p_and_e_lines_get_one_retranslation_from_the_english_with_the_missing_words_named(fake):
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["E", [], "negation"]}))
     tr, req, res, out = await reviewed(fake, ids=(1, 2, 3))
-    redo = fake.calls()[-1]
-    assert redo["msg"]["call"] == "retranslate" and len(fake.calls()) == 3
-    assert redo["arg"]("--model") == "claude-opus-5-5" and redo["arg"]("--effort") == "medium"
-    assert redo["arg"]("--system-prompt") == sp.system_prompt(brief_v0(META))  # the scene prompt: never the Telugu
+    redo = fake.calls()[-2]
+    assert redo["msg"]["call"] == "retranslate" and len(fake.calls()) == 4
+    assert fake.calls()[-1]["msg"]["call"] == "review"
+    assert redo["arg"]("--model") == MODEL and redo["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in redo["argv"]
+    assert redo["system"] == sp.system_prompt(brief_v0(META))  # the scene prompt: never the Telugu
     by_id = {x["id"]: x for x in redo["msg"]["lines"]}
     assert set(by_id) == {1, 2} and by_id[1]["missing"] == ["over the hill"] and "problems" not in by_id[1]
     assert by_id[2]["missing"] == [] and "meaning error (negation)" in by_id[2]["problems"][0]
     assert [x["id"] for x in redo["msg"]["context_done"]] == [3]
-    # the re-translations say more and flag nothing: classed C by the checks, and kept
+    # the exact corrected wordings explicitly receive C in the additional semantic review
     for i, first in ((1, "P"), (2, "E")):
         assert out.lines[i].full.spoken.startswith("మళ్ళీ")
-        assert out.lines[i].coverage == Coverage("C", tier="full", by="validators", first=first)
+        assert out.lines[i].coverage == Coverage("C", tier="full", by="review", first=first)
     assert out.lines[3].coverage.cls == "C" and out.lines[3].full == res.lines[3].full
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
     assert stored[1]["line"]["full"]["spoken"].startswith("మళ్ళీ") and stored[1]["coverage"]["first"] == "P"
     (ev,) = [e for e in fake.events if e["event"] == "review"]
-    assert ev["retranslated"] == [1, 2] and ev["replaced"] == [1, 2] and ev["calls"] == 2
+    assert ev["retranslated"] == [1, 2] and ev["replaced"] == [1, 2] and ev["calls"] == 3
+    assert ev["correction_outcomes"] == {1: "accepted", 2: "accepted"}
     again = await fake.make().translate(req)  # a re-watch serves the kept wordings with their classes
-    assert again.calls == 0 and again.lines[2].coverage.by == "validators"
+    assert again.calls == 0 and again.lines[2].coverage.by == "review"
 
 
 async def test_a_review_with_cache_stores_the_wording_reviewed_never_its_retranslation(fake):
@@ -719,9 +852,10 @@ async def test_a_review_with_cache_stores_the_wording_reviewed_never_its_retrans
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["E", [], "negation"]}))
     out = await tr.review(req, {i: replace(x, coverage=None) for i, x in res.lines.items()},
                           {i: "full" for i in res.lines}, cache={1, 3})
-    assert out.lines[1].full.spoken.startswith("మళ్ళీ") and out.lines[1].coverage.by == "validators"
+    assert out.lines[1].full.spoken.startswith("మళ్ళీ") and out.lines[1].coverage.by == "review"
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
-    assert stored[1]["line"] == ct.line_json(res.lines[1]) and stored[1]["coverage"]["class"] == "P"
+    safe = replace(res.lines[1], tiers={t: replace(w, english=()) for t, w in res.lines[1].tiers.items()})
+    assert stored[1]["line"] == ct.line_json(safe) and stored[1]["coverage"]["class"] == "P"
     assert stored[1]["coverage"]["by"] == "review" and stored[3]["coverage"]["class"] == "C"
     assert stored[2] == {r["line"]["id"]: r for r in before.values()}[2]  # not in `cache`: left as it was
 
@@ -737,12 +871,15 @@ async def test_the_reviewed_wording_stays_unless_the_retranslation_classes_bette
     req = SceneRequest(1, lines)
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "full", 2: "full", 3: "full"})
-    # 1: no longer than before, so still P (a tie keeps the reviewed one); 2: the negation still isn't said, E again;
-    # 3: the number still isn't said, E, worse than P
+    # 1 and 3: the fresh review still says P, so the original wins the tie.
+    # 2: the negation is still absent, so deterministic rejection prevents approval.
     assert [out.lines[i].coverage.cls for i in (1, 2, 3)] == ["P", "E", "P"]
-    assert all(out.lines[i].coverage.by == "review" and out.lines[i].full == res.lines[i].full for i in (1, 2, 3))
+    assert all(out.lines[i].coverage.by == "review" and out.lines[i].full == replace(res.lines[i].full, english=())
+               for i in (1, 2, 3))
     assert all(r["coverage"]["by"] == "review" for r in rows(fake).values())  # the cache holds the reviewed ones again
-    assert (await fake.make().translate(req)).lines[1].full == res.lines[1].full
+    assert (await fake.make().translate(req)).lines[1].full == replace(res.lines[1].full, english=())
+    (ev,) = [e for e in fake.events if e["event"] == "review"]
+    assert ev["correction_outcomes"] == {1: "not_better", 2: "meaning_flag", 3: "not_better"}
 
 
 async def test_a_line_reviewed_on_a_shorter_tier_keeps_that_tier_in_its_class(fake):
@@ -752,6 +889,9 @@ async def test_a_line_reviewed_on_a_shorter_tier_keeps_that_tier_in_its_class(fa
     out = await tr.review(req, res.lines, {1: "concise"})
     assert fake.calls()[-1]["msg"]["lines"][0]["te"] == res.lines[1].tiers["concise"].spoken
     assert out.lines[1].coverage.tier == "concise"
+    assert out.lines[1].tiers["concise"].english == ((0, "kite"),)
+    assert out.lines[1].full.english == ()  # this tier's substitution was not reviewed
+    assert fake.calls()[-1]["msg"]["lines"][0]["tts"] == "kite వాక్యం కము"
     req2 = SceneRequest(2, specs((2,)))
     res2 = await tr.translate(req2)
     out2 = await tr.review(req2, res2.lines, {2: "very_concise"})  # a tier the line hasn't: its `full` is reviewed
@@ -784,7 +924,7 @@ async def test_a_review_failure_the_user_must_fix_leaves_the_lines_unreviewed_an
     fake.env.setenv("FAKE_MODE", "ok,not_signed_in")
     tr, req, res, out = await reviewed(fake)
     assert out.error is not None and out.error.kind == "not_signed_in"
-    assert {i: x.full for i, x in out.lines.items()} == {i: x.full for i, x in res.lines.items()}
+    assert {i: x.full for i, x in out.lines.items()} == {i: replace(x.full, english=()) for i, x in res.lines.items()}
     assert all(x.coverage is None for x in out.lines.values()) and all(r["coverage"] is None for r in rows(fake).values())
     assert [e["error"] for e in fake.events if e["event"] == "review"] == ["not_signed_in"]
 
@@ -793,8 +933,34 @@ async def test_a_retranslation_that_fails_the_user_leaves_its_line_to_be_reviewe
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,session_limit")
     tr, req, res, out = await reviewed(fake)
-    assert out.error.kind == "usage_limit" and out.lines[1].coverage is None and out.lines[2].coverage.cls == "C"
+    assert out.error.kind == "usage_limit" and out.lines[1].coverage.cls == "P" and out.lines[2].coverage.cls == "C"
+    assert out.review_pending == (1,)
     assert {r["line"]["id"]: r["coverage"] for r in rows(fake).values()}[1] is None
+    (ev,) = [e for e in fake.events if e["event"] == "review"]
+    assert ev["correction_outcomes"] == {1: "call_error"}
+
+
+async def test_exhausted_correction_validation_is_distinct_from_a_call_error(fake):
+    fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
+    fake.env.setenv("FAKE_MODE", "ok,ok,garbage_json")
+    tr, req, res, out = await reviewed(fake)
+    assert out.error is None and out.lines[1].coverage.cls == "P"
+    assert out.lines[1].full == replace(res.lines[1].full, english=())
+    assert out.lines[2].coverage.cls == "C"
+    (ev,) = [e for e in fake.events if e["event"] == "review"]
+    assert ev["correction_outcomes"] == {1: "no_valid_candidate"}
+    assert ev["retranslated"] == [1] and ev["replaced"] == []
+
+
+async def test_partial_review_failure_does_not_report_an_unattempted_correction(fake):
+    fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
+    fake.env.setenv("FAKE_MODE", "ok,drop_last,not_signed_in")
+    tr, req, res, out = await reviewed(fake)
+    assert out.error.kind == "not_signed_in" and out.lines[1].coverage.cls == "P" and out.lines[2].coverage is None
+    assert out.review_pending == (1, 2)
+    assert all(r["coverage"] is None for r in rows(fake).values())
+    (ev,) = [e for e in fake.events if e["event"] == "review"]
+    assert ev["correction_outcomes"] == {} and ev["retranslated"] == []
 
 
 async def test_a_review_is_cancelled_like_a_request(fake):
@@ -846,16 +1012,17 @@ async def test_a_retranslation_is_classed_on_the_tier_the_review_classed(fake):
     req = SceneRequest(1, specs((1,), want=("full", "concise")))
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
-    assert fake.calls()[-1]["msg"]["call"] == "retranslate"
+    assert fake.calls()[-1]["msg"]["call"] == "review"
+    assert fake.calls()[-1]["msg"]["lines"][0]["te"] == res.lines[1].tiers["concise"].spoken
     assert out.lines[1].coverage == Coverage("P", ("over the hill",), tier="concise")
-    assert out.lines[1].tiers == res.lines[1].tiers
+    assert out.lines[1].tiers == {t: replace(w, english=()) for t, w in res.lines[1].tiers.items()}
     assert [e["replaced"] for e in fake.events if e["event"] == "review"] == [[]]
-    # a longer `concise` back: C on `concise`, and kept
+    # an explicitly reviewed C on the corrected `concise` is kept
     fake.env.setenv("FAKE_MODE", "ok")
     tr = fake.make(video="vid2")
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
-    assert out.lines[1].coverage == Coverage("C", tier="concise", by="validators", first="P")
+    assert out.lines[1].coverage == Coverage("C", tier="concise", by="review", first="P")
     assert out.lines[1].tiers["concise"].spoken == "మళ్ళీ కైట్ వాక్యం కము"
 
 
@@ -867,21 +1034,21 @@ async def test_a_retranslation_without_the_reviewed_tier_is_classed_on_full_agai
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
     assert set(out.lines[1].tiers) == {"full"} and out.lines[1].full.spoken == "మళ్ళీ కైట్ వాక్యం కము ఇది."
-    assert out.lines[1].coverage == Coverage("C", tier="full", by="validators", first="P")
+    assert out.lines[1].coverage == Coverage("C", tier="full", by="review", first="P")
 
 
-async def test_a_retranslation_is_cached_only_once_the_review_has_judged_it(fake):
-    """Line 2's re-translation is left out of the first reply and asked for again, which hits a usage limit: line 1's,
-    back already, is judged, kept and stored; line 2 keeps its first wording, unclassed, and so does its cache row."""
+async def test_partial_corrections_before_usage_failure_cannot_gain_heuristic_approval(fake):
+    """A partial correction exists, but the usage failure prevents its semantic check. Neither candidate is approved."""
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["P", ["higher"], "none"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,drop_last,session_limit")
     tr, req, res, out = await reviewed(fake)
     assert out.error.kind == "usage_limit" and len(fake.calls()) == 4
-    assert out.lines[1].coverage == Coverage("C", tier="full", by="validators", first="P")
-    assert out.lines[2].coverage is None and out.lines[2].full == res.lines[2].full
+    assert all(line.coverage.cls == "P" for line in out.lines.values())
+    assert out.review_pending == (1, 2)
+    assert all(out.lines[i].full == replace(res.lines[i].full, english=()) for i in (1, 2))
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
-    assert stored[1]["line"]["full"]["spoken"].startswith("మళ్ళీ") and stored[1]["coverage"]["class"] == "C"
-    assert stored[2]["line"]["full"] == ct.line_json(res.lines[2])["full"] and stored[2]["coverage"] is None
+    assert all(stored[i]["coverage"] is None for i in (1, 2))
+    assert all(stored[i]["line"]["full"] == ct.line_json(res.lines[i])["full"] for i in (1, 2))
 
 
 async def test_a_review_cancelled_during_its_retranslation_leaves_the_cache_as_it_was(fake):
@@ -904,10 +1071,10 @@ async def test_a_retranslation_asked_again_still_carries_the_review_finding(fake
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["E", [], "negation"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,drop_last,ok")
     tr, req, res, out = await reviewed(fake, ids=(1,))
-    first, again = (c["msg"]["lines"][0] for c in fake.calls()[2:])
+    first, again = (c["msg"]["lines"][0] for c in fake.calls() if c["msg"]["call"] == "retranslate")
     assert "meaning error (negation)" in first["problems"][0]
     assert again["problems"] == first["problems"] + ["missing from the reply"]
-    assert out.lines[1].coverage.by == "validators"
+    assert out.lines[1].coverage.by == "review"
 
 
 class Refit(MockClaude):
@@ -977,6 +1144,246 @@ async def test_a_fit_that_replaces_the_reviewed_wording_leaves_the_line_unreview
     assert len(tr.review_cli.calls) == n + 1 and again.lines[1].coverage == Coverage("C", tier="very_concise")
 
 
+FULL_C = {"class": "C", "missing": [], "added": [], "error": "none"}
+
+
+async def full_fallback_case(tmp_path, monkeypatch, *, primary="P", fallback=FULL_C, eligible=(1,),
+                             chosen="very_concise", cache=None, recheck=None, en=None, full=None, trace=None):
+    """Original kite sentence with a fact-dropping short tier; scripted semantic verdicts, no model calls."""
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude(), trace=trace)
+    line = LineResult(1, {"full": full or Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది.", ((0, "kite"),)),
+                          "very_concise": Wording("కైట్ పైకి.", ((0, "kite"),))}, brief_version=0, model="mock")
+    req, calls = SceneRequest(1, (replace(KITE, en=en or KITE.en),)), []
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        calls.append((call, json.loads(prompt)))
+        if call == "review":
+            row = {"id": 1, "class": primary, "missing": ["over the green hill"] if primary == "P" else [],
+                   "added": [], "error": "other" if primary == "E" else "none"}
+            if fallback != "absent":
+                row["fallback"] = fallback
+            data = {"lines": [row]}
+        else:
+            assert call == "retranslate"
+            data = {"lines": [ct.line_json(line)]}  # no improvement: keeps the original P short tier
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    result = await tr.review(req, {1: line}, {1: chosen}, cache=cache, fallbacks=eligible,
+                             fallback_check=recheck)
+    return tr, req, line, calls, result
+
+
+@pytest.mark.parametrize("primary", ["P", "E"])
+async def test_explicit_complete_full_reuses_existing_wording_in_same_review(tmp_path, monkeypatch, primary):
+    events = []
+    tr, req, original, calls, result = await full_fallback_case(tmp_path, monkeypatch, primary=primary,
+                                                              trace=events.append)
+    line = result.lines[1]
+    assert [call for call, _ in calls] == ["review"] and result.calls == 1
+    assert events[-1]["correction_outcomes"] == {} and events[-1]["fallback_approved"] == [1]
+    assert approved_full(line) and line.coverage.first == primary and line.full == original.full
+    assert line.tiers["very_concise"].spoken == original.tiers["very_concise"].spoken  # diagnostic wording kept
+    assert line.tiers["very_concise"].english == ()  # only actual reviewed full may use Latin replacements
+    offered = calls[0][1]["lines"][0]["fallback"]
+    assert offered == {"te": original.full.spoken,
+                       "tts": "kite పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది."}
+    fresh = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    cached = fresh.cached(KITE)
+    assert approved_full(cached) and cached.full == line.full
+    # A new scene requesting another short tier must not generate it over a persisted full approval.
+    out = await fresh.translate(replace(req, lines=(replace(KITE, want=("full", "concise", "very_concise")),)))
+    assert approved_full(out.lines[1]) and out.calls == 0 and fresh.cli.calls == []
+
+
+@pytest.mark.parametrize("fallback", ["absent", None, {"class": "C"},
+    {**FULL_C, "class": "m"}, {**FULL_C, "class": "P"}, {**FULL_C, "class": "E"},
+    {**FULL_C, "missing": ["maybe"]}, {**FULL_C, "error": "number"}])
+async def test_unusable_full_verdict_retains_existing_correction_path(tmp_path, monkeypatch, fallback):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, fallback=fallback)
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
+    assert not approved_full(result.lines[1]) and result.lines[1].coverage.cls == "P"
+
+
+@pytest.mark.parametrize("kw", [{"eligible": ()}, {"cache": set()}, {"cache": {1}}, {"chosen": "full"}])
+async def test_unoffered_or_voiced_full_verdict_cannot_skip_correction(tmp_path, monkeypatch, kw):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, **kw)
+    assert "fallback" not in calls[0][1]["lines"][0]
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
+    assert not approved_full(result.lines[1])
+
+
+@pytest.mark.parametrize("primary", ["C", "m"])
+async def test_acceptable_selected_tier_is_not_replaced_by_an_unsolicited_full_verdict(tmp_path, monkeypatch, primary):
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, primary=primary)
+    assert len(calls) == 1 and not approved_full(result.lines[1])
+    assert result.lines[1].coverage == Coverage(primary, tier="very_concise")
+
+
+@pytest.mark.parametrize("full", [None, Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్లవచ్చు.")])
+async def test_modal_source_never_shortcuts_redo_even_when_reviewer_claims_full_c(tmp_path, monkeypatch, full):
+    # The live negative control incorrectly approved a full that dropped "may". Veto both that answer and a
+    # full retaining the uncertainty; this guarded scope does not delegate the shortcut decision to its verdict.
+    _, _, _, calls, result = await full_fallback_case(
+        tmp_path, monkeypatch, en="The kite may climb slowly over the green hill.", full=full)
+    assert "fallback" not in calls[0][1]["lines"][0]
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
+    assert not approved_full(result.lines[1])
+
+
+@pytest.mark.parametrize("raises", [False, True])
+async def test_full_fallback_rechecks_live_eligibility_before_skipping_redo(tmp_path, monkeypatch, raises):
+    checked = []
+
+    def changed(i):
+        checked.append(i)
+        if raises:
+            raise RuntimeError("changed planner")
+        return False
+
+    _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, recheck=changed)
+    assert checked == [1] and [call for call, _ in calls] == ["review", "retranslate", "review"]
+    assert result.lines[1].coverage.cls == "P" and not approved_full(result.lines[1])
+
+
+async def test_full_approval_does_not_depend_on_another_lines_correction_succeeding(tmp_path, monkeypatch):
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    req = SceneRequest(1, (KITE, replace(KITE, id=2)))
+    original = {i: LineResult(i, {"full": Wording(LONG), "very_concise": Wording(SHORT)}) for i in (1, 2)}
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        if call == "review":
+            return ClaudeReply("", {"lines": [{"id": i, "class": "P", "missing": ["over the green hill"],
+                "added": [], "error": "none", "fallback": FULL_C if i == 1 else None} for i in (1, 2)]}, 0.0)
+        assert json.loads(prompt)["context_done"][-1]["te"] == LONG
+        raise ClaudeCLIError("usage_limit", "test limit")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    result = await tr.review(req, original, {1: "very_concise", 2: "very_concise"}, fallbacks={1})
+    assert result.error.kind == "usage_limit" and approved_full(result.lines[1])
+    assert result.lines[2].coverage.cls == "P" and approved_full(tr.cached(KITE))
+
+
+@pytest.mark.parametrize("fit_fails", [False, True])
+async def test_fit_in_flight_cannot_overwrite_a_new_full_approval(tmp_path, monkeypatch, fit_fails):
+    tr = ClaudeTranslator(tmp_path, "fallback", brief_v0(META), cli=MockClaude())
+    old = LineResult(1, {"full": Wording(LONG), "very_concise": Wording(SHORT)}, brief_version=0)
+    tr._store(KITE, old)
+    pinned = replace(old, coverage=Coverage("C", tier="full", first="P"))
+
+    async def ask(call, *args, **kwargs):
+        assert call == "fit"
+        tr._store(KITE, pinned)  # review completes while an earlier fit awaited the provider
+        data = {"lines": [] if fit_fails else [ct.line_json(replace(old, tiers={**old.tiers, "concise": Wording(MID)}))]}
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    spec = replace(KITE, want=("concise",), current=LONG, overflow=6.0)
+    result = await tr.translate(SceneRequest(1, (spec,), "fit"))
+    assert approved_full(result.lines[1]) and approved_full(tr.cached(KITE))
+    assert "concise" not in result.lines[1].tiers and result.lines[1].full == old.full
+
+
+def legacy_wording_row(tmp_path, *, prompt="ccfdc4088a39", brief=1):
+    """Known v5 anchored text on disk, including an old approval that must never migrate."""
+    directory = tmp_path / "migration"
+    directory.mkdir(exist_ok=True)
+    line = LineResult(1, {"full": Wording("కైట్ పచ్చని కొండ మీదుగా నెమ్మదిగా పైకి వెళ్తుంది.", ((0, "kite"),)),
+                          "very_concise": Wording("కైట్ పైకి.", ((0, "kite"),))}, model="mock", brief_version=brief,
+                      coverage=Coverage("C", tier="full", first="P"))
+    row = {"key": ct.line_key(KITE, "colloquial"), "prompt_hash": prompt, "model": "mock",
+           "answered_by": "mock", "brief": brief, "line": ct.line_json(line),
+           "coverage": {"class": "C", "tier": "full", "by": "review", "first": "P"}}
+    path = directory / "lines.jsonl"
+    path.write_text(json.dumps(row, ensure_ascii=False) + "\n", encoding="utf-8")
+    return line, row, path
+
+
+def test_wording_migration_requires_the_same_generator_policy(monkeypatch):
+    assert ct.WORDING_MIGRATIONS == {sp.PROMPT_HASH: "ccfdc4088a39"}
+    # The destination changed review policy/version only. A future actual generator edit must remove this reuse
+    # permission, even if someone updates the destination pin; it cannot inherit compatibility by convenience.
+    monkeypatch.setattr(sp, "SHOTS_VERSION", "scene-v5")
+    assert sp.prompt_hash() == "ccfdc4088a39"
+
+
+async def test_known_v5_wording_reuses_generation_but_requires_fresh_review(tmp_path):
+    original, _, path = legacy_wording_row(tmp_path)
+    before = path.read_bytes()
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    spec = replace(KITE, want=("full", "very_concise"))
+    req = SceneRequest(1, (spec,))
+    cached = tr.cached(spec)
+    assert cached.cached and cached.coverage is None and not approved_full(cached)
+    assert all(w.english == () for w in cached.tiers.values())
+    assert {t: w.spoken for t, w in cached.tiers.items()} == {t: w.spoken for t, w in original.tiers.items()}
+    result = await tr.translate(req)
+    assert result.calls == 0 and tr.cli.calls == [] and path.read_bytes() == before
+    reviewed = await tr.review(req, result.lines, {1: "very_concise"})
+    assert [c["call"] for c in tr.cli.calls] == ["review"]  # old C/full never skips this call
+    assert tr.cli.calls[0]["message"]["lines"][0]["tts"] == original.tiers["very_concise"].spoken
+    assert reviewed.lines[1].coverage == Coverage("C", tier="very_concise")
+    assert path.read_bytes().startswith(before)  # old rows and progress remain recoverable, append-only
+    rows = [json.loads(x) for x in path.read_text().splitlines()]
+    assert len(rows) == 2 and rows[1]["prompt_hash"] == sp.PROMPT_HASH
+    fresh = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    assert fresh.cached(spec).coverage == reviewed.lines[1].coverage
+
+
+@pytest.mark.parametrize("bad", [None, {}, {"full": {"spoken": "Latin only", "english": []}}])
+def test_corrupt_current_row_cannot_resurrect_older_wording_or_approval(tmp_path, bad):
+    _, row, path = legacy_wording_row(tmp_path)
+    current = {**row, "prompt_hash": sp.PROMPT_HASH, "line": bad}
+    with path.open("a") as f:
+        f.write(json.dumps(current) + "\n")
+    before = path.read_bytes()
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    assert tr.cached(KITE) is None and path.read_bytes() == before
+
+
+def test_current_wording_and_approval_win_even_if_legacy_row_was_appended_later(tmp_path):
+    _, row, path = legacy_wording_row(tmp_path)
+    current_line = LineResult(1, {"full": Wording(LONG)})
+    current = {**row, "prompt_hash": sp.PROMPT_HASH, "approval_policy": ClaudeTranslator(tmp_path, "identity", Brief(1, META), cli=MockClaude()).approval_policy,
+               "line": ct.line_json(current_line)}
+    path.write_text(json.dumps(current) + "\n" + json.dumps(row) + "\n")
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
+    cached = tr.cached(KITE)
+    assert cached.full.spoken == LONG and approved_full(cached)
+
+
+@pytest.mark.parametrize("change", ["old_prompt", "rejected_v6", "future_prompt", "model", "style", "speaker",
+                                    "english", "video"])
+def test_wording_migration_is_limited_to_exact_known_provenance(tmp_path, monkeypatch, change):
+    prompt = {"old_prompt": "pre-anchor-v4", "rejected_v6": "b17b25dc4e91"}.get(change, "ccfdc4088a39")
+    legacy_wording_row(tmp_path, prompt=prompt)
+    cli, kwargs, spec = MockClaude(), {}, KITE
+    if change == "future_prompt":
+        monkeypatch.setattr(ct, "PROMPT_HASH", "future-generator")
+    elif change == "model":
+        cli.model = "other-model"
+    elif change == "style":
+        kwargs["style"] = "formal"
+    elif change == "speaker":
+        spec = replace(spec, speaker="S2")
+    elif change == "english":
+        spec = replace(spec, en="The kite does not climb over the hill.")
+    tr = ClaudeTranslator(tmp_path, "other-video" if change == "video" else "migration", Brief(1, META),
+                          cli=cli, **kwargs)
+    assert tr.cached(spec) is None
+
+
+@pytest.mark.parametrize("old_brief,new_brief,usable", [(0, 0, True), (0, 1, False), (1, 2, True),
+                                                       (None, 1, False), (True, 1, False)])
+def test_wording_migration_preserves_brief_compatibility_gate(tmp_path, old_brief, new_brief, usable):
+    legacy_wording_row(tmp_path, brief=old_brief)
+    tr = ClaudeTranslator(tmp_path, "migration", Brief(new_brief, META), cli=MockClaude())
+    cached = tr.cached(KITE)
+    assert (cached is not None) is usable
+    if usable:
+        assert cached.coverage is None and all(not w.english for w in cached.tiers.values())
+
+
 # ---- the mock ----------------------------------------------------------------------------------------------------------
 async def test_the_mock_translator_is_deterministic_telugu_and_never_calls_claude(tmp_path):
     from maata_engine.backends.mock import _LINES
@@ -1004,3 +1411,150 @@ async def test_the_mock_can_be_slow_and_cancelled(tmp_path):
     with pytest.raises(asyncio.CancelledError):
         await task
     assert time.monotonic() - t0 < 2
+
+
+async def correction_case(tmp_path, monkeypatch, *, en="The kite crossed the hill.",
+                          before="గాలిపటం ఇప్పుడు ఇక్కడ చాలా నెమ్మదిగా పైకి వెళ్తుంది.",
+                          candidate="గాలిపటం కొండ దాటింది.", verdict="C", failure=None):
+    """Original controls pass through real validation/cache/selection; only the external provider is scripted."""
+    tr = ClaudeTranslator(tmp_path, "correction", brief_v0(META), cli=MockClaude())
+    spec = replace(KITE, en=en, want=("full",))
+    req = SceneRequest(1, (spec,))
+    original = LineResult(1, {"full": Wording(before)}, brief_version=0, model="mock")
+    new = LineResult(1, {"full": Wording(candidate)}, brief_version=0, model="mock")
+    tr._store(spec, original)
+    calls = []
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        msg = json.loads(prompt)
+        calls.append((call, msg, kwargs.get("tags")))
+        if call == "retranslate":
+            data = {"lines": [ct.line_json(new)]}
+        elif len(calls) == 1:
+            data = {"lines": [{"id": 1, "class": "P", "missing": ["original missing detail"],
+                                "added": [], "error": "none"}]}
+        else:
+            assert call == "review" and kwargs["tags"]["correction"] is True
+            assert msg["lines"][0]["te"] == candidate
+            assert msg["lines"][0]["tts"] == candidate
+            assert "fallback" not in msg["lines"][0]
+            if failure in ("bad_output", "usage_limit", "not_signed_in"):
+                raise ClaudeCLIError(failure, "scripted correction review failure")
+            row = {"id": 1, "class": verdict, "missing": [] if verdict == "C" else ["may"],
+                   "added": [], "error": "none"}
+            if failure == "contradictory_error":
+                row["error"] = "negation"
+            elif failure == "contradictory_missing":
+                row["missing"] = ["may"]
+            elif failure == "contradictory_added":
+                row["added"] = ["always"]
+            data = {"lines": [] if failure == "missing" else [row, row] if failure == "duplicate" else [row]}
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    out = await tr.review(req, {1: original}, {1: "full"})
+    return tr, spec, original, calls, out
+
+
+async def test_shorter_correct_candidate_requires_and_receives_fresh_semantic_approval(tmp_path, monkeypatch):
+    tr, spec, original, calls, out = await correction_case(tmp_path, monkeypatch)
+    got = out.lines[1]
+    assert len(got.full.spoken) < len(original.full.spoken)
+    assert got.coverage == Coverage("C", tier="full", by="review", first="P")
+    assert approved_full(got)  # subsequent timing fits cannot discard this explicitly reviewed correction
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]
+    assert out.calls == 3 and out.error is None and out.review_pending == ()
+    fresh = ClaudeTranslator(tmp_path, "correction", brief_v0(META), cli=MockClaude())
+    assert fresh.cached(spec).coverage == got.coverage
+    row = next(iter(fresh._lines.rows.values()))
+    assert row["approval_policy"] == tr.approval_policy
+    assert (await fresh.review(SceneRequest(1, (spec,)), {1: fresh.cached(spec)}, {1: "full"})).calls == 0
+
+
+async def test_longer_candidate_losing_uncertainty_is_not_approved_by_length(tmp_path, monkeypatch):
+    tr, spec, original, calls, out = await correction_case(
+        tmp_path, monkeypatch, en="The replacement may cost another fifty rupees.",
+        before="యాభై రూపాయలు అవుతుంది.", candidate="మార్చడానికి ఇంకో యాభై రూపాయలు అవుతుంది.", verdict="P")
+    assert len(calls[-1][1]["lines"][0]["te"]) > len(original.full.spoken)
+    assert out.lines[1].full == original.full and out.lines[1].coverage.cls == "P"
+    assert tr.cached(spec).coverage.cls == "P"
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]  # no recursive repair
+
+
+@pytest.mark.parametrize("failure", ["missing", "duplicate", "bad_output", "usage_limit", "not_signed_in",
+                                     "contradictory_error", "contradictory_missing", "contradictory_added"])
+async def test_unknown_correction_review_never_approves_or_persists_candidate(tmp_path, monkeypatch, failure):
+    tr, spec, original, calls, out = await correction_case(tmp_path, monkeypatch, failure=failure)
+    assert out.lines[1].full == original.full and out.lines[1].coverage.cls == "P"
+    assert out.review_pending == (1,)
+    assert tr.cached(spec).coverage is None  # pending review remains retryable across restart
+    assert tr.cached(spec).full == original.full
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]
+    assert (out.error.kind if out.error else None) == (failure if failure in ("bad_output", "usage_limit", "not_signed_in") else None)
+
+
+@pytest.mark.parametrize("policy", [None, "heuristic-v0", "current"])
+@pytest.mark.parametrize("by", ["validators", "review"])
+def test_cached_approval_requires_current_policy_but_reuses_wording(tmp_path, policy, by):
+    tr = ClaudeTranslator(tmp_path, "policy", brief_v0(META), cli=MockClaude())
+    original = LineResult(1, {"full": Wording("కైట్ కొండ మీదుగా వెళ్తుంది.", ((0, "kite"),))},
+                          coverage=Coverage("C", tier="full", by=by, first="P"), brief_version=0)
+    tr._store(KITE, original)
+    path = tmp_path / "policy" / "lines.jsonl"
+    row = json.loads(path.read_text())
+    if policy is None:
+        row.pop("approval_policy")
+    else:
+        row["approval_policy"] = tr.approval_policy if policy == "current" else policy
+    path.write_text(json.dumps(row, ensure_ascii=False) + "\n")
+    before = path.read_bytes()
+    fresh = ClaudeTranslator(tmp_path, "policy", brief_v0(META), cli=MockClaude())
+    cached = fresh.cached(KITE)
+    assert cached.full.spoken == original.full.spoken and cached.cached
+    assert cached.coverage == (original.coverage if policy == "current" and by == "review" else None)
+    assert cached.full.english == (original.full.english if policy == "current" and by == "review" else ())
+    assert path.read_bytes() == before  # inspection never rewrites user cache or completed artifacts
+
+
+@pytest.mark.parametrize("change", ["review_model", "review_effort", "review_hash", "client_effort"])
+def test_changed_reviewer_identity_invalidates_approval_not_generation(tmp_path, monkeypatch, change):
+    cli = MockClaude()
+    cli.effort = "low"
+    original = ClaudeTranslator(tmp_path, "policy-change", brief_v0(META), cli=cli, review_effort=None)
+    line = LineResult(1, {"full": Wording("కైట్ కొండ దాటింది.", ((0, "kite"),))},
+                      coverage=Coverage("C", tier="full", by="review"), brief_version=0)
+    original._store(KITE, line)
+    reviewer = MockClaude()
+    reviewer.effort = "low"
+    kwargs = {"review_cli": reviewer, "review_effort": None}
+    if change == "review_model":
+        reviewer.model = "different-review-model"
+    elif change == "review_effort":
+        kwargs["review_effort"] = "medium"
+    elif change == "client_effort":
+        reviewer.effort = "medium"
+    else:
+        monkeypatch.setattr(ct, "REVIEW_HASH", "different-review-prompt")
+    changed = ClaudeTranslator(tmp_path, "policy-change", brief_v0(META), cli=cli, **kwargs)
+    assert changed.prompt_hash == original.prompt_hash and changed.model == original.model
+    assert changed.approval_policy != original.approval_policy
+    cached = changed.cached(KITE)
+    assert cached.cached and cached.full.spoken == line.full.spoken
+    assert cached.coverage is None and cached.full.english == ()
+
+
+async def test_cancellation_during_correction_review_never_caches_its_candidate(fake):
+    fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
+    fake.env.setenv("FAKE_MODE", "ok,ok,ok,slow")
+    tr = fake.make()
+    req = SceneRequest(1, specs((1,)))
+    initial = await tr.translate(req)
+    pending = asyncio.create_task(tr.review(req, initial.lines, {1: "full"}))
+    await fake.started(4)
+    assert fake.calls()[-1]["msg"]["call"] == "review"
+    assert fake.calls()[-1]["msg"]["lines"][0]["te"].startswith("మళ్ళీ")
+    assert tr.cancel(lambda r: r.scene == 1) == 1
+    with pytest.raises(asyncio.CancelledError):
+        await pending
+    cached = tr.cached(req.lines[0])
+    assert cached.coverage is None and cached.full.spoken == initial.lines[1].full.spoken

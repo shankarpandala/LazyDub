@@ -807,7 +807,7 @@ async def test_notifications_fire_for_speakers_done_failed_holds_and_a_crash(eng
     for _ in range(2):
         await eng._job_event({"type": "claude_error", "videoId": VID_C, "kind": "usage_limit", "message": "Limit reached.",
                               "resetsAt": None})
-    assert posted == [("Maata", f"Claude is holding back {VID_C}: Limit reached.")]
+    assert posted == [("Maata", f"Codex is holding back {VID_C}: Limit reached.")]
     # a failure
     posted.clear()
     eng.backend.tts = BrokenSynth()
@@ -860,8 +860,70 @@ async def test_a_paused_job_holding_a_big_video_survives_another_job_ending(eng,
     a = job_json(eng, VID_A)
     assert not a["expired"] and big.stat().st_size == 6_000_000_000
     assert (eng.cache_dir / VID_A / "render" / "pcm").is_dir() and (eng.cache_dir / VID_A / "render" / "takes").is_dir()
-    assert job_json(eng, VID_B)["expired"]  # the done whole job went instead (still over the cap)
+    assert not job_json(eng, VID_B)["expired"]  # paused bytes cannot evict a small completed job either
+    assert (eng.cache_dir / VID_B / "render" / "takes").is_dir()
     assert Path(job_json(eng, VID_B)["output"]["path"]).is_file()  # never the output folder
+
+
+def _retention_fixture(cache: Path, vid: str, *, status="done", updated=2_000_000_000.0,
+                       stop=None, expired=False, size=1024) -> Path:
+    root = cache / vid / "render"
+    (root / "takes").mkdir(parents=True)
+    with (root / "takes" / "original.npz").open("wb") as f:
+        f.truncate(size)  # sparse fixtures exercise byte accounting without large writes
+    (root / "job.json").write_text(json.dumps({"status": status, "updatedAt": updated, "expired": expired,
+                                               "settings": {"stopAt": stop}, "stages": {}}))
+    return root
+
+
+@pytest.mark.parametrize("kind", ["paused", "interrupted", "waiting", "failed", "new", "running", "queued",
+                                  "preview", "kept"])
+def test_retention_cap_counts_only_eligible_job_directories(tmp_path, kind):
+    cache = tmp_path / "cache"
+    complete = _retention_fixture(cache, VID_A)
+    protected = _retention_fixture(cache, VID_B, status="done" if kind in ("preview", "kept") else kind,
+                                   stop=60.0 if kind == "preview" else None, size=100_000)
+    unmanaged = cache / "model-evaluation" / "models" / "weights.bin"
+    unmanaged.parent.mkdir(parents=True)
+    with unmanaged.open("wb") as f:
+        f.truncate(1_000_000_000)
+    monitoring = cache / "monitoring"
+    monitoring.mkdir()
+    (monitoring / "trace.jsonl").write_bytes(b"x" * 10_000)
+    before = {p: p.read_bytes() for p in (complete / "job.json", protected / "job.json")}
+    keep = {VID_B} if kind == "kept" else ()
+    assert retain(cache, keep, 2_000_000_001.0, cap=4096) == []
+    assert all(p.read_bytes() == data for p, data in before.items())
+    assert (complete / "takes" / "original.npz").is_file()
+    assert (protected / "takes" / "original.npz").stat().st_size == 100_000
+    assert unmanaged.stat().st_size == 1_000_000_000
+
+
+def test_retention_cap_still_reclaims_oldest_eligible_and_expired_leftovers(tmp_path):
+    from maata_engine.server import _bytes
+
+    cache = tmp_path / "cache"
+    oldest = _retention_fixture(cache, VID_A, updated=2_000_000_000.0, expired=True, size=8000)
+    older = _retention_fixture(cache, VID_B, updated=2_000_000_001.0, size=8000)
+    newest = _retention_fixture(cache, VID_C, updated=2_000_000_002.0, size=8000)
+    paused = _retention_fixture(cache, VID_D, status="paused", size=100_000)
+    # One payload must go. The expired job's newly accumulated take goes first, then the older completed job.
+    cap = sum(_bytes(root.parent) for root in (oldest, older, newest)) - 8000 + 128
+    assert retain(cache, (), 2_000_000_003.0, cap=cap) == [VID_A]
+    assert not (oldest / "takes").exists()
+    assert (older / "takes").is_dir() and (newest / "takes").is_dir()
+    cap = sum(_bytes(root.parent) for root in (oldest, older, newest)) - 8000 + 128
+    assert retain(cache, (), 2_000_000_003.0, cap=cap) == [VID_B]
+    assert not (older / "takes").exists() and (newest / "takes").is_dir()
+    assert (paused / "takes").is_dir()
+
+
+def test_retention_age_policy_still_applies_to_paused_work(tmp_path):
+    cache = tmp_path / "cache"
+    paused = _retention_fixture(cache, VID_A, status="paused", updated=2_000_000_000.0 - 15 * 86400)
+    assert retain(cache, (), 2_000_000_000.0, cap=1_000_000) == [VID_A]
+    assert not (paused / "takes").exists()
+    assert json.loads((paused / "job.json").read_text())["expired"]
 
 
 async def test_remove_deletes_the_jobs_unfinished_mp4_too(eng, tmp_path):
@@ -950,7 +1012,7 @@ async def test_renders_items_carry_their_options_and_the_video_both_estimates(en
         await w.send(type="inspect", url="https://youtu.be/" + "x" * 11)
         video = await w.until(lambda m: m["type"] == "video")
     assert item["settings"] == {"speakers": None, "style": "formal", "stopAt": 60.0, "speedCap": 1.1,
-                                "ttsScript": "telugu", "presets": []}
+                                "ttsScript": "telugu", "presets": [], "voiceProfiles": {}}
     assert item["createdAt"] == job_json(eng, VID_A)["createdAt"] and item["createdAt"] > 0
     assert item["error"] is None and item["slept"] is None
     # what the job view shows of a job that isn't running (it sends no `render`): its stages, elapsed time and report
@@ -1059,3 +1121,170 @@ async def test_the_output_says_whether_it_has_the_background_sound(eng):
         await w.send(type="prepare", url=URL_B, stopAt=60)
         out = (await w.until(done(VID_B)))["output"]
     assert out["bed"] is False and out["warning"] == mp4.NO_BED
+
+
+async def test_old_clone_preview_cannot_be_served_as_selected_native_voice(tmp_path):
+    from maata_engine.server import Client
+    eng = Engine("mock", tmp_path / "models", tmp_path / "cache", None, "tok", demo=True)
+    tts = eng.backend.tts
+    tts.native_voice = True
+    tts.model_revision = "omnivoice-test"
+    tts.cache_identity = {"reference": "approved-B"}
+    root = eng.cache_dir / VID_A / "render"
+    root.mkdir(parents=True)
+    path = root / "voices.json"
+    old = {"inputs": {"model": "chatterbox-old"}, "speakers": {"S1": {"how": "single-clip"}}}
+    path.write_text(json.dumps(old))
+    provenance = eng._voice_provenance({"videoId": VID_A})
+    assert provenance["voiceMode"] == "cloned" and provenance["voiceCompatible"] is False
+    messages, frames = [], []
+    async def send_json(m):
+        messages.append(m)
+    async def send_bytes(m):
+        frames.append(m)
+    await eng._voice_sample(Client(send_json, send_bytes), VID_A, "S1")
+    assert not frames and "earlier voice model" in messages[-1]["message"]
+    assert json.loads(path.read_text()) == old
+    current = {"inputs": {"model": tts.model_revision, "synthesis": tts.cache_identity},
+               "speakers": {"S1": {"how": "native"}}}
+    path.write_text(json.dumps(current))
+    assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is True
+    tts.cache_identity = {"reference": "different-B"}
+    assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is False
+
+
+@pytest.mark.parametrize("initial_status", ["done", "paused", "failed", "interrupted"])
+async def test_native_voice_choice_does_not_resume_stopped_jobs(eng, initial_status):
+    await run_job(eng, URL_A)
+    set_status(eng, VID_A, status=initial_status)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    before = job_json(eng, VID_A)
+    output = before["output"]
+    async with window(eng) as w:
+        n = len(w.msgs)
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="female")
+        found = await w.until(lambda m: m["type"] == "speakers_found" and
+                             m["speakers"][0].get("voiceProfile") == "female", after=n)
+        assert found["speakers"][0]["voiceCompatible"] is False
+        assert found["speakers"][0]["resolvedVoiceProfile"] is None
+        assert not [m for m in w.msgs[n:] if m["type"] == "render" and m.get("status") in ("running", "queued")]
+    saved = job_json(eng, VID_A)
+    assert saved["settings"]["voiceProfiles"] == {"S1": "female"}
+    assert saved["status"] == initial_status and saved["output"] == output
+    assert saved["stages"] == before["stages"] and saved["updatedAt"] == before["updatedAt"]
+    assert eng.job is None and not eng.queue
+
+
+async def test_native_voice_choice_auto_clears_override_and_validates_speaker(eng):
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    async with window(eng) as w:
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="male")
+        await w.until(lambda m: m["type"] == "speakers_found" and m["speakers"][0].get("voiceProfile") == "male")
+        for speaker, profile in [("S999", "female"), ("S1", "invalid"), ("S1", {"male": True})]:
+            n = len(w.msgs)
+            await w.send(type="set_voice_profile", videoId=VID_A, speaker=speaker, voiceProfile=profile)
+            await w.until(lambda m: m["type"] == "error", after=n)
+            assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "male"}
+        n = len(w.msgs)
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="auto")
+        await w.until(lambda m: m["type"] == "speakers_found" and m["speakers"][0].get("voiceProfile") == "auto", after=n)
+    assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {}
+    assert eng.job is None
+
+
+async def test_native_voice_preview_cannot_play_a_different_profile(eng):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    tts = eng.backend.tts
+    tts.native_voice = True
+    tts.model_revision = "native-test"
+    tts.cache_identity = {"policy": "profile-test"}
+    path = eng.cache_dir / VID_A / "render" / "voices.json"
+    path.write_text(json.dumps({"inputs": {"model": tts.model_revision, "synthesis": tts.cache_identity},
+                               "speakers": {"S1": {"how": "native", "voiceProfile": "auto", "sample": True,
+                                           "resolvedVoiceProfile": "male", "voiceProfileSource": "acoustic"}}}))
+    msg = {"videoId": VID_A, "speakers": [{"id": "S1"}]}
+    assert eng._voice_provenance(msg)["speakers"][0]["voiceCompatible"]
+    d = job_json(eng, VID_A)
+    set_status(eng, VID_A, settings={**d["settings"], "voiceProfiles": {"S1": "female"}})
+    row = eng._voice_provenance(msg)["speakers"][0]
+    assert row["voiceProfile"] == "female" and not row["voiceCompatible"] and row["resolvedVoiceProfile"] is None
+    frames, messages = [], []
+    async def send_json(m):
+        messages.append(m)
+    async def send_bytes(m):
+        frames.append(m)
+    await eng._voice_sample(Client(send_json, send_bytes), VID_A, "S1")
+    assert not frames and "voice choice" in messages[-1]["message"]
+
+
+@pytest.mark.parametrize("stopping", [False, True])
+async def test_voice_choice_restarts_running_work_but_preserves_a_pause(eng, stopping):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng.job = eng._job(VID_A, None)
+    eng.job.doc["status"] = "running"
+    if stopping:
+        eng.job.pause()
+    eng.queue = [(VID_B, RenderSettings()), (VID_C, RenderSettings())]
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "male")
+    assert eng.job.stopping
+    if stopping:
+        assert waiting(eng) == [VID_B, VID_C]
+        assert dict(eng.job.settings.voice_profiles) == {"S1": "male"}
+        assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "male"}
+    else:
+        assert waiting(eng) == [VID_A, VID_B, VID_C]
+        assert dict(eng.queue[0][1].voice_profiles) == {"S1": "male"}
+        assert eng.job.settings.voice_profiles == ()
+    # Pending selections are reflected without falsely relabelling old samples.
+    row = eng._voice_provenance({"videoId": VID_A, "speakers": [{"id": "S1"}]})["speakers"][0]
+    assert row["voiceProfile"] == "male" and not row["voiceCompatible"]
+
+
+async def test_voice_choice_keeps_queued_order_and_survives_restart(eng):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng._quitting = True  # simulate pending queue persistence without launching model work
+    eng.queue = [(VID_B, RenderSettings()), (VID_A, RenderSettings()), (VID_C, RenderSettings())]
+    set_status(eng, VID_A, status="queued", queuedAt=123.0)
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "female")
+    assert waiting(eng) == [VID_B, VID_A, VID_C]
+    assert dict(eng.queue[1][1].voice_profiles) == {"S1": "female"}
+    doc = job_json(eng, VID_A)
+    assert doc["status"] == "queued" and doc["queuedAt"] == 123.0
+    assert dict(eng._job(VID_A, None).settings.voice_profiles) == {"S1": "female"}
+
+
+@pytest.mark.parametrize("terminal_status", ["done", "failed", "paused"])
+async def test_voice_choice_during_terminal_notification_does_not_restart(eng, terminal_status):
+    """A window can react to the terminal render event before _run_job clears self.job."""
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng.job = eng._job(VID_A, None)
+    eng.job.doc["status"] = terminal_status
+    output = dict(eng.job.doc["output"])
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "female")
+    assert not eng.queue and not eng.job.stopping
+    assert eng.job.doc["status"] == terminal_status and eng.job.doc["output"] == output
+    assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "female"}

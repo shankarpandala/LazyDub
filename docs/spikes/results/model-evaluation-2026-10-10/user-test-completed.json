@@ -1,0 +1,62 @@
+{
+  "recorded_utc": "2026-10-10T09:47:06.175401+00:00",
+  "video_id": "8qCc_hMCB0w",
+  "status": "done",
+  "source_duration_seconds": 475.43,
+  "rendered_lines": 65,
+  "skipped_lines": 0,
+  "coverage_classes": {
+    "C": 57,
+    "P": 7,
+    "m": 1
+  },
+  "flags": {
+    "long": 1
+  },
+  "voice_modes": {
+    "native": 65
+  },
+  "stats": {
+    "lines": 65,
+    "coverage": {
+      "C": 0.877,
+      "m": 0.015,
+      "P": 0.108,
+      "E": 0.0,
+      "other_tier": 0.0,
+      "unreviewed": 0.0
+    },
+    "lag_p95": 0.0446,
+    "rate_p90": 1.0528,
+    "overdraft_s": 0.0,
+    "overdraft_carried_s": 0.0,
+    "fixups": 1
+  },
+  "output": {
+    "path": "/Users/shankarpandala/Movies/Maata/What Happens If You Consumed Omega-3 Fish Oils for 30 Days (Telugu).mp4",
+    "bytes": 63704203,
+    "sha256": "1a75658599bbdae91e155ddbd55a30be7a4f42fd4bc4e98589da9d9b42d92598",
+    "probed_duration_seconds": 475.382993,
+    "codecs": [
+      "h264",
+      "aac",
+      "mov_text",
+      "mov_text"
+    ],
+    "loudness": {
+      "I": -16.02,
+      "TP": -1.8,
+      "LRA": 5.33
+    },
+    "background_bed": true,
+    "export_warning": null
+  },
+  "limits": [
+    "Client-started real video, not the controlled original-audio smoke.",
+    "Coverage classes are reported labels, not independent proof that every word was spoken. C provenance was not re-audited here.",
+    "Seven P and one m labels remain; no automatic redub or quality-gate weakening.",
+    "Whole-export native listening, word completeness and watermark acceptance have not been verified.",
+    "Earlier underfill issue remains unresolved.",
+    "The run overlapped the regression suite and was split by one maintenance restart; no paired speed or fresh-run throughput claim."
+  ]
+}

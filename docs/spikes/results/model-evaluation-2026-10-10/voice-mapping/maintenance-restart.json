@@ -1,0 +1,147 @@
+{
+  "before": {
+    "time": 1791626072.262658,
+    "jobs": [
+      {
+        "video_id": "0eFln_mdXGY",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 33423614,
+        "output_mtime_ns": 1791092588948081933
+      },
+      {
+        "video_id": "3iRUwVzRDZQ",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 140576430,
+        "output_mtime_ns": 1791218097651509954
+      },
+      {
+        "video_id": "5XTJRU9na3Y",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 41074994,
+        "output_mtime_ns": 1791100671226013738
+      },
+      {
+        "video_id": "8qCc_hMCB0w",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 63704203,
+        "output_mtime_ns": 1791625523743923060
+      },
+      {
+        "video_id": "9GSDvO0LFFE",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 224234481,
+        "output_mtime_ns": 1791172675176493309
+      },
+      {
+        "video_id": "9TsjAaFZG20",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 329647747,
+        "output_mtime_ns": 1791096087857895561
+      },
+      {
+        "video_id": "Is8XU3J5ZZE",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 179351656,
+        "output_mtime_ns": 1791225886497729907
+      },
+      {
+        "video_id": "xi-zHJL5bnI",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 1111432741,
+        "output_mtime_ns": 1791257575858753507
+      },
+      {
+        "video_id": "yWBP-gDUXiQ",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 153010726,
+        "output_mtime_ns": 1791129051459639632
+      }
+    ]
+  },
+  "after": {
+    "time": 1791626624.5946612,
+    "jobs": [
+      {
+        "video_id": "0eFln_mdXGY",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 33423614,
+        "output_mtime_ns": 1791092588948081933
+      },
+      {
+        "video_id": "3iRUwVzRDZQ",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 140576430,
+        "output_mtime_ns": 1791218097651509954
+      },
+      {
+        "video_id": "5XTJRU9na3Y",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 41074994,
+        "output_mtime_ns": 1791100671226013738
+      },
+      {
+        "video_id": "8qCc_hMCB0w",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 63704203,
+        "output_mtime_ns": 1791625523743923060
+      },
+      {
+        "video_id": "9GSDvO0LFFE",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 224234481,
+        "output_mtime_ns": 1791172675176493309
+      },
+      {
+        "video_id": "9TsjAaFZG20",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 329647747,
+        "output_mtime_ns": 1791096087857895561
+      },
+      {
+        "video_id": "Is8XU3J5ZZE",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 179351656,
+        "output_mtime_ns": 1791225886497729907
+      },
+      {
+        "video_id": "xi-zHJL5bnI",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 1111432741,
+        "output_mtime_ns": 1791257575858753507
+      },
+      {
+        "video_id": "yWBP-gDUXiQ",
+        "status": "done",
+        "run_id": null,
+        "output_bytes": 153010726,
+        "output_mtime_ns": 1791129051459639632
+      }
+    ]
+  },
+  "all_nine_done": true,
+  "job_ids_statuses_and_output_metadata_unchanged": true,
+  "verification_limit": "Size and mtime, not a fresh content-hash comparison.",
+  "native_ui": "Rebuilt app launched via CUA; saved male choice for S1 of recent test via UI; terminal status stayed done and no dub started.",
+  "saved_choice": {
+    "S1": "male"
+  },
+  "cancelled_video_entry_restored": false,
+  "schedule_created": false
+}

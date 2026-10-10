@@ -3,12 +3,12 @@
     maata-bench fetch [--backend apple]           download + verify the models for a backend
     maata-bench pipeline FILE [--backend apple]   dub the whole video to an MP4 (a render job), print JSON metrics
         [--out DIR]                               ...saving the MP4 in DIR (default: <cache>/out)
-        [--translator mock]                       ...with the mock translator instead of the Claude CLI (offline)
+        [--translator mock]                       ...with the mock translator instead of the Codex CLI (offline)
         [--tts-script latin]                      ...with English words given to the TTS in Latin script (decision D6)
         [--baseline JSON]                         ...with the timing targets measured against a committed run's JSON
 
 Every number printed comes from this machine; nothing is estimated. The pipeline translates through the backend's
-translator: the user's signed-in Claude CLI on apple and cuda (ADR-019), the mock one on the mock backend. The input file
+translator: the user's signed-in Codex CLI on apple and cuda, the mock one on the mock backend. The input file
 is read in place and never changed (OFFLINE-RENDER §2.2: `LocalResolver`).
 
 The bench's job lives in its own cache (`--cache`, default ~/Library/Caches/Maata-bench), which Maata never scans: a bench
@@ -161,7 +161,10 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     token = os.environ.get("HF_TOKEN")
     missing_gated: list[str] = []
     for m in models_for(args.backend or detect()):
-        print(f"→ {m['id']}  ({m['total_bytes'] / 1e9:.2f} GB, {m['license']})", flush=True)
+        total = m.get("total_bytes")
+        if not isinstance(total, (int, float)) or total < 0:
+            total = sum(f["size"] for f in m["files"])
+        print(f"→ {m['id']}  ({total / 1e9:.2f} GB, {m['license']})", flush=True)
         last = [0.0]
 
         def progress(path: str, got: int, total: int) -> None:
@@ -242,7 +245,9 @@ async def _pipeline(args: argparse.Namespace) -> dict:
     out = job.doc["output"]
     return {
         "machine": _machine(), "backend": backend.name, "device": backend.device, "file": path.name,
-        "translator": backend.translator.__name__, "tts_script": args.tts_script,
+        "translator": backend.translator.__name__, "translation_model": job.tr.model,
+        "translation_provider": "mock" if args.translator == "mock" or backend.name == "mock" and not args.translator
+                                else "codex", "tts_script": args.tts_script,
         "audio_seconds": round(seconds, 2), "model_load_seconds": round(load_s, 2), "pipeline_seconds": round(wall, 2),
         "throughput_x_realtime": round(seconds / wall, 2) if wall else None,
         "calibration_seconds": round(job.calibrate_s, 2), "speakers": len(job.registry.speakers),
@@ -272,7 +277,8 @@ def main(argv: list[str] | None = None) -> None:
     pl.add_argument("file", help="a local video file (it is read in place, never changed)")
     pl.add_argument("--backend", choices=["apple", "cuda", "mock"])
     pl.add_argument("--out", help="the folder the MP4 is saved in (default: <cache>/out)")
-    pl.add_argument("--translator", choices=["claude", "mock"], help="default: the backend's own")
+    pl.add_argument("--translator", choices=["codex", "mock", "claude"],
+                    help="default: the backend's own; claude is a legacy alias for codex")
     pl.add_argument("--tts-script", choices=["telugu", "latin"], default="telugu")
     pl.add_argument("--baseline", help="a committed pipeline JSON: the timing targets are measured against its own")
     args = p.parse_args(argv)

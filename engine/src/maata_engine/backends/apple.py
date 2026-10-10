@@ -165,8 +165,19 @@ class MLXMelRoFormerSeparator:
 
 def make_apple_backend(models_dir: Path) -> Backend:
     m = models_dir
-    # MAATA_CFM_STEPS: a dev override for the S3Gen flow-matching steps (ADR-014).
-    tts = ChatterboxTeluguTTS(m / "chatterbox-telugu", "mps", m / "preset-voices", cfm_steps=int(os.environ.get("MAATA_CFM_STEPS") or 10))
+    voice_model = os.environ.get("MAATA_TTS", "omnivoice")
+    if voice_model == "omnivoice":
+        from .omnivoice import OmniVoiceTTS
+        from ..settings import default_config_dir
+
+        python = Path(os.environ.get("MAATA_OMNIVOICE_PYTHON") or
+                      default_config_dir() / "runtimes/omnivoice/bin/python")
+        tts = OmniVoiceTTS(m / "omnivoice", runtime_python=python, voice_dir=m / "omnivoice/voices", device="mps")
+    elif voice_model == "chatterbox":  # explicit rollback; never silently revert to the rejected voice
+        tts = ChatterboxTeluguTTS(m / "chatterbox-telugu", "mps", m / "preset-voices",
+                                cfm_steps=int(os.environ.get("MAATA_CFM_STEPS") or 10))
+    else:
+        raise ValueError(f"Unknown MAATA_TTS {voice_model!r}; choose omnivoice or chatterbox")
     return Backend(
         name="apple",
         device="mps",

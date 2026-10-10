@@ -1,6 +1,6 @@
 import type {
   ClaudeHealth, ClaudeProblem, ClientMessage, DubOptions, EngineMessage, EngineSettings, JobItem, Render, SpeakersFound,
-  VideoInfo,
+  TtsModel, VideoInfo, VoiceMode, VoiceProfile,
 } from "./types";
 import { PRIVACY_KEY, healthProblem } from "./claude";
 import { jobOptions, newDubOptions } from "./settings";
@@ -45,11 +45,13 @@ export class AppState {
   backend = $state("");
   device = $state("");
   demo = $state(false);
-  /** The Claude CLI as the engine found it on connect; null when the engine never calls Claude (the demo). */
+  voiceMode = $state<VoiceMode>("cloned");
+  ttsModel = $state<TtsModel>("Chatterbox Telugu");
+  /** The Codex CLI as the engine found it on connect; null for the demo. Internal names preserve the wire protocol. */
   claude = $state<ClaudeHealth | null>(null);
   /** What holds translation back now, and when the engine said so (ms): the banner's countdown runs from then. */
   claudeProblem = $state<(ClaudeProblem & { at: number }) | null>(null);
-  /** The one-time notice that transcript text goes to Anthropic has been read. */
+  /** The one-time notice that transcript text goes to OpenAI has been read. */
   privacySeen = $state(loadFlag(PRIVACY_KEY));
 
   view = $state<View>("library");
@@ -61,6 +63,8 @@ export class AppState {
   openId = $state<string | null>(null);
   /** The speaker check of each job that sent one (`speakers_found`), by video id. */
   foundBy = $state<Record<string, SpeakersFound>>({});
+  /** In-flight choices; a server echo owns the actual setting and whether its sample is ready. */
+  voiceProfileRequests = $state<Record<string, Record<string, VoiceProfile>>>({});
   /** The video New dub shows (`inspect`'s answer). */
   video = $state<VideoInfo | null>(null);
   /** The link `inspect` was sent for, until its answer. */
@@ -108,10 +112,13 @@ export class AppState {
     switch (m.type) {
       case "hello":
         this.backend = m.backend; this.device = m.device; this.demo = m.demo;
+        this.voiceMode = m.voiceMode ?? "cloned";
+        this.ttsModel = m.ttsModel ?? "Chatterbox Telugu";
         this.setClaude(m.claude, now);
         this.jobs = m.renders ?? [];
         this.renders = m.render ? { [m.render.videoId]: m.render } : {};
         this.foundBy = {}; // (the engine sends each job's speaker check after hello)
+        this.voiceProfileRequests = {};
         this.settings = m.settings ?? null;
         if (this.launch) {
           this.inspect(this.launch, send);
@@ -160,6 +167,7 @@ export class AppState {
           return s === "running" || s === "waiting";
         }));
         this.foundBy = Object.fromEntries(Object.entries(this.foundBy).filter(([id]) => status.has(id)));
+        this.voiceProfileRequests = Object.fromEntries(Object.entries(this.voiceProfileRequests).filter(([id]) => status.has(id)));
         for (const id of Object.keys(this.removing)) {
           if (!status.has(id)) this.forgetRemove(id);
         }
@@ -169,6 +177,15 @@ export class AppState {
       case "speakers_found": {
         const { type: _t, ...found } = m;
         this.foundBy = { ...this.foundBy, [found.videoId]: found };
+        const pending = this.voiceProfileRequests[found.videoId];
+        if (pending) {
+          this.voiceProfileRequests = { ...this.voiceProfileRequests, [found.videoId]: Object.fromEntries(
+            Object.entries(pending).filter(([id, profile]) => {
+              const speaker = found.speakers.find((s) => s.id === id);
+              return speaker !== undefined && speaker.voiceProfile !== profile;
+            }),
+          ) };
+        }
         break;
       }
       case "settings":
@@ -188,6 +205,7 @@ export class AppState {
         this.error = { message: m.message, retryable: m.retryable };
         this.inspecting = null;
         this.preparing = null;
+        this.voiceProfileRequests = {};
         break;
     }
   }
@@ -280,6 +298,7 @@ export class AppState {
 
   /** A speaker voiced with a stock voice instead of their clone, or back. Shown at once; the engine re-runs from there. */
   setVoice(videoId: string, speaker: string, usePreset: boolean, send: Send): void {
+    if (this.voiceMode === "native") return;
     send({ type: "set_voice", videoId, speaker, usePreset });
     this.jobs = this.jobs.map((j) => {
       if (j.videoId !== videoId) return j;
@@ -287,6 +306,17 @@ export class AppState {
       if (usePreset) presets.add(speaker); else presets.delete(speaker);
       return { ...j, settings: { ...j.settings, presets: [...presets].sort() } };
     });
+  }
+
+  /** Save a speaker's dubbing voice choice; only the engine decides whether current work must restart. */
+  setVoiceProfile(videoId: string, speaker: string, voiceProfile: VoiceProfile, send: Send): void {
+    const found = this.foundBy[videoId]?.speakers.find((s) => s.id === speaker);
+    if (this.voiceMode !== "native" || found?.voiceProfile === undefined
+      || !["auto", "male", "female"].includes(voiceProfile) || found.voiceProfile === voiceProfile) return;
+    this.error = null;
+    this.voiceProfileRequests = { ...this.voiceProfileRequests,
+      [videoId]: { ...this.voiceProfileRequests[videoId], [speaker]: voiceProfile } };
+    send({ type: "set_voice_profile", videoId, speaker, voiceProfile });
   }
 
   openOutput(videoId: string, reveal: boolean, send: Send): void {
@@ -298,7 +328,7 @@ export class AppState {
     send({ type: "settings", outputDir: outputDir.trim() });
   }
 
-  /** The engine's `hello`: how the Claude CLI is, and anything wrong with it already. */
+  /** The engine's `hello`: how the Codex CLI is, and anything wrong with it already. */
   setClaude(health: ClaudeHealth | null | undefined, now: number = Date.now()): void {
     this.claude = health ?? null;
     const p = healthProblem(health);

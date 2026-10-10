@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "status": "proposal_only_no_production_change",
+  "observed_at": 1791225703.6364858,
+  "prior_evidence": "/tmp/maata-map-audio-gap-report.json",
+  "finding": {
+    "uncovered_source_s": 3.14,
+    "silent_s_per_min": 5.0801,
+    "target_s_per_min": 3.0,
+    "dominant_unit_share": 0.5032,
+    "dominant_unit_already_reviewed_fuller": true,
+    "saved_alternate_take_opportunities_in_smoke": 0,
+    "existing_behavior": "Closest-duration acceptable batched candidate is already selected. Only the selected take is persisted; post-synthesis text correction currently addresses overlength."
+  },
+  "recommendation": "Do not implement a cache-only alternative chooser with no observed opportunity. Keep production playback rate unchanged pending original-audio and native listening evidence.",
+  "next_experiment": {
+    "material": "A small original audio set containing speech-dense underfills, short complete utterances, deliberate pauses, and matching well-filled controls; retain a ground-truth transcript and evaluate ASR separately.",
+    "baseline": "Current translation, semantic review, take selection and natural-rate playback.",
+    "candidate": "For measured dense-speech underfill only, at most one request for a fuller natural rephrase based on actual take duration, preserving every source fact and qualifier. Review the exact selected wording and actual Latin TTS form before one bounded synthesis batch. If no meaning-preserving natural wording improves timing, keep baseline.",
+    "candidate_trigger_to_predeclare": "Example exploratory trigger: more than 0.8s early speech end AND less than 85% source-speech coverage; exclude intended pauses, source cutoffs, and invalid ASR. Freeze thresholds before collecting outcomes.",
+    "slowdown_arm": "Optional separate offline listening comparison only, with a modest predefined cap; do not enable as default. The current worst case would need a large expansion, so a small slowdown must not be claimed to solve it.",
+    "controls": [
+      "Same original audio, voice reference, TTS/model settings, planner settings and text model; retain all raw outputs and call costs.",
+      "Counterbalanced repeated order and matching seeds where supported; distinguish cache hits, actual new work and run boundaries.",
+      "Predeclare one correction attempt per eligible line and a small per-clip budget; no unbounded retries.",
+      "No invented facts or filler to fill the slot, and no line left out of full-clip quality or timing totals."
+    ],
+    "acceptance": [
+      "Blinded native Telugu listening judges meaning, natural pace/prosody and intelligibility; reject any material meaning error or audible quality regression.",
+      "Record source-speech uncovered seconds and per-line end error, keeping authored speech and ASR artifacts separate. Target at most 3s uncovered per minute without worsening existing lag/rate/freeze guards.",
+      "Compare full-clip finish time, added text-call latency and actual GPU time, plus candidate acceptance/rejection counts; do not claim speed from component-only numbers.",
+      "Repeat with well-filled controls to verify unchanged PCM and zero extra calls when no repair is needed."
+    ]
+  },
+  "future_regression_tests": [
+    "No opportunity, already-fuller, paused source, cutoff or good timing: original output and call counts unchanged.",
+    "Unreviewed/other-tier/validators-only candidate, wrong text/map hash, failed waveform or no timing improvement: retain original.",
+    "Accepted reviewed candidate preserves all semantic fixtures, obeys planner lag/overlap guards, and accounts for bounded work once.",
+    "Pause/resume and corrupt-cache paths preserve the chosen reviewed wording, actual TTS identity and spent attempt budget."
+  ],
+  "queue_snapshot": {
+    "active_jobs": 1,
+    "active_status": "running",
+    "active_stage": "voice_lines",
+    "active_duration_s": 691.49,
+    "active_final_until_s": 229.08,
+    "active_finished_lines": 47,
+    "active_total_lines": 141,
+    "queued_jobs": 2,
+    "queued_durations_s": [
+      4296.0,
+      10506.0
+    ],
+    "active_error_present": false,
+    "active_output_recorded": false,
+    "snapshot_only": true,
+    "mutated": false
+  },
+  "limits": [
+    "No live text/audio/GPU model calls, source edits, queue changes or listening performed.",
+    "Experiment thresholds are proposals, not validated defaults.",
+    "No promised fix for the observed smoke without a new accepted recording/listening comparison."
+  ]
+}

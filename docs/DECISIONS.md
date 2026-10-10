@@ -507,3 +507,441 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   - M18: `scripts/check-youtube-video.sh` before the first real job (`yt-dlp-ejs` would be a new dependency).
 - **Not measured yet on the M5 Pro:** the whole job on a real video, and `scripts/verify-mac.sh`'s checks on its synthesised speech + music video (separation time per block, MLX and resident peak memory, the vocals' SI-SDR with its 8 dB floor, bf16 against float32, the English left in the bed, the A/V offset, loudness, the subtitle tracks and the PerTh watermark after the mix and AAC).
 - **Reopen if:** the maintainer wants to watch while it dubs again, or a long job's real numbers (hours per video, memory) make a different order of stages better.
+
+## ADR-022 — Measured separator optimization, first-pass timing, and selective audio checks
+
+- **Decision (2026-10-05):** the maintainer asked to implement the researched speed and quality improvements. Keep the
+  existing local Telugu model, precision, CFM steps and candidate counts while removing redundant work and catching
+  failed output. No new dependencies or model downloads.
+- **Separator:** merge each band's mask with one indexed scatter instead of one scalar scatter per frequency/channel.
+  The band order and float32 accumulator stay the same. Tests compare the real overlapping band layout in both input
+  precisions and multiple batch sizes, bit for bit. Real-weight paired measurements, their scope and reproducible
+  commands are in `docs/spikes/results/inference-components/m5-pro-24gb/` and `scripts/bench_inference_components.py`.
+  These are component measurements, not whole-video speed claims. A preallocated T3 token-history experiment preserved
+  token outputs but did not improve its paired timings, so production T3 remains unchanged.
+- **Translation:** `scene-v4` makes the first complete wording aim at locally supplied speech time and akshara targets.
+  Meaning wins when it cannot fit: retain names, numbers, negation, uncertainty, conditions and other meaningful
+  qualifiers; never pad, summarize or count aksharas in the LLM. The model, scene context and requested tiers remain.
+  This adopts the duration-aware generation approach documented in the
+  [Descript case study](https://openai.com/index/descript/), without assuming its reported gains transfer to Telugu.
+  `scripts/check-translation.py` exercises original examples through the sealed Claude CLI and the existing reviewer;
+  its JSON is a schema/automated-meaning smoke check, not native-speaker validation.
+- **CLI scheduling:** replace FIFO-only admission with bounded, nonpreemptive priority admission. Re-evaluate queued
+  work when a slot opens: the next unvoiced scene's review, retranslation and fitting precede distant scenes. Preserve
+  the three context lanes, FIFO ties, the concurrency bound, and process-exit-before-slot-release cancellation.
+- **Selected audio:** only the selected candidate is flowed/vocoded in the healthy path. Reject empty, malformed,
+  non-finite or numerically silent waveforms; try already-generated alternatives before one fresh batched candidate.
+  Do not treat quiet speech or long pauses as failure. Failed audio does not teach the duration estimator or enter
+  the take cache. If no initial candidate is usable, fail resumably instead of silently dropping the line. An unusable
+  optional shorter wording or fix-up preserves the original audio and still spends its fix-up budget. These checks
+  do not judge pronunciation or intelligibility; a calibrated Telugu recognizer remains a separate experiment.
+- **Cache:** `TAKES_VERSION=2`. Take files and rows use the same synthesis identity: backend, pinned model revision,
+  device, T3 dtype, sample rate, storage format, batch size, CFM steps and input script. Restoration recomputes the
+  current text/voice key; duration-estimator replay filters incompatible identities and counts each take only once.
+  Legacy takes miss once, so old output cannot bypass the new checks. Invalid cached PCM is regenerated.
+- **Measurements:** stage trace `seconds` always means wall time. The export's media length is `media_seconds`; extra
+  fields cannot overwrite stage accounting. Preserve quality defaults until listening evidence justifies changing
+  them. Cross-language performance prompts, a new TTS backend and pronunciation QA have not been validated here.
+- **Validation:** all 1,060 engine tests pass (39 WebSocket, 113 render/trace, 908 remaining tests). The paired separator
+  script reproduces a 13.6% lower warm median component time with equivalent output and nominal thermals; raw data is
+  `docs/spikes/results/inference-components/m5-pro-24gb/2026-10-05-separator-repro.json`. The original two-speaker,
+  60-second integration fixture voices all 11 lines and passes copied video, audio/subtitle layout, loudness, A/V and
+  watermark checks (`docs/spikes/results/pipeline/m5-pro-24gb/2026-10-05-quality-smoke.json`). It took 114.58 seconds:
+  this short, fresh run includes voice preparation and Claude calls and does not establish real-time throughput or
+  a whole-render speedup. Native-listener quality, long-video throughput and a calibrated pronunciation judge remain
+  open acceptance work.
+
+## ADR-023 — Smaller reviewed translation batches feed speech synthesis sooner
+
+- **Decision (2026-10-05):** following the maintainer's request to implement the next speed priority, bound each
+  translation scene at 30 seconds and 6 complete source lines instead of 150 seconds and 30 lines. Preserve the
+  speaker-turn/pause preference and keep an overlong sentence whole. This amends ADR-021's scene size; all scenes use
+  the same policy, with no special first scene.
+- **Quality contract:** the complete video brief and calibrated voices are still ready before translation. Keep
+  the three contiguous lanes, three preceding/two following context lines, glossary, duration-based tier selection,
+  Opus medium translation, Sonnet high meaning review, corrective retranslation and review of changed voiced tiers.
+  No model, precision, candidate-count, effort, prompt or audio-inference policy changes. A lower latency does not
+  establish better Telugu naturalness or pronunciation.
+- **Resume:** boundaries depend on source units and the fixed limits, never preview length or cached progress.
+  Existing reviewed line caches and matching voice takes remain reusable; settled-scene keys follow their new
+  grouping. Explicit internal caps retain the old policy for controlled comparisons, without a new user setting.
+  Final displayed timing flags come from the settled final plan, so a working-plan overflow that later disappears
+  cannot leave a stale `long` warning on the first export and disappear only after resuming the same takes.
+- **Concurrent fix-ups:** recheck the rephrase synthesis budget when queued work executes. Several scene tasks can
+  otherwise queue against the same last slot and exceed it. Skipped optional rephrases preserve the original take;
+  meaning corrections remain eligible. A deterministic regression exercises two queued rephrases and a correction.
+- **Reproduction:** `scripts/bench_scene_pipeline.py` compares fresh whole-video runs with explicit caps and records
+  first retained take separately from completed export. Use separate processes/caches and alternating order, with
+  the normal `verify_mac.py` Anthropic-only proxy and network sandbox. The local calibration seed is held fixed;
+  provider generation and prompt caching still vary. `scripts/bench_translation_scenes.py` isolates text scheduling
+  with a fixed brief/calibration and includes original boundary-dependent examples. Its text timing excludes audio,
+  changed-voiced-tier review and export. A retained take is not yet final playable PCM.
+- **Acceptance limits:** native Telugu listening, longer representative videos, pronunciation evaluation and the
+  full separation/leakage acceptance run remain separate work. The synthetic integration fixture also exposes an
+  ASR tail artifact and inconsistent automated review classifications; neither a generic C nor a deterministic
+  correction proves native-speaker quality. All comparison outputs must be retained, including imperfect ones.
+- **Measured result:** five fresh runs per policy on the original 60-second two-speaker fixture, with the same
+  local calibration seed and nominal thermals: median completed export 104.85 → 94.82 seconds (9.6% less time),
+  first retained take 80.54 → 61.59 seconds (23.5% less time). Median Claude calls increased 4 → 6 and output tokens
+  7,999 → 10,499. Differently worded repetitions also lost some audio-cache reuse. The tradeoff and all raw runs are
+  in `docs/spikes/results/translation-latency/m5-pro-24gb/2026-10-05-pipeline.json`; this is not a general long-video
+  speed claim. Both arms passed the separate 16-line boundary-meaning smoke and independent model text inspection,
+  with human listening still pending. The candidate MP4 passed copied-video, stream/subtitle layout, loudness, A/V
+  and watermark checks. The final complete engine suite passes: 1,079 tests (180 affected, 39 WebSocket, 860 others).
+
+## ADR-024 — Use the maintainer-selected latest Haiku for text work
+
+- **Decision (2026-10-05):** the maintainer asked to switch the app to the latest Haiku. Anthropic's
+  [current model catalog](https://platform.claude.com/docs/en/models/overview) and
+  [Haiku model page](https://platform.claude.com/docs/en/models/haiku-4-5/overview) list Haiku 4.5 as the latest
+  available Haiku. Pin `claude-haiku-4-5-20251001`; this supersedes ADR-019's Opus/Sonnet defaults and ADR-023's
+  unchanged-model policy. No dependency or audio-model changes.
+- **Scope:** the video brief, scene translation, fitting, rephrasing, corrective retranslation and the separate
+  meaning-review pass all use Haiku. No cross-family fallback is configured, so the app does not deliberately
+  revert to Opus or Sonnet when Haiku is unavailable. Explicit model overrides remain for controlled evaluations.
+- **Effort:** Haiku 4.5 does not support the effort parameter. Omit `--effort` for Haiku calls, including when an
+  internal caller supplies an effort override; record the effective effort as null in usage traces.
+- **Quality and measurements:** retain the prompts, context, meaning review, corrective retry and local audio
+  checks. Earlier Opus/Sonnet benchmarks do not establish Haiku's speed or Telugu quality. Native-speaker listening
+  and representative whole-video comparisons are still needed.
+- **Existing work:** completed videos remain intact. Brief and line caches already include the primary model,
+  so freshly requested translation cannot silently reuse the previous model's entries. Saved wording adjustments
+  also record model and prompt provenance: direct lookups from cached takes reject mismatched or legacy rows.
+  Apply the new engine defaults after the current dub completes rather than restarting its in-flight work.
+- **Live check:** the sealed CLI returned the pinned Haiku model for scene translation, meaning review and a
+  corrective translation on five original examples. All five passed the existing final automated coverage checks;
+  this is a functional smoke check, not an independent language-quality or speed comparison. The reopened app's
+  health handshake reports the same Haiku model, Apple backend and a healthy Claude sign-in.
+
+## ADR-025 — Move text work to GPT-6 Luna through the signed-in Codex CLI
+
+- **Decision (2026-10-05):** the maintainer found Haiku too slow and explicitly requested a current fast OpenAI
+  model through the Codex CLI, replacing ADR-024 and ADR-019's provider restriction. Use `gpt-6-luna` with low
+  reasoning effort for the video brief, scene translation, fitting, rephrasing, corrections and meaning review.
+  OpenAI's [current model guide](https://learn.chatgpt.com/docs/models) recommends Luna for focused, repeatable
+  work. There is no automatic Claude fallback, direct API key or dependency change.
+- **Transport:** run Codex CLI 0.160.0 or newer with ChatGPT sign-in, structured output and an ephemeral session in
+  an empty working directory. Disable user configuration, project instructions, hooks, plugins, MCP, action tools,
+  web search and telemetry exporters. Task instructions and text input travel on stdin; only fixed service
+  instructions and a temporary schema are written by the transport. Reject tool-use events and incomplete turns.
+  Cancellation and watchdogs terminate the subprocess group. Retry only transient failures and startup stalls.
+- **Schema compatibility:** adapt optional fields to required nullable fields for OpenAI's structured output;
+  remove only nulls representing originally absent fields before validating against the existing local schema.
+  Preserve the original prompts, glossary, context, meaning review, corrective retry and local audio checks.
+- **Privacy and compatibility:** disclose OpenAI and ChatGPT-plan usage in the app with a new provider-specific
+  notice key. Transcript, translation and video-context text goes to OpenAI; audio inference stays local. Keep
+  existing internal `claude` wire/event names for compatibility, adding explicit `provider: codex` provenance.
+  Health and Settings show the active model and Codex sign-in. Finder launches can discover the CLI bundled with
+  ChatGPT even without a shell PATH entry.
+- **Existing work:** stop the in-flight dub and save it as paused before rebuilding. Preserve its cached progress
+  and completed videos. Existing model/prompt cache keys and wording-adjustment provenance prevent silent reuse
+  of Haiku text under the new model. Do not resume the stopped job automatically.
+- **Acceptance:** a live original-sentence CLI probe returned valid Telugu in 7.742 seconds. This is a functional
+  latency check, not a paired model benchmark or whole-video speed claim. Native Telugu listening and comparative
+  long-video measurements remain necessary to establish language quality and end-to-end speed.
+- **Live integration:** the first five-line production smoke took 40.083 seconds and rejected one line after its
+  bounded retries because Luna repeatedly returned a Telugu shaping joiner in `అప్‌డేట్`. Canonicalize joiners only
+  after a Telugu virama and before a Telugu letter, preserving word boundaries and recording a repair flag. Keep
+  rejecting other invisible characters, mixed scripts and digits. The fresh rerun passed all five existing final
+  automated meaning checks in 27.541 seconds. Raw reports are `/tmp/maata-codex-translation-smoke.json` and
+  `/tmp/maata-codex-translation-smoke-fixed.json`; these local smoke results do not establish native-speaker quality.
+- **Validation:** 34 Codex transport tests, 251 QA/translation/WebSocket/bench tests and 68 UI tests pass; Svelte
+  reports no errors or warnings. The macOS release bundle builds successfully. The reopened app reports a healthy
+  Codex 0.160.0 ChatGPT sign-in and `gpt-6-luna` on the Apple backend, and Settings displays the same model. The
+  previous dub is left paused with its cache intact and no translation subprocesses running.
+
+## ADR-026 — Preserve spoken meaning and measure fresh work in long queues
+
+- **Decision (2026-10-05):** the maintainer authorizes monitoring the queued long videos, tested speed and quality
+  improvements, and graceful maintenance restarts. Preserve queue order, cached progress, completed outputs and
+  deliberate pauses. Resume work interrupted by this maintenance. Text remains GPT-6 Luna/low through Codex;
+  audio models, inference precision and quality checks remain local and unchanged.
+- **Observed quality defect:** model-counted English-word indices could replace an unrelated Telugu word in
+  Latin-script TTS, although review approved the displayed Telugu. In the inspected snapshot, 19 of 43 finalized
+  mapped lines had at least one wrong replacement. This is a manual mapping audit, not a native-language rating.
+  Scene-v5 requests exact Telugu token anchors and occurrence numbers; local code derives indices. Legacy,
+  ambiguous and invalid anchors leave Telugu intact. Attached Telugu endings stay intact too. Meaning review
+  receives both Telugu and the actual Latin TTS form. Only the exact C/m tier approved by semantic review keeps
+  its map; failed reviews, cache reads, fits and heuristic-only corrections cannot resurrect unapproved maps.
+- **Cache contract:** new prompt/review hashes invalidate affected text. Actual TTS input already keys takes and
+  downstream PCM, so changed substitutions regenerate only the affected work. Duration observations now carry
+  prompt provenance. Calibration identity includes the actual TTS input per speaker: legacy Latin pace is
+  recalibrated with the restored voice reference; compatible Telugu calibration is reusable. Never delete or
+  invalidate completed output files merely to apply a new prompt.
+- **Observed waits:** the interrupted run had no text transport retries/errors in 90 calls. CLI first-event time
+  was small relative to translation and corrective calls; it is not model first-token latency. Equal contiguous
+  translation lanes sometimes prepared far-future scenes while synthesis waited for earlier scenes. A weighted
+  lane helper supports bounded comparisons while retaining three workers, contiguous context and meaning review.
+  Historical replay is screening evidence only; the balanced production policy remains until a live comparison
+  justifies a change. Preserve the full brief and context rather than trading away meaning for a shorter prompt.
+- **Measurement:** each run emits a fresh run ID, start/end and per-attempt stage timings. Completed scheduled GPU
+  operations record execution and queue wait separately without text arguments; these are not hardware-utilization
+  samples. `scripts/monitor-queue.py` produces a read-only aggregate without titles, transcript, translations or
+  credentials. It separates run IDs, marks legacy windows explicitly, does not add overlapping stage/call time,
+  and never counts restored takes' historical synthesis cost as work in the current run.
+- **Long-timeline work:** avoid copying the remaining voice list per mix block and preparing duck-bound arrays
+  repeatedly. Original synthetic three-hour PCM is bitwise identical before/after over 952,587,342 samples. The
+  exploratory CPU timings are small/noisy and do not establish a material whole-render speedup. Reserve export
+  progress for the final decoded AAC loudness/peak pass, report that phase and check cancellation between blocks;
+  retain the pass and preserve an existing output if cancelled.
+- **Evidence and limits:** raw reports are in `docs/spikes/results/queue-monitor/m5-pro-24gb/`. Five original text
+  examples pass the new actual-TTS meaning review. The fresh original 60-second audio smoke takes 96.79 seconds,
+  voices all 11 units and passes copied video, stream/subtitle layout, loudness, A/V synchronization and watermark.
+  Its uncovered speech is 5.08 seconds/minute, above the 3-second guide; early endings still need improvement.
+  One ASR tail artifact has a heuristic-approved correction after an initial E, not a fresh semantic C. Do not
+  present aggregate heuristic C or passing export checks as proof of native Telugu quality. Native listening,
+  pronunciation and representative long-video throughput remain acceptance work.
+- **Lane experiment:** a bounded 54-line original-text pilot completed one balanced and two weighted runs (ABB,
+  below the five-per-policy measurement minimum). The first pair moved some middle-prefix readiness earlier but
+  delayed the tail; changing wording and correction counts prevents attributing the result solely to scheduling.
+  Selected-tier review gaps and one shared narrow meaning deviation remain in the preserved outputs. This text-only
+  pilot has no voice-consumption frontier or audio-quality evidence. Keep the balanced default; retain all original
+  inputs, outputs and audits in the evidence directory's `lane-pilot/` for a future whole-pipeline comparison.
+- **Validation and launch:** all 1,188 engine tests are covered by passing runs: 990 passed in the broad partition,
+  four outdated calibration-fixture assertions were corrected and their complete 17-test file passes, and the
+  final render/line partition passes all 194 tests. The prior 68 UI tests remain valid; no UI source changed in this
+  pass. The release bundle builds. macOS was locked when reopening the window, so the authorized queue was resumed
+  through the normal engine CLI with its stdin lifeline. The temporary supervisor's metadata is local at
+  `~/Library/Caches/Maata/monitoring/background-engine.json`. Stop that supervisor gracefully before launching the
+  native app after unlock, to prevent two engines from sharing the same queue.
+
+## ADR-027 — Reuse a reviewed complete wording before generating a correction
+
+- **Decision (2026-10-06):** for the initial review only, offer the existing full wording alongside a selected
+  shorter wording when the unchanged local timing planner predicts it can be absorbed. If the shorter wording
+  receives P/E and the full wording explicitly receives C, recheck timing eligibility and select the reviewed full
+  wording. Review both Telugu and actual Latin TTS text. Missing, malformed, inconsistent or non-C fallback
+  verdicts retain the existing correction path. Voiced-wording review cannot switch to an unsynthesized fallback.
+- **Preserve approval:** an exact `C / review / full / first P-or-E` marker persists the decision. Later fits,
+  duration estimates, optional shortening/rephrasing and old non-full takes cannot undo it. A real overrun keeps
+  the normal speed cap and a visible timing warning. A fit that began before approval re-reads current cache
+  approval before either merging a reply or returning its failed-fit result.
+- **Rejected candidate:** the first original-text pilot showed useful reuse, but a negative control incorrectly
+  received C after dropping “may.” That candidate was not deployed. The final shortcut excludes explicitly
+  modal/uncertain source sentences, even if their full wording appears correct; these keep the normal correction
+  path. The review prompt now treats meaningful uncertainty, frequency and bounds as content, not minor filler.
+  This exclusion is conservative admission control, not a claim that token checks prove semantic equivalence.
+- **Preserve cached work:** only the explicitly compatible scene-v5 generator hash may supply validated wording
+  under the final policy. Clear its old coverage and Latin maps and run a fresh meaning review; retain the
+  Telugu-spelled loanwords. Current rows are authoritative, including when invalid. Never inherit intermediate
+  rejected-policy approvals, other models, older index-based maps, old fixup decisions or unknown brief provenance.
+  Cache files are append-only; completed outputs and preprocessing remain intact. Exact compatible TTS/audio
+  remains reusable, while an actual changed TTS input must be synthesized again.
+- **Measurement:** successful text-call latency is now separate from fast usage-limit rejection attempts. Run
+  wall time containing the overnight usage-limit hold is not processing throughput. Original fixed-wording
+  comparisons and sanitized queue evidence live in `docs/spikes/results/queue-monitor/m5-pro-24gb/full-review-fallback/`.
+  Component timing is not whole-video speed, and validator-only C is not independent semantic approval.
+- **Remaining acceptance:** native Telugu listening and the ADR-026 early-ending/underfill issue remain open.
+  This policy introduces no slowdown, fuller rephrase, new audio model, changed precision or relaxed quality gate.
+- **Validation and deployment:** 1,306 unique engine tests are covered by passing runs (241 translation/QA,
+  215 render/line, 849 other tests, plus the new diagnostics regression; the separate five-test diagnostics run
+  overlaps four of the 849). The release app builds. Five fresh-cache trials per arm on four identical original
+  eligible examples reduced review-plus-correction calls from two to one and the observed median from 19.693 to
+  13.900 seconds. All 20 candidate positives have semantic full C; all six controls avoid fallback approval.
+  Provider load and concurrent queue work were uncontrolled, and baseline returned wording quality differed;
+  this component result is not an end-to-end throughput claim. Raw rejected and final pilots are both retained.
+  The offline original Apple-TTS smoke keeps full, uses rate 1.157 under its 1.2 cap, has no waveform failure,
+  detects the watermark in natural and timed audio, and restores identical PCM with no text or synthesis calls.
+  Its tighter-window CPU check retains full and exposes a timing warning. It is not native listening or a full
+  export test. Graceful maintenance preserves all 3,299 cache files and seven completed output hashes, then
+  resumes the 71-minute job ahead of the queued 175-minute job in the temporary background supervisor.
+- **First completed long job (2026-10-06):** run `c1ce46998a60489087d54c2b25762c9d` finished the
+  71-minute job in 3,866.039 seconds after resuming, with cached preprocessing; this is not fresh end-to-end
+  throughput or a paired speed comparison. Main translation took 1,925.934 seconds and overlaps speech work.
+  All 590 text calls succeeded. Final coverage is 682 C, 5 m, 81 P and 3 E across 771 voiced lines;
+  651 classifications came from review and 120 from validators. There are 21 timing-long warnings, no skipped
+  or unreviewed lines, and the P/E findings remain unresolved. The MP4 has one Telugu audio track and Telugu
+  and English subtitles; container audio/video endpoints differ by about 7 ms, which does not establish
+  line-level synchronization. Stored export loudness is -16.03 LUFS with -1.73 dBTP and no export warning.
+  Output structure, size and hash are recorded in `run-c1ce4699-completed.json` in the evidence directory above.
+  Final source-speech and planner-voicing intervals show 128/771 lines ending over one second early and 7.423
+  seconds of uncovered source speech per source-speech minute, above the 3-second guide. These interval metrics
+  flag timing mismatch, not proven missing words or inaudible final audio; native listening and whole-export
+  watermark detection remain unverified. The aggregate audit is `run-c1ce4699-quality.json` alongside the timing
+  evidence. The 175-minute job started automatically in the same engine; the completed output was not redubbed.
+- **Correction diagnostics (2026-10-06):** future engine launches add `correction_outcomes` to review events:
+  requested line IDs mapped to fixed reasons (`accepted`, `not_longer`, `meaning_flag`, `no_valid_candidate`,
+  `call_error`, or `not_better`). Accepted means the existing deterministic decision, not a fresh semantic review.
+  An initial review failure does not count an unattempted correction, and a full fallback approval is excluded.
+  No source/candidate text is added. Selection, prompts, models, cache approval and call counts are unchanged;
+  190 focused tests pass, including partial-error and validation-exhaustion regressions. Evidence is in
+  `docs/spikes/results/queue-monitor/m5-pro-24gb/correction-review/telemetry-validation.json`.
+  The running queue is not restarted solely for this instrumentation.
+- **Original correction controls:** two fresh signed-in Codex review calls on six adversarial original cases
+  expose why length cannot establish meaning. The existing heuristic rejects a shorter repair restoring a date,
+  while accepting four longer candidates that omit a clause, reverse negation, change numeric scope, or lose
+  uncertainty. Both semantic-review replies accept the date repair and reject the four defective candidates.
+  A second shorter-deadline control also receives C, but its before-noon/by-noon boundary nuance is unresolved;
+  do not count authored-label agreement as independent correctness. Raw fixtures, prompts and both replies are
+  retained under `correction-review/original-controls/` in the same evidence directory. Prior P labels are
+  authored test conditions, not fresh production-review findings. This is mechanism evidence, not a measured
+  real-job error rate, speed comparison, native/audio validation, or approval to change the correction policy.
+
+## ADR-028 — Pronunciation-first model audition and semantic corrective approval (2026-10-10)
+
+- **Trigger:** the maintainer cancelled the long-video runs because of unnatural voices and poor Telugu
+  pronunciation, and asked to research and use suitable models. The deleted monitoring schedule stays deleted;
+  this work does not resume cancelled jobs or overwrite completed videos.
+- **Local model evaluation:** install upstream OmniVoice at
+  `08be0b4ccbac3e13e374e86fbfead4b4cac343e2` in a separate frozen environment (Torch/Torchaudio 2.8.0,
+  Transformers 5.3.0). Its model and codec files are pinned by commit, size and hash in
+  `scripts/experiments/omnivoice/models.lock.json`, fetched through the existing downloader, and loaded offline
+  under a network-denied process. The production engine's Chatterbox dependencies remain unchanged.
+- **Voice comparison:** three original Telugu sentences are generated by both models, followed by a bounded
+  production-normalized repeat of the names/numbers sentence after detecting a shaping joiner. All original
+  trials remain available. OmniVoice uses auto voice with Telugu specified; Chatterbox uses builtin conditioning
+  of unknown native-language provenance. Neither is a controlled speaker-cloning comparison. Local PerTh and
+  forced-Telugu ASR are diagnostics; listener acceptance, stable identity and timed export are still required.
+  Evidence is in `docs/spikes/results/model-evaluation-2026-10-10/audio/`; WAVs stay outside Git. The local audition
+  page is generated by `scripts/experiments/make_voice_audition.py` and embeds only generated original speech.
+- **Text comparison:** exactly three original six-line generations (Luna low, Sol 6.1 medium, Astra medium) plus
+  one blind Astra high review. This small screen does not establish a Telugu speech-quality winner. Keep
+  production text defaults unchanged. Research and primary sources:
+  `docs/research/telugu-voice-selection-2026-10-10.md`; raw authored evidence: the adjacent `text/` results folder.
+- **Corrective acceptance:** a generated repair now receives one fresh batched semantic review of the exact
+  candidate tier and actual TTS wording. Length never proves completeness. Deterministic meaning-error checks
+  still veto candidates. Missing, duplicate, contradictory or failed verdicts cannot promote a line. No recursive
+  correction loop is added. A reviewed complete full correction is pinned against later unreviewed shortening.
+- **Failure and audio handling:** failed correction reviews return the known original P/E with `review_pending`;
+  they do not become completed persistent review/fixup/settled results. Accepted repairs of already voiced lines
+  require a usable replacement take before their new coverage can be applied. If synthesis fails, the original
+  audio keeps its original P/E, never the new wording's C.
+- **Cache compatibility:** `semantic-correction-v1` approval provenance includes reviewer model, fallback,
+  effective effort and review-prompt hash. Old wording remains reusable but loses old coverage and Latin maps
+  until re-reviewed. Take restoration, fixups and settled scenes check this provenance separately from wording
+  and audio identity. Exact compatible PCM remains reusable; no existing cache or output is deleted or rewritten
+  by this migration. No live jobs were used to test it.
+- **Initial validation:** the engine suite before the voice adapter passes **1,357 tests in 442.46 seconds** on the M5 Pro. Independent review
+  caught and repaired contradictory-C parsing, applying new wording's approval to old audio, and persistent
+  caching of unfinished reviews. Source hashes and test scope are in the evaluation `validation.json`. These
+  tests do not establish native listening quality or timed-audio acceptance.
+- **Listener decision and app adoption:** the maintainer answered “Voice B is clearly better” after hearing the
+  original blind A/B pairs. B is OmniVoice with auto voice. Apple now selects OmniVoice by default, with an explicit
+  `MAATA_TTS=chatterbox` rollback; no silent fallback. Use automatic Telugu without reference conditioning,
+  instructions or duration/speed overrides, 32 steps, and reset predeclared seed 20261010 for every call. Automatic
+  voice can vary between lines; source identity is not cloned. UI/manifests distinguish this mode, and incompatible
+  old previews cannot masquerade as the new voice.
+- **Runtime and artifacts:** `engine/runtimes/omnivoice/` holds the frozen separate runtime and pinned model manifest;
+  `scripts/setup-omnivoice.sh` provisions Application Support/Maata without altering engine/.venv. Setup reuses verified
+  downloads without generating or adopting any reference voice. Existing trial assets stay intact but are not
+  discovered by the default worker. Model weights, generated WAVs and downloaded reference audio stay outside Git.
+- **Worker and timing:** a lazy persistent network-denied process checks runtime/source pins, local model hashes and
+  automatic-mode configuration. PCM takes are cached with model/mode/seed/quality policy identity. Natural
+  speech is not forced short or cropped; complete over-budget speech is distinct from a cutoff, and planner warnings
+  remain. WSOLA precedes PerTh. Missing setup fails before preprocessing; pause while waiting for GPU admission cannot
+  start inference; cancellation, timeouts, normal shutdown and parent exit stop/reap the worker.
+- **Other candidates:** Indic-Mio and its codec were fetched with pinned manifests into another isolated runtime.
+  Strict codec loading found 199 missing WavLM weights and four other entries; inference was stopped before synthesis,
+  without hidden downloads or random SSL conditioning. A separately pinned CC-BY FLEURS Telugu reference was used for
+  three additional OmniVoice samples. It did not uniformly improve roundtrip diagnostics and was not promoted over B.
+- **Actual meaning repair:** a bounded two-defect live production smoke used three isolated signed-in Codex calls
+  (14 seconds), caught a missing date and lost uncertainty, then approved the exact repaired TTS text in a fresh review.
+  Raw authored evidence and cache/provenance checks are in `correction-smoke/`. This is mechanism validation, not a
+  representative translation-accuracy result.
+- **Cancellation preservation:** one stale `running` marker would have auto-resumed the cancelled 175-minute job.
+  `RenderJob.hold("paused")` persisted the user's intent without starting an engine. Only status/update time changed;
+  4,925 production cache entries and 39 export entries were compared, with all other hashes unchanged.
+- **Rejected conditioning:** the first actual adapter test conditioned on B's short conversation. The greeting
+  became 1.79 seconds and local ASR missed its final clause. Raw and marked lengths matched, rate was 1.0, and the
+  estimator requested 73 frames versus 68 in auto mode; postprocessing removed silence. The precise generative
+  cause is unproven. Preserve this failed trial and use automatic B mode instead; do not mask it with padding,
+  arbitrary slowdown, seed search or ASR-based claims of listening acceptance.
+- **Retention correction:** before launch, a dry run exposed paused/research bytes counting toward completed-cache
+  eviction. The cap now counts only directories eligible for that eviction. Age expiry, queued/running protection
+  and oldest-first order remain unchanged. Eleven new regressions and all 51 server tests passed; a read-only
+  inventory confirmed all 4,925 cache and 39 export entries unchanged and zero projected startup evictions.
+- **Actual automatic adapter:** exactly three authored normalized lines, one predeclared seed and no retries,
+  passed the persistent-worker, exact saved-take replay and mastered AAC/PerTh checks. The greeting PCM is bitwise
+  identical to the selected original B. Local ASR recovers its final clause; other sentence errors remain and these
+  diagnostics cannot establish native quality. The synthetic scene measured -16.00 LUFS and -2.26 dBTP. Its energy
+  voicing ends a median 0.83 seconds before the authored windows; prior underfill remains unresolved. Runtime
+  observations (4.27-second preparation; 2.21/2.59/2.17-second generation) are unpaired component timings, not throughput.
+  Full results and implementation hashes are in `audio/adapter-auto-summary.json`.
+- **Native startup:** the rebuilt app opened through CUA, showed Apple Silicon / OmniVoice and initially eight done
+  jobs plus the cancelled paused job. A later client `remove` command removed that cancelled entry; no agent click,
+  removal or resume command was sent, and it was not restored. A new client-started video then ran with OmniVoice.
+  All 3,832 completed-job cache files, 39 exports and the removed job's three retained text-cache files still match
+  their baseline hashes. Do not claim its removed render/media files survived that client action. Evidence is in
+  `startup-preservation-result.json`.
+- **Final software checks:** 1,414 engine tests passed in 657.44 seconds, 73 UI tests passed, Svelte reported no
+  errors/warnings, and the native release bundle built. A later failure-routing review found that the initial voicing
+  loop could convert an OmniVoice worker failure into a skipped line. It now propagates worker errors/cancellation
+  so the run is failed/paused and resumable. Seven focused regressions (three new failure/resume cases) passed in
+  10.40 seconds after that patch; the earlier full-suite and final source hashes are recorded separately in
+  `integration-validation.json`. No quality guard was weakened. Native graceful restart activated the fix and resumed
+  only the already-running test. All 117 captured cached-audio files remained byte-identical; the removed cancelled
+  job stayed absent (`maintenance-restart.json`).
+- **Limits:** the B listening preference does not certify all automatic production utterances, speaker
+  cloning, representative throughput or full-video quality. The earlier early-ending/underfill and whole-export
+  listening findings remain unresolved. No cancelled job is resumed and no completed export is automatically redubbed.
+
+## ADR-029 — Match male and female Telugu voices to speakers (2026-10-10)
+
+- **Trigger:** the maintainer likes the improved Telugu voice but reports male/female voices used for the wrong
+  speakers. Automatic OmniVoice generation did not condition on a speaker's voice type.
+- **Synthesis:** keep the same pinned local OmniVoice model, 32 steps, precision and fixed seed. Add explicit
+  `instruct="male"` and `instruct="female"` profiles, with independent voice identities and strict worker protocol
+  validation. Do not mix these with the rejected short-reference experiment, force duration, or shift pitch.
+  [Upstream voice-design documentation](https://github.com/k2-fsa/OmniVoice/blob/08be0b4ccbac3e13e374e86fbfead4b4cac343e2/docs/voice-design.md)
+  warns that voice design was trained on English/Chinese; Telugu support must be tested by listening.
+- **Source matching:** use at most 12 seconds of clean, exclusive diarized source speech. A bounded NumPy
+  difference-function pitch estimator requires at least two seconds of periodic evidence, a periodic fraction of
+  at least 0.2, and at least 80% of periodic frames in one conservative range (70–160 Hz or 190–350 Hz). These
+  are practical vocal-range heuristics, not gender identity or confidence probabilities. Ambiguous, noisy,
+  insufficient or mixed evidence persists as unresolved and stops before new speech, with an actionable request
+  to choose Male or Female. Transcript names and grammatical-gender notes are not acoustic evidence.
+  A bounded source check on the recent test produced a 126.5 Hz median and selected the male profile; it is not
+  an accuracy benchmark or speaker identity label. No source audio/text is copied into Git.
+- **Consistency and cache:** resolve once per speaker, reuse the decision with source/policy provenance, and
+  calibrate once per resolved profile. Profile identity participates in take keys; changed profiles cannot restore
+  old automatic or opposite-profile audio. Copy cached preview donors before overwriting any speaker preview,
+  including a two-speaker profile swap. Source voices are not cloned, and this does not promise identical timbre
+  across all utterances or different voices for two speakers using the same profile.
+- **Controls and preservation:** the speaker panel exposes Auto/Male/Female, requested selection, acoustic
+  suggestion and unresolved state. Samples require matching saved profile/model provenance. A selection on a
+  completed, paused or failed job saves settings only; it never starts or redubs it. Running work restarts
+  gracefully, queued work keeps its position, and a deliberate pause remains paused. Reconnecting retains
+  selections. Existing completed videos stay unchanged until an explicit dub/resume.
+- **Audio evidence:** exactly six original Telugu samples, one generation per sentence/profile, passed waveform
+  and PerTh checks. Median detected pitch was 138.5 Hz for male and 262.8 Hz for female; this alone cannot establish
+  naturalness. ASR missed the word for files in one female sample. The maintainer listened and replied **“Both
+  match and all words are audible”**; the possible omission was not confirmed by listening. Evidence, waveform
+  hashes, raw authored ASR forms and listener response are in
+  `docs/spikes/results/model-evaluation-2026-10-10/voice-mapping/`; media stays in the local cache.
+- **Limits:** six accepted samples do not certify every future utterance, automatic matching on all sources,
+  stable speaker identity, whole-video synchronization or throughput. Earlier underfill/early endings remain
+  unresolved. Semantic approval, timing, voice-quality and watermark checks remain in force. No new dependency,
+  model download, schedule, cancelled run or automatic completed-output redub is introduced.
+
+## ADR-030 — Install the Apple Silicon release without a checkout (2026-10-10)
+
+- **Trigger:** the maintainer requests an installable setup file and a GitHub push. The previous release shell
+  expected an engine under Application Support, but local setup only provisioned the source checkout. A development
+  shim hid that gap on the reference Mac.
+- **Package:** `scripts/build-installer.sh` produces an Apple Silicon DMG containing Maata.app, an Applications
+  shortcut, Setup Maata.command and installation instructions. The app embeds an allowlisted source/lock payload,
+  without model weights, virtual environments, local media or credentials. A deterministic SHA-256 manifest identifies
+  the payload. CI uploads the DMG and checksum instead of a raw app directory that can lose permissions.
+- **Runtime:** setup verifies the payload, installs frozen Python dependencies into a versioned Application Support
+  snapshot, verifies pinned models and the isolated OmniVoice runtime, then activates a launcher and matching stamp.
+  The source checkout is not a runtime dependency. Old runtime generations remain available; an existing development
+  launcher directory is backed up with rollback on failed promotion. Later symlink upgrades switch the launcher and
+  stamp together. Setup refuses an active engine and does not launch, resume, remove or redub jobs.
+- **Prerequisites:** uv, its Python 3.12, Deno and a signed-in Codex CLI are installed separately. End users do not need
+  Node or Rust. Models use the existing verified downloader and declared licences; optional gated pyannote assets
+  still require the user's own accepted terms and token. No new third-party package is introduced.
+- **Compatibility:** the native shell requires the installed runtime ID to match its bundled manifest and presents
+  setup instructions on missing or mismatched installations. Finder launches receive predictable tool paths while
+  preserving inherited custom paths. Explicit development engine overrides remain available.
+- **Distribution limit:** this machine has no Developer ID signing identity. The preview is ad-hoc signed with a sealed
+  resource bundle and checked with strict codesign verification, but is not Apple notarized. Documentation describes
+  Apple's per-app security approval, without disabling Gatekeeper or removing quarantine. A trusted public release
+  still requires the maintainer's Developer ID/notarization credentials. This preview does not establish clean-Mac
+  installation success or representative long-video listening quality; earlier underfill remains unresolved.
+- **Reference-Mac checks:** 45 focused Python packaging/model tests, four Rust runtime tests and 83 UI tests passed;
+  Svelte reported no errors/warnings. The final DMG passed verification and mounted payload checks. Its setup command
+  ran with provisioning network access denied, reusing existing packages/models. The installed `/Applications` app
+  opened with the independent runtime, OmniVoice and all nine completed jobs. All job JSON hashes and the size/mtime
+  of 40 MP4s remained unchanged; MP4 content hashes were not rerun. Actual installation was correctly refused while
+  this engine was running. Sanitized artifact hashes and limitations are in
+  `docs/spikes/results/release-installation-2026-10-10/validation.json`.

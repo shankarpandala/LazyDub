@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "observed_at": 1791227097.156076,
+  "video_id": "xi-zHJL5bnI",
+  "scope": "Read-only cached ASR metadata, bounded lexical aggregate inspection, source review and original deterministic text controls. No downloaded source sentences, translations, titles or audio copied. No model/GPU calls or queue mutations.",
+  "asr": {
+    "chunks": 82,
+    "stored_language_counts": {
+      "en": 82
+    },
+    "words": 11115,
+    "alphabetic_script_counts": {
+      "LATIN": 47077
+    },
+    "words_with_devanagari": 0,
+    "words_with_latin": 11033,
+    "english_punctuation_chunks": 82,
+    "caveat": "Language is auto-detected for the first chunk and then pinned, so these are not independent language detections."
+  },
+  "bounded_lexical_samples": [
+    {
+      "position": "first",
+      "asr_words": 200,
+      "latin_tokens": 200,
+      "english_function_hits": 44,
+      "roman_hindi_marker_hits": 0
+    },
+    {
+      "position": "middle",
+      "asr_words": 200,
+      "latin_tokens": 208,
+      "english_function_hits": 37,
+      "roman_hindi_marker_hits": 0
+    },
+    {
+      "position": "last",
+      "asr_words": 200,
+      "latin_tokens": 201,
+      "english_function_hits": 69,
+      "roman_hindi_marker_hits": 0
+    }
+  ],
+  "sample_method": "Simple fixed English function-word and romanized-Hindi marker sets applied locally to first/middle/last200 ASR words. This is a script/lexical check, not independent ASR or semantic language detection.",
+  "translation_cache_snapshot": {
+    "latest_rows": 152,
+    "full_contains_telugu": 152,
+    "full_contains_devanagari": 0,
+    "coverage_provenance_counts": {
+      "validators:C": 45,
+      "review:C": 91,
+      "review:P": 7,
+      "review:m": 3,
+      "none:none": 6
+    },
+    "caveat": "Cache was active; this is one non-atomic snapshot. Script and labels do not prove semantic correctness."
+  },
+  "conclusion_for_current_job": "Available cache evidence is consistent with English transcript text. It does not demonstrate that the downloaded audio is Hindi/mixed, nor rule out first-chunk language misclassification or a selected translated audio track. No audio was listened to.",
+  "general_non_english_support_findings": [
+    {
+      "issue": "Source-language context is not carried into translation/review",
+      "evidence": "ASR source text enters LineSpec.en unchanged; scene, brief and review instructions explicitly call it English.",
+      "references": [
+        "engine/src/maata_engine/render.py:917",
+        "engine/src/maata_engine/dubber.py:484",
+        "engine/src/maata_engine/text/scene_prompt.py:28",
+        "engine/src/maata_engine/text/scene_prompt.py:325",
+        "engine/src/maata_engine/text/scene_prompt.py:375"
+      ]
+    },
+    {
+      "issue": "Length prior ignores Devanagari letters",
+      "original_control_result": {
+        "devanagari_speaking_units": 0.0
+      },
+      "impact": "Non-English source can request inappropriate length variants and cannot train the English-syllable prior normally.",
+      "references": [
+        "engine/src/maata_engine/text/akshara.py:82",
+        "engine/src/maata_engine/dubber.py:494",
+        "engine/src/maata_engine/dubber.py:574"
+      ]
+    },
+    {
+      "issue": "English-specific deterministic coverage checks are unsound for Hindi",
+      "original_control_result": {
+        "correct_negative_flag_types": [
+          "negation"
+        ],
+        "dropped_negative_flag_types": [],
+        "wrong_spelled_number_flag_types": [],
+        "redo_dropped_negative_class": "C"
+      },
+      "impact": "A true translated negation can receive a false mismatch, while a removed Hindi negation or changed spelled-out Hindi number can escape the corrective validator.",
+      "references": [
+        "engine/src/maata_engine/qa/validators.py:46",
+        "engine/src/maata_engine/qa/validators.py:312",
+        "engine/src/maata_engine/qa/validators.py:324",
+        "engine/src/maata_engine/qa/coverage.py:95"
+      ]
+    },
+    {
+      "issue": "User-facing scope is broader than tested implementation",
+      "references": [
+        "app/src/lib/components/Library.svelte:62",
+        "CLAUDE.md:95"
+      ],
+      "evidence": "UI says any YouTube video, while documented contract and deterministic source-language rules assume English."
+    }
+  ],
+  "recommendation": "Treat multilingual inputs as a separate quality-support task: carry source language into prompts, make the length prior language-aware and gate English-only heuristic corrections or replace them with validated language-aware checks. Preserve current queue unchanged; do not attribute current xi correction rate to Hindi based on available evidence.",
+  "limits": [
+    "No independent audio-language or transcription verification.",
+    "No native listening or model quality evaluation.",
+    "Original local controls demonstrate implementation limitations, not downloaded-video errors."
+  ]
+}

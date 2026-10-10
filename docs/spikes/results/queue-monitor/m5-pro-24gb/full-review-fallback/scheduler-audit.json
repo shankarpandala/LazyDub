@@ -1,0 +1,969 @@
+{
+  "run_id": "cc414717eb6045a4a5e8f1085b94f11d",
+  "video_id": "Is8XU3J5ZZE",
+  "snapshot_epoch": 1791225633.96561,
+  "last_event_s": 491.886,
+  "event_counts": {
+    "run_start": 1,
+    "stage_start": 11,
+    "stage_timing": 9,
+    "stage": 9,
+    "gpu_work": 290,
+    "brief": 1,
+    "recalibrate": 1,
+    "claude": 90,
+    "translate": 29,
+    "review": 32,
+    "scene": 27,
+    "fixups": 14,
+    "unit": 68
+  },
+  "translation_finished_s": 368.698,
+  "gpu_queue_wait_s": 0.0004,
+  "voice_scheduled_work_s": 246.5772,
+  "completed_voice_operations": 284,
+  "gaps_at_least_half_second": [
+    {
+      "start_s": 61.717,
+      "end_s": 92.2221,
+      "gap_s": 30.5051,
+      "before_operation": "pack_take",
+      "after_operation": "unpack_take",
+      "scene_events_during_gap": [
+        2,
+        11
+      ],
+      "fit_completions_during_gap": [
+        2
+      ],
+      "overlapping_text_calls": [
+        {
+          "scene": 2,
+          "call": "scene",
+          "start_s": 52.767,
+          "end_s": 68.694,
+          "process_s": 15.927
+        },
+        {
+          "scene": 11,
+          "call": "scene",
+          "start_s": 52.064,
+          "end_s": 72.649,
+          "process_s": 20.585
+        },
+        {
+          "scene": 2,
+          "call": "review",
+          "start_s": 68.699,
+          "end_s": 74.613,
+          "process_s": 5.914
+        },
+        {
+          "scene": 20,
+          "call": "scene",
+          "start_s": 59.622,
+          "end_s": 78.333,
+          "process_s": 18.711
+        },
+        {
+          "scene": 11,
+          "call": "review",
+          "start_s": 72.655,
+          "end_s": 78.673,
+          "process_s": 6.018
+        },
+        {
+          "scene": 2,
+          "call": "retranslate",
+          "start_s": 74.617,
+          "end_s": 83.7,
+          "process_s": 9.083
+        },
+        {
+          "scene": 20,
+          "call": "review",
+          "start_s": 78.338,
+          "end_s": 84.632,
+          "process_s": 6.294
+        },
+        {
+          "scene": 11,
+          "call": "retranslate",
+          "start_s": 78.676,
+          "end_s": 85.731,
+          "process_s": 7.055
+        },
+        {
+          "scene": 2,
+          "call": "fit",
+          "start_s": 83.709,
+          "end_s": 92.162,
+          "process_s": 8.453
+        },
+        {
+          "scene": 20,
+          "call": "retranslate",
+          "start_s": 85.735,
+          "end_s": 94.901,
+          "process_s": 9.166
+        },
+        {
+          "scene": 3,
+          "call": "scene",
+          "start_s": 84.635,
+          "end_s": 104.751,
+          "process_s": 20.116
+        },
+        {
+          "scene": 12,
+          "call": "scene",
+          "start_s": 92.167,
+          "end_s": 108.365,
+          "process_s": 16.198
+        }
+      ]
+    },
+    {
+      "start_s": 103.47,
+      "end_s": 108.9947,
+      "gap_s": 5.5247,
+      "before_operation": "pack_take",
+      "after_operation": "vocode",
+      "scene_events_during_gap": [],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 3,
+          "call": "scene",
+          "start_s": 84.635,
+          "end_s": 104.751,
+          "process_s": 20.116
+        },
+        {
+          "scene": 12,
+          "call": "scene",
+          "start_s": 92.167,
+          "end_s": 108.365,
+          "process_s": 16.198
+        },
+        {
+          "scene": 2,
+          "call": "review",
+          "start_s": 104.756,
+          "end_s": 108.954,
+          "process_s": 4.198
+        },
+        {
+          "scene": 12,
+          "call": "review",
+          "start_s": 108.956,
+          "end_s": 114.733,
+          "process_s": 5.777
+        },
+        {
+          "scene": 3,
+          "call": "review",
+          "start_s": 108.371,
+          "end_s": 115.153,
+          "process_s": 6.782
+        },
+        {
+          "scene": 21,
+          "call": "scene",
+          "start_s": 94.904,
+          "end_s": 115.153,
+          "process_s": 20.249
+        }
+      ]
+    },
+    {
+      "start_s": 109.312,
+      "end_s": 121.849,
+      "gap_s": 12.537,
+      "before_operation": "vocode",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        3
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 12,
+          "call": "review",
+          "start_s": 108.956,
+          "end_s": 114.733,
+          "process_s": 5.777
+        },
+        {
+          "scene": 3,
+          "call": "review",
+          "start_s": 108.371,
+          "end_s": 115.153,
+          "process_s": 6.782
+        },
+        {
+          "scene": 21,
+          "call": "scene",
+          "start_s": 94.904,
+          "end_s": 115.153,
+          "process_s": 20.249
+        },
+        {
+          "scene": 3,
+          "call": "retranslate",
+          "start_s": 115.156,
+          "end_s": 121.84,
+          "process_s": 6.684
+        },
+        {
+          "scene": 21,
+          "call": "review",
+          "start_s": 115.197,
+          "end_s": 123.388,
+          "process_s": 8.191
+        },
+        {
+          "scene": 12,
+          "call": "retranslate",
+          "start_s": 114.735,
+          "end_s": 129.098,
+          "process_s": 14.363
+        }
+      ]
+    },
+    {
+      "start_s": 139.001,
+      "end_s": 163.6932,
+      "gap_s": 24.6922,
+      "before_operation": "vocode",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        4
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 4,
+          "call": "scene",
+          "start_s": 121.852,
+          "end_s": 140.037,
+          "process_s": 18.185
+        },
+        {
+          "scene": 4,
+          "call": "review",
+          "start_s": 140.043,
+          "end_s": 147.129,
+          "process_s": 7.086
+        },
+        {
+          "scene": 13,
+          "call": "scene",
+          "start_s": 129.101,
+          "end_s": 149.287,
+          "process_s": 20.186
+        },
+        {
+          "scene": 13,
+          "call": "review",
+          "start_s": 149.295,
+          "end_s": 155.392,
+          "process_s": 6.097
+        },
+        {
+          "scene": 22,
+          "call": "scene",
+          "start_s": 136.224,
+          "end_s": 158.766,
+          "process_s": 22.542
+        },
+        {
+          "scene": 4,
+          "call": "retranslate",
+          "start_s": 147.133,
+          "end_s": 163.686,
+          "process_s": 16.553
+        },
+        {
+          "scene": 22,
+          "call": "review",
+          "start_s": 158.773,
+          "end_s": 165.345,
+          "process_s": 6.572
+        },
+        {
+          "scene": 13,
+          "call": "retranslate",
+          "start_s": 155.396,
+          "end_s": 165.94,
+          "process_s": 10.544
+        }
+      ]
+    },
+    {
+      "start_s": 180.846,
+      "end_s": 194.5025,
+      "gap_s": 13.6565,
+      "before_operation": "pack_take",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 5,
+          "call": "scene",
+          "start_s": 163.695,
+          "end_s": 184.732,
+          "process_s": 21.037
+        },
+        {
+          "scene": 14,
+          "call": "scene",
+          "start_s": 165.943,
+          "end_s": 185.569,
+          "process_s": 19.626
+        },
+        {
+          "scene": 5,
+          "call": "review",
+          "start_s": 185.574,
+          "end_s": 194.289,
+          "process_s": 8.715
+        },
+        {
+          "scene": 4,
+          "call": "rephrase",
+          "start_s": 184.737,
+          "end_s": 194.453,
+          "process_s": 9.716
+        },
+        {
+          "scene": 23,
+          "call": "scene",
+          "start_s": 175.451,
+          "end_s": 195.92,
+          "process_s": 20.469
+        },
+        {
+          "scene": 14,
+          "call": "review",
+          "start_s": 194.292,
+          "end_s": 200.436,
+          "process_s": 6.144
+        },
+        {
+          "scene": 5,
+          "call": "retranslate",
+          "start_s": 194.455,
+          "end_s": 206.449,
+          "process_s": 11.994
+        }
+      ]
+    },
+    {
+      "start_s": 196.789,
+      "end_s": 206.5053,
+      "gap_s": 9.7163,
+      "before_operation": "pack_take",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        23,
+        5
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 14,
+          "call": "review",
+          "start_s": 194.292,
+          "end_s": 200.436,
+          "process_s": 6.144
+        },
+        {
+          "scene": 23,
+          "call": "review",
+          "start_s": 195.923,
+          "end_s": 202.028,
+          "process_s": 6.105
+        },
+        {
+          "scene": 4,
+          "call": "review",
+          "start_s": 200.438,
+          "end_s": 206.331,
+          "process_s": 5.893
+        },
+        {
+          "scene": 5,
+          "call": "retranslate",
+          "start_s": 194.455,
+          "end_s": 206.449,
+          "process_s": 11.994
+        },
+        {
+          "scene": 14,
+          "call": "retranslate",
+          "start_s": 202.033,
+          "end_s": 209.832,
+          "process_s": 7.799
+        },
+        {
+          "scene": 4,
+          "call": "retranslate",
+          "start_s": 206.451,
+          "end_s": 217.462,
+          "process_s": 11.011
+        },
+        {
+          "scene": 24,
+          "call": "scene",
+          "start_s": 206.335,
+          "end_s": 224.87,
+          "process_s": 18.535
+        }
+      ]
+    },
+    {
+      "start_s": 223.99,
+      "end_s": 249.4327,
+      "gap_s": 25.4427,
+      "before_operation": "vocode",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        24,
+        6
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 24,
+          "call": "scene",
+          "start_s": 206.335,
+          "end_s": 224.87,
+          "process_s": 18.535
+        },
+        {
+          "scene": 6,
+          "call": "scene",
+          "start_s": 209.834,
+          "end_s": 226.992,
+          "process_s": 17.158
+        },
+        {
+          "scene": 24,
+          "call": "review",
+          "start_s": 224.875,
+          "end_s": 230.473,
+          "process_s": 5.598
+        },
+        {
+          "scene": 6,
+          "call": "review",
+          "start_s": 226.998,
+          "end_s": 233.056,
+          "process_s": 6.058
+        },
+        {
+          "scene": 24,
+          "call": "retranslate",
+          "start_s": 230.476,
+          "end_s": 241.152,
+          "process_s": 10.676
+        },
+        {
+          "scene": 15,
+          "call": "scene",
+          "start_s": 217.464,
+          "end_s": 243.43,
+          "process_s": 25.966
+        },
+        {
+          "scene": 6,
+          "call": "retranslate",
+          "start_s": 233.059,
+          "end_s": 249.425,
+          "process_s": 16.366
+        },
+        {
+          "scene": 15,
+          "call": "review",
+          "start_s": 243.436,
+          "end_s": 250.528,
+          "process_s": 7.092
+        },
+        {
+          "scene": 25,
+          "call": "scene",
+          "start_s": 241.16,
+          "end_s": 263.211,
+          "process_s": 22.051
+        }
+      ]
+    },
+    {
+      "start_s": 266.382,
+      "end_s": 282.882,
+      "gap_s": 16.5,
+      "before_operation": "vocode",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        7
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 25,
+          "call": "review",
+          "start_s": 263.214,
+          "end_s": 269.644,
+          "process_s": 6.43
+        },
+        {
+          "scene": 7,
+          "call": "review",
+          "start_s": 264.592,
+          "end_s": 270.681,
+          "process_s": 6.089
+        },
+        {
+          "scene": 16,
+          "call": "scene",
+          "start_s": 250.531,
+          "end_s": 271.994,
+          "process_s": 21.463
+        },
+        {
+          "scene": 16,
+          "call": "review",
+          "start_s": 272.0,
+          "end_s": 277.557,
+          "process_s": 5.557
+        },
+        {
+          "scene": 7,
+          "call": "retranslate",
+          "start_s": 270.685,
+          "end_s": 282.875,
+          "process_s": 12.19
+        },
+        {
+          "scene": 16,
+          "call": "retranslate",
+          "start_s": 277.56,
+          "end_s": 284.505,
+          "process_s": 6.945
+        },
+        {
+          "scene": 25,
+          "call": "retranslate",
+          "start_s": 269.647,
+          "end_s": 288.43,
+          "process_s": 18.783
+        }
+      ]
+    },
+    {
+      "start_s": 295.198,
+      "end_s": 325.2599,
+      "gap_s": 30.0619,
+      "before_operation": "vocode",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        17,
+        8
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 8,
+          "call": "scene",
+          "start_s": 282.883,
+          "end_s": 304.085,
+          "process_s": 21.202
+        },
+        {
+          "scene": 17,
+          "call": "scene",
+          "start_s": 284.509,
+          "end_s": 307.261,
+          "process_s": 22.752
+        },
+        {
+          "scene": 8,
+          "call": "review",
+          "start_s": 304.091,
+          "end_s": 312.772,
+          "process_s": 8.681
+        },
+        {
+          "scene": 17,
+          "call": "review",
+          "start_s": 307.267,
+          "end_s": 313.744,
+          "process_s": 6.477
+        },
+        {
+          "scene": 26,
+          "call": "scene",
+          "start_s": 288.434,
+          "end_s": 314.493,
+          "process_s": 26.059
+        },
+        {
+          "scene": 17,
+          "call": "retranslate",
+          "start_s": 313.747,
+          "end_s": 321.915,
+          "process_s": 8.168
+        },
+        {
+          "scene": 8,
+          "call": "retranslate",
+          "start_s": 312.775,
+          "end_s": 325.253,
+          "process_s": 12.478
+        },
+        {
+          "scene": 26,
+          "call": "review",
+          "start_s": 314.499,
+          "end_s": 325.948,
+          "process_s": 11.449
+        },
+        {
+          "scene": 18,
+          "call": "scene",
+          "start_s": 321.922,
+          "end_s": 339.923,
+          "process_s": 18.001
+        }
+      ]
+    },
+    {
+      "start_s": 339.412,
+      "end_s": 359.5327,
+      "gap_s": 20.1207,
+      "before_operation": "pack_take",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        26
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 26,
+          "call": "retranslate",
+          "start_s": 325.95,
+          "end_s": 339.636,
+          "process_s": 13.686
+        },
+        {
+          "scene": 18,
+          "call": "scene",
+          "start_s": 321.922,
+          "end_s": 339.923,
+          "process_s": 18.001
+        },
+        {
+          "scene": 9,
+          "call": "scene",
+          "start_s": 325.262,
+          "end_s": 343.459,
+          "process_s": 18.197
+        },
+        {
+          "scene": 8,
+          "call": "review",
+          "start_s": 339.64,
+          "end_s": 344.704,
+          "process_s": 5.064
+        },
+        {
+          "scene": 18,
+          "call": "review",
+          "start_s": 343.467,
+          "end_s": 350.64,
+          "process_s": 7.173
+        },
+        {
+          "scene": 9,
+          "call": "review",
+          "start_s": 344.707,
+          "end_s": 353.889,
+          "process_s": 9.182
+        },
+        {
+          "scene": 8,
+          "call": "retranslate",
+          "start_s": 350.644,
+          "end_s": 359.446,
+          "process_s": 8.802
+        },
+        {
+          "scene": 27,
+          "call": "scene",
+          "start_s": 339.925,
+          "end_s": 360.793,
+          "process_s": 20.868
+        },
+        {
+          "scene": 9,
+          "call": "retranslate",
+          "start_s": 359.45,
+          "end_s": 367.903,
+          "process_s": 8.453
+        },
+        {
+          "scene": 18,
+          "call": "retranslate",
+          "start_s": 353.892,
+          "end_s": 368.693,
+          "process_s": 14.801
+        }
+      ]
+    },
+    {
+      "start_s": 364.429,
+      "end_s": 367.9148,
+      "gap_s": 3.4858,
+      "before_operation": "pack_take",
+      "after_operation": "synthesize_takes",
+      "scene_events_during_gap": [
+        27,
+        9
+      ],
+      "fit_completions_during_gap": [],
+      "overlapping_text_calls": [
+        {
+          "scene": 27,
+          "call": "review",
+          "start_s": 360.795,
+          "end_s": 367.09,
+          "process_s": 6.295
+        },
+        {
+          "scene": 9,
+          "call": "retranslate",
+          "start_s": 359.45,
+          "end_s": 367.903,
+          "process_s": 8.453
+        },
+        {
+          "scene": 18,
+          "call": "retranslate",
+          "start_s": 353.892,
+          "end_s": 368.693,
+          "process_s": 14.801
+        }
+      ]
+    }
+  ],
+  "after_translation_finished": {
+    "start_s": 368.698,
+    "end_s": 491.886,
+    "elapsed_s": 123.188,
+    "completed_scheduled_work_overlap_s": 123.0266,
+    "gap_s": 0.1614
+  },
+  "scene_timeline": [
+    {
+      "scene": 1,
+      "translated_and_reviewed_s": 52.764,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 61.72
+    },
+    {
+      "scene": 2,
+      "translated_and_reviewed_s": 83.706,
+      "fits_requested": 1,
+      "fit_done_s": [
+        92.166
+      ],
+      "settled_s": 108.955
+    },
+    {
+      "scene": 3,
+      "translated_and_reviewed_s": 121.846,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 138.823
+    },
+    {
+      "scene": 4,
+      "translated_and_reviewed_s": 163.692,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 221.395
+    },
+    {
+      "scene": 5,
+      "translated_and_reviewed_s": 206.502,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 223.499
+    },
+    {
+      "scene": 6,
+      "translated_and_reviewed_s": 249.43,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 266.067
+    },
+    {
+      "scene": 7,
+      "translated_and_reviewed_s": 282.88,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 295.005
+    },
+    {
+      "scene": 8,
+      "translated_and_reviewed_s": 325.258,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 364.43
+    },
+    {
+      "scene": 9,
+      "translated_and_reviewed_s": 367.91,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 381.881
+    },
+    {
+      "scene": 10,
+      "translated_and_reviewed_s": 52.061,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 398.059
+    },
+    {
+      "scene": 11,
+      "translated_and_reviewed_s": 85.787,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 429.342
+    },
+    {
+      "scene": 12,
+      "translated_and_reviewed_s": 129.101,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 431.617
+    },
+    {
+      "scene": 13,
+      "translated_and_reviewed_s": 165.942,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 449.104
+    },
+    {
+      "scene": 14,
+      "translated_and_reviewed_s": 209.92,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": 482.184
+    },
+    {
+      "scene": 15,
+      "translated_and_reviewed_s": 250.529,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 16,
+      "translated_and_reviewed_s": 284.507,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 17,
+      "translated_and_reviewed_s": 321.92,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 18,
+      "translated_and_reviewed_s": 368.697,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 19,
+      "translated_and_reviewed_s": 59.621,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 20,
+      "translated_and_reviewed_s": 94.902,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 21,
+      "translated_and_reviewed_s": 136.223,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 22,
+      "translated_and_reviewed_s": 175.45,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 23,
+      "translated_and_reviewed_s": 202.032,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 24,
+      "translated_and_reviewed_s": 241.157,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 25,
+      "translated_and_reviewed_s": 288.432,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 26,
+      "translated_and_reviewed_s": 339.816,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    },
+    {
+      "scene": 27,
+      "translated_and_reviewed_s": 367.092,
+      "fits_requested": 0,
+      "fit_done_s": [],
+      "settled_s": null
+    }
+  ],
+  "caveats": [
+    "Sanitized aggregate only; no transcript, source text, generated wording or media.",
+    "gpu_work is completed scheduled-operation wall time, not hardware utilization; MPS/CPU work can both occur inside those operations.",
+    "Derived operation starts subtract run_s from trace completion timestamp, rounded to1ms.",
+    "Scene event follows initial translation and review; an optional fit may complete later.",
+    "Historical runs and accumulated stage seconds are excluded."
+  ],
+  "source_dependency": "_voice_lines spawns _settle with _side and continues to next ready scene. Final-tier review blocks final placement/PCM for its scene, not synthesis of a subsequent ready scene."
+}

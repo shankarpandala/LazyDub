@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "status": "blocked_before_synthesis",
+  "model": "SPRINGLab/Indic-Mio",
+  "codec": "Aratako/MioCodec-25Hz-24kHz",
+  "reason": "Pinned codec checkpoint is not self-contained. Upstream constructor requires automatic WavLM download; exact local architecture plus strict state loading found missing weights. No random or unverified SSL embedding was used.",
+  "missing_state_keys": 203,
+  "missing_ssl_model_keys": 199,
+  "other_missing_state_keys": [
+    "ssl_feature_extractor.resampler.kernel",
+    "conv_upsample.weight",
+    "conv_upsample.bias",
+    "istft_head.istft.window"
+  ],
+  "generated_samples": 0,
+  "reference_manifest": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/references/reference.json",
+  "runtime": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/indic-mio-venv",
+  "log_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/indic-mio.log",
+  "model_lock": "scripts/experiments/indic_mio/models.lock.json",
+  "next_requirement": "Resolve and pin the exact upstream WavLM dependency and explain remaining checkpoint/architecture missing keys before any inference. No production changes.",
+  "native_reference_audio_committed": false
+}

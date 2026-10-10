@@ -121,10 +121,10 @@ describe("chips", () => {
     expect(chip(item({ slept }), now + (SLEEP_NOTE_FOR + 120) * 1000).text).toMatch(/^Dubbing/);
   });
 
-  it("say when Claude holds a job back, and until when", () => {
+  it("say when Codex holds a job back, and until when", () => {
     const resets = now / 1000 + 6 * 3600;
-    expect(chip(item({ status: "waiting" }), now, resets).text).toBe(`Waiting for Claude · resets ${fmtReset(resets, new Date(now))}`);
-    expect(chip(item({ status: "waiting" }), now).text).toBe("Waiting for Claude");
+    expect(chip(item({ status: "waiting" }), now, resets).text).toBe(`Waiting for Codex · resets ${fmtReset(resets, new Date(now))}`);
+    expect(chip(item({ status: "waiting" }), now).text).toBe("Waiting for Codex");
   });
 
   it("give a done job's length and size, a preview's length, a missing file, a failure and an expired job", () => {
@@ -157,14 +157,14 @@ describe("New dub's estimate line", () => {
   const est = { seconds: [3 * 3600, 6.4 * 3600] as [number, number], claudeCalls: [310, 360] as [number, number],
     preview: { seconds: [30 * 60, 70 * 60] as [number, number], claudeCalls: [30, 35] as [number, number] }, ahead: null };
 
-  it("gives the time, the Claude calls and where it saves", () => {
+  it("gives the time, the Codex calls and where it saves", () => {
     expect(estimateLine(est, { stopAt: null, outputDir: "/Users/me/Movies/Maata", ahead: 0, claude: true }))
-      .toBe("About 3–6½ h on this Mac · about 310–360 Claude calls · saves to Movies ▸ Maata");
+      .toBe("About 3–6½ h on this Mac · about 310–360 Codex calls · saves to Movies ▸ Maata");
     expect(estimateLine(est, { stopAt: 900, outputDir: "/Users/me/Movies/Maata", ahead: 0, claude: true }))
-      .toBe("About 30–70 min on this Mac · about 30–35 Claude calls · saves to Movies ▸ Maata");
+      .toBe("About 30–70 min on this Mac · about 30–35 Codex calls · saves to Movies ▸ Maata");
   });
 
-  it("adds the jobs ahead when it would be queued, and leaves Claude out where the engine doesn't use it", () => {
+  it("adds the jobs ahead when it would be queued, and leaves Codex out where the engine doesn't use it", () => {
     expect(estimateLine({ ...est, ahead: 7200 }, { stopAt: null, outputDir: null, ahead: 1, claude: false }))
       .toBe("About 3–6½ h on this Mac · after the 1 job ahead (about 2 h)");
     expect(estimateLine({ ...est, ahead: 4 * 3600 + 1200 }, { stopAt: null, outputDir: null, ahead: 2, claude: false }))

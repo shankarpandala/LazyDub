@@ -14,13 +14,14 @@ from __future__ import annotations
 
 import hashlib
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from ..backends.base import EMOTIONS, ENERGIES, Brief, GlossaryEntry, LineSpec, SceneRequest, VideoMeta, Wording
+from .tenglish import anchored_english, latin_spoken
 
 # Bump SHOTS_VERSION whenever the prompt, an example or a schema changes; PROMPT_HASH follows the content and keys the
 # per-line cache, so a change never serves lines made under the old prompt.
-SHOTS_VERSION = "scene-v3"  # v3: the everyday spoken Telugu of the general public (OFFLINE-RENDER §2.18)
+SHOTS_VERSION = "scene-v7"  # veto qualified-source fallback; invalidate the earlier full-approval policy's caches
 DESCRIPTION_MAX = 2000  # characters of the video description placed in the brief
 
 ROLE = (
@@ -50,16 +51,18 @@ STYLE (formal; only when the message says "style": "formal")
 SCRIPT = """SCRIPT CONTRACT
 - Every "spoken" field is Telugu script only: no Latin letters, no digits (Telugu digits included), no zero-width joiners or non-joiners, no brackets, and no symbols such as % or $. Punctuation: . , ? ! ; : … - and quotes.
 - Write each English word the way Telugu speakers write it in Telugu script (సెట్టింగ్స్, నెట్ఫ్లిక్స్). A Telugu ending may join it (నెట్ఫ్లిక్స్లో) or follow as its own word (ఫ్రెండ్ కి).
-- List every English word, and every name or brand normally written in Latin script, in "english": "i" is the 0-based index of its word in "spoken" split on spaces (punctuation stays with its word), and "en" is that word in Latin script, as the Telugu line says it (ఎంజాయ్ → enjoy).
+- For each English word or name to render in Latin script, give an "english" entry: "word" copies its EXACT whitespace token from "spoken", including punctuation; "occurrence" is zero for the first occurrence of that exact token, one for the second; "en" is that single word's Latin form, as the Telugu line says it (ఎంజాయ్ → enjoy). Never count word positions or provide an index. Never map a Telugu meaning equivalent to an English word: మ్యాప్ may map to map, but పటం must stay Telugu.
+- Leave a word with any attached Telugu ending out of "english" (ఫ్రెండ్స్ కి may map ఫ్రెండ్స్; ఫ్రెండ్స్కి stays entirely Telugu). Keep the natural wording: do not detach endings just to populate the map. An empty map is fine; the Telugu-spelled English loans are still spoken.
 - Words Telugu has fully absorbed (బస్సు, సినిమా, గ్లాసు) and Indian names (హైదరాబాద్) are Telugu words: don't list them.
 - Never write Telugu words in Latin script."""
 
 LENGTH = """LENGTH CONTRACT
-- Each line's "target_aksharas" is computed locally from the speaker's speech time and the voice's pace. Use it only to judge how much the shorter wordings must cut; don't count aksharas yourself.
-- "full" is the natural, complete line, with no length pressure. It is always given.
+- Each line's "speech_s" is the available speech time; "target_aksharas" is computed locally from that time and the voice's pace. They guide wording, not a hard length limit. Don't count aksharas yourself: the local duration predictor measures the result.
+- "full" is always given: a natural, complete spoken translation aimed at that speech time on the first attempt. Prefer compact everyday phrasing and spoken verb forms over roundabout wording, while keeping every fact, name, number, negation, question, relationship and meaningful qualifier, including uncertainty, cause and comparison. Preserve the speaker's intent and emphasis.
+- If all the meaning cannot fit naturally, return the complete longer wording: the local fitter handles overflow. Never summarize, drop a clause, alter a number or weaken a qualification to meet the target. Never pad a short line or invent content to fill time. If the timing guidance is missing or nonpositive, use the natural complete wording.
 - Give the other wordings only when "want" names them.
-- "concise" and "very_concise" say the same thing in fewer aksharas. They cut only fillers, hedges, repetitions and pronouns the verb marks, and use shorter spoken forms; every fact, name, number, negation and question stays. "concise" is clearly shorter than "full", and "very_concise" clearly shorter than "concise".
-- "fuller" restores what the speaker actually said that "full" smoothed away: hedges, repetitions, discourse markers, full verb forms, pronouns. It adds no fact and no filler the speaker didn't say, and is longer than "full"."""
+- "concise" and "very_concise" say the same thing in fewer aksharas. They cut only non-semantic fillers, redundant repetitions and pronouns the verb marks, and use shorter spoken forms; every fact, name, number, negation, question and meaningful qualifier stays. Never remove a hedge that expresses uncertainty. "concise" is clearly shorter than "full", and "very_concise" clearly shorter than "concise".
+- "fuller" restores source delivery details that "full" smoothed away: non-semantic repetitions, discourse markers, full verb forms and pronouns. It adds no fact and no filler the speaker didn't say, and is longer than "full". Facts and meaningful qualifiers already belong in "full"."""
 
 CONTRACT = """JSON CONTRACT
 The message is JSON; "call" says what to do.
@@ -79,7 +82,7 @@ Reply with one JSON object: {"lines": [...], "glossary_additions": [...]}.
 
 
 def _w(spoken: str, *english: tuple[int, str]) -> dict:
-    return {"spoken": spoken, "english": [{"i": i, "en": en} for i, en in english]}
+    return {"spoken": spoken, "english": anchored_english(spoken, english)}
 
 
 def _d(emotion: str = "neutral", energy: str = "mid", question: bool = False, *emphasis: int) -> dict:
@@ -97,7 +100,8 @@ def _d(emotion: str = "neutral", energy: str = "mid", question: bool = False, *e
 # MAINTAINER REVIEW: please read these as a native speaker (everyday word choice, loan spellings, verb forms, the formal
 # pair, the lecture line) before the step-1 bake-off; SHOTS_VERSION goes up with any change.
 SHOTS: list[tuple[str, dict, dict]] = [
-    ("My father worked two jobs so that we could go to school.", {},
+    ("My father worked two jobs so that we could go to school.",
+     {"start": 0.0, "end": 6.5, "speech_s": 6.0, "target_aksharas": 35},
      {"full": _w("మేము స్కూల్ కి వెళ్ళాలని మా నాన్న రెండు జాబ్స్ చేసేవారు.", (1, "school"), (7, "jobs")),
       "delivery": _d("serious")}),
     ("So, have you ever noticed how time just flies when you're, like, really enjoying something?", {},
@@ -202,8 +206,10 @@ SYSTEM_TAIL = CONTRACT
 _WORDING = {"type": "object", "additionalProperties": False, "required": ["spoken", "english"],
             "properties": {"spoken": {"type": "string", "minLength": 1},
                            "english": {"type": "array", "items": {
-                               "type": "object", "additionalProperties": False, "required": ["i", "en"],
-                               "properties": {"i": {"type": "integer", "minimum": 0}, "en": {"type": "string"}}}}}}
+                               "type": "object", "additionalProperties": False, "required": ["word", "occurrence", "en"],
+                               "properties": {"word": {"type": "string", "minLength": 1},
+                                              "occurrence": {"type": "integer", "minimum": 0},
+                                              "en": {"type": "string"}}}}}}
 
 # §4.4, shared by the scene, fit, re-translate and rephrase calls (one schema, one prompt: one cache per model).
 SCENE_SCHEMA = {
@@ -367,30 +373,41 @@ def brief_message(meta: VideoMeta, transcript: Sequence[tuple[str, str]], previo
 # Its own system prompt and schema, byte-identical for every video (no brief: it judges meaning, not spellings), so its
 # calls share one prompt cache on the review model.
 REVIEW_SYSTEM = """You check a Telugu dub against its English, line by line, for meaning only: never style, word choice, spelling or length.
-The message is JSON. "lines" holds the lines to check, each {"id", "en", "te"}: the English and the Telugu said for it. "context_before" (earlier lines, with their Telugu when there is one) and "context_after_en" (the lines that follow) are context only: never return them.
+The message is JSON. "lines" holds the lines to check, each {"id", "en", "te", "tts"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. "context_before" (earlier lines, with their Telugu when there is one) and "context_after_en" (the lines that follow) are context only: never return them.
 The Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is "settings"). A line with "cut_off": true was interrupted in the English, and its Telugu is unfinished on purpose.
 Reply with every id in "lines" exactly once, with "class":
-- "C": complete: every fact, name, number, negation and question of the English is there, and nothing is added;
-- "m": a minor drop only: an intensifier, a hedge, a filler or discourse marker, "okay", a trailing backchannel;
+- "C": complete: every fact, name, number, negation, question and meaningful qualification of the English is there, and nothing is added;
+- "m": a minor drop only: a conversational filler or discourse marker, "okay", a trailing backchannel, or emphasis that does not change the factual claim;
 - "P": a content phrase or clause of the English is missing;
 - "E": a meaning error: a negation lost or added, a number, name or question changed, or content that isn't in the English.
-With it: "missing", the English words (as the English has them) whose meaning is not in the Telugu, empty for "C"; "added", Telugu content that isn't in the English, said in English; "error", the kind of an "E" error, else "none"."""
+Uncertainty, conditions, frequency and bounds qualify a factual claim. If a meaningful qualification is lost or certainty is strengthened, classify P or E, never m or C: "may cost" must not become "will cost", and "rarely" must not disappear.
+With it: "missing", the English words (as the English has them) whose meaning is not in the Telugu, empty for "C"; "added", Telugu content that isn't in the English, said in English; "error", the kind of an "E" error, else "none".
+Some input lines also offer "fallback": an existing full wording with its own "te" and actual "tts". Only when the main wording is P or E, check that fallback against the SAME English and context, including its actual TTS form. Return its verdict in "fallback" with "class", "missing", "added" and "error"; otherwise omit it or return null. C requires every meaning detail, including uncertainty, conditions and quantities, with no additions; use empty missing/added and error none. Do not assume a longer wording is complete. Judge natural Telugu paraphrases and implicit subjects by meaning, not literal word matches. Do not rewrite, copy or generate a translation."""
+
+_REVIEW_FINDING = {"class": {"enum": ["C", "m", "P", "E"]},
+                   "missing": {"type": "array", "items": {"type": "string"}},
+                   "added": {"type": "array", "items": {"type": "string"}},
+                   "error": {"enum": ["none", "negation", "number", "name", "question", "addition", "other"]}}
 
 REVIEW_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["lines"],
     "properties": {"lines": {"type": "array", "items": {
         "type": "object", "additionalProperties": False, "required": ["id", "class", "missing", "added", "error"],
-        "properties": {"id": {"type": "integer"}, "class": {"enum": ["C", "m", "P", "E"]},
-                       "missing": {"type": "array", "items": {"type": "string"}},
-                       "added": {"type": "array", "items": {"type": "string"}},
-                       "error": {"enum": ["none", "negation", "number", "name", "question", "addition", "other"]}}}}}}
+        "properties": {"id": {"type": "integer"}, **_REVIEW_FINDING,
+                       "fallback": {"type": ["object", "null"], "additionalProperties": False,
+                                    "required": list(_REVIEW_FINDING), "properties": _REVIEW_FINDING}}}}}}
 
 
-def review_message(req: SceneRequest, lines: Sequence[tuple[LineSpec, Wording]]) -> str:
+def review_message(req: SceneRequest, lines: Sequence[tuple[LineSpec, Wording]],
+                   fallbacks: Mapping[int, Wording] | None = None) -> str:
     """The review call's message: each line's English and the Telugu chosen for it, with the scene's context."""
     msg: dict = {"scene": req.scene, "call": "review",
                  "context_before": [{"en": en, "te": te} if te else {"en": en} for en, te in req.context_before],
-                 "lines": [{"id": s.id, "en": s.en, "te": w.spoken, **({"cut_off": True} if s.cut_off else {})}
+                 "lines": [{"id": s.id, "en": s.en, "te": w.spoken, "tts": latin_spoken(w.spoken, w.english),
+                            **({"fallback": {"te": fallbacks[s.id].spoken,
+                                             "tts": latin_spoken(fallbacks[s.id].spoken, fallbacks[s.id].english)}}
+                               if fallbacks and s.id in fallbacks else {}),
+                            **({"cut_off": True} if s.cut_off else {})}
                            for s, w in lines],
                  "context_after_en": list(req.context_after_en)}
     return _json(msg)
@@ -420,7 +437,8 @@ def brief_hash() -> str:
 
 def review_hash() -> str:
     probe = SceneRequest(0, (), "review", (("<en>", "<te>"), ("<en>", None)), ("<next>",))
-    layout = review_message(probe, [(LineSpec(0, "S1", "<en>", 0.0, 1.0, 1.0, 5.0, cut_off=True), Wording("<te>"))])
+    layout = review_message(probe, [(LineSpec(0, "S1", "<en>", 0.0, 1.0, 1.0, 5.0, cut_off=True), Wording("<te>"))],
+                            {0: Wording("<full>")})
     return _digest(REVIEW_SYSTEM, REVIEW_SCHEMA, layout)
 
 

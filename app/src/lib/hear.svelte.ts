@@ -49,6 +49,8 @@ class VoicePlayer {
   }
 
   stop(): void {
+    clearTimeout(this.timer);
+    this.waiting = null; // a late frame for a cancelled/profile-changed sample must not start playing
     const src = this.source;
     this.source = null;
     this.playing = null;

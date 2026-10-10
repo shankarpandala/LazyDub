@@ -19,12 +19,14 @@
     return () => clearInterval(id);
   });
 
-  const steps = [
+  const steps = $derived([
     { icon: "wave", title: "Listens", body: "Finds who speaks when, and what they say, over the whole video." },
-    { icon: "sparkle", title: "Translates", body: "Into the Telugu people speak every day, with your own Claude Code." },
-    { icon: "user", title: "Speaks", body: "In a clone of each speaker's voice, over the original music and sounds." },
+    { icon: "sparkle", title: "Translates", body: "Into the Telugu people speak every day, through your own Codex sign-in." },
+    { icon: "user", title: "Speaks", body: app.voiceMode === "native"
+      ? "Natural Telugu speech over the original music and sounds. Source voices are not cloned; the automatic voice can vary between lines."
+      : "In a clone of each speaker's voice, over the original music and sounds." },
     { icon: "film", title: "Saves", body: "A video file with Telugu audio and Telugu and English subtitles." },
-  ] as const;
+  ] as const);
 
   function submit(e?: Event) {
     e?.preventDefault();
@@ -59,8 +61,10 @@
 <section class="library">
   <div class="headline">
     <h1><span class="te grad-text word">మాట</span></h1>
-    <p class="tag">Any YouTube video, dubbed into Telugu in the speakers' own voices.</p>
-    <p class="sub">Maata dubs the whole video on your Mac and saves it as a video file. Only the transcript, as text, goes to your own Claude Code.</p>
+    <p class="tag">{app.voiceMode === "native"
+      ? "Any YouTube video, dubbed with natural Telugu speech."
+      : "Any YouTube video, dubbed into Telugu in the speakers' own voices."}</p>
+    <p class="sub">Maata dubs the whole video on your Mac and saves it as a video file. Only transcript and translation text go to OpenAI through your own Codex CLI.</p>
   </div>
 
   <form class="paste" class:dragging novalidate onsubmit={submit} ondragover={(e) => { e.preventDefault(); dragging = true; }} ondragleave={() => (dragging = false)} ondrop={onDrop}>
@@ -136,7 +140,7 @@
               <p class="c-title" id={`rm-${j.videoId}`}>Remove this dub from Maata?</p>
               <p class="c-body">
                 {isActive(st) ? "It is paused first. " : ""}Its voices and work files go; its translations stay, so dubbing it again
-                needs no new Claude calls. {out ? "The saved video stays in its folder." : ""}
+                needs no new Codex calls. {out ? "The saved video stays in its folder." : ""}
               </p>
               <div class="c-actions">
                 <button class="btn" use:focusOnMount onclick={() => (confirming = null)}>Cancel</button>

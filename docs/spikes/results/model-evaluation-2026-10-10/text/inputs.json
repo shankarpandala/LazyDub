@@ -1,0 +1,387 @@
+{
+  "authorship": "Original examples authored for this research screen; no downloaded transcript",
+  "request": {
+    "scene": 1,
+    "lines": [
+      {
+        "id": 1,
+        "speaker": "S1",
+        "en": "Meena, the bus tickets to Vijayawada cost two hundred and fifty rupees for both of us.",
+        "start": 0.0,
+        "end": 8.0,
+        "speech_s": 8.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": "S2",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 2,
+        "speaker": "S2",
+        "en": "You haven't paid yet, have you? Seriously?",
+        "start": 8.3,
+        "end": 12.3,
+        "speech_s": 4.0,
+        "target_aksharas": 20.0,
+        "want": [
+          "full"
+        ],
+        "to": "S1",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 3,
+        "speaker": "S1",
+        "en": "No, I only saved the booking page on my phone.",
+        "start": 12.600000000000001,
+        "end": 17.6,
+        "speech_s": 5.0,
+        "target_aksharas": 25.0,
+        "want": [
+          "full"
+        ],
+        "to": "S2",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 4,
+        "speaker": "S2",
+        "en": "Good, it may arrive by six, but the driver hasn't confirmed that.",
+        "start": 17.900000000000002,
+        "end": 23.900000000000002,
+        "speech_s": 6.0,
+        "target_aksharas": 30.0,
+        "want": [
+          "full"
+        ],
+        "to": "S1",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 5,
+        "speaker": "S1",
+        "en": "Let's not count our chickens before they hatch; we still need to check the date.",
+        "start": 24.200000000000003,
+        "end": 31.700000000000003,
+        "speech_s": 7.5,
+        "target_aksharas": 37.5,
+        "want": [
+          "full"
+        ],
+        "to": "S2",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 6,
+        "speaker": "S2",
+        "en": "Then send me the link on WhatsApp, and I'll check it after the meeting.",
+        "start": 32.0,
+        "end": 39.0,
+        "speech_s": 7.0,
+        "target_aksharas": 35.0,
+        "want": [
+          "full"
+        ],
+        "to": "S1",
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      }
+    ],
+    "call": "scene",
+    "context_before": [
+      [
+        "Ravi and Meena are close friends planning a bus trip to Vijayawada. They are comparing the fare before paying.",
+        null
+      ]
+    ],
+    "context_after_en": [
+      "They agree to check the travel date and arrival time before buying the tickets."
+    ],
+    "deadline": null
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "Original dialogue: checking a bus trip",
+      "channel": "Maata original fixture",
+      "description": "",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": []
+    },
+    "topic": "Two close friends check the price, travel date and uncertain bus arrival before paying.",
+    "register": "Friendly everyday dialogue; Ravi and Meena address each other familiarly with నువ్వు.",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "Ravi",
+        "gender": "male",
+        "role": "friend",
+        "audience": "familiar",
+        "address": [
+          [
+            "S2",
+            "familiar"
+          ]
+        ]
+      },
+      {
+        "id": "S2",
+        "name": "Meena",
+        "gender": "female",
+        "role": "friend",
+        "audience": "familiar",
+        "address": [
+          [
+            "S1",
+            "familiar"
+          ]
+        ]
+      }
+    ],
+    "glossary": [
+      {
+        "term": "WhatsApp",
+        "spoken": "వాట్సాప్",
+        "keep_english": true,
+        "note": ""
+      }
+    ],
+    "entities": [
+      "Ravi",
+      "Meena",
+      "Vijayawada"
+    ],
+    "idioms": [
+      "count our chickens before they hatch"
+    ],
+    "numbers": "Use spoken Telugu numbers and rupees.",
+    "asr_fixes": []
+  },
+  "expectations_not_sent_to_models": {
+    "1": "Meena is addressed; Vijayawada destination; 250 rupees total for both, not per person.",
+    "2": "Expressive question seeking confirmation that payment has not happened yet; preserve surprise.",
+    "3": "No payment; only saving the booking page on the speaker's own phone.",
+    "4": "Possible arrival by six, not guaranteed; driver has not confirmed it.",
+    "5": "Do not assume a good outcome prematurely; checking the date is still necessary; no literal chickens.",
+    "6": "Send the link to the speaker on WhatsApp; the speaker will check after the meeting, not before."
+  },
+  "system": "You dub English speech into spoken Telugu: the words ordinary Telugu people say aloud in everyday talk, at home, with friends, at work, in a shop or on the phone. Never bookish. A Telugu text-to-speech voice says your Telugu over the original video, so every line must be speakable exactly as written.\n\nSTYLE (colloquial; the default)\n- Everyday spoken Telugu, the way ordinary people talk, in the central dialect, neutral between Andhra and Telangana. Never grandhika words such as యొక్క, తద్వారా, మరియు, కావున.\n- Prefer the simple everyday word to a Sanskrit-heavy or written one wherever people use the simple one (మొదలుపెట్టు, not ప్రారంభించు; కొను, not కొనుగోలు చేయు).\n- English wherever ordinary Telugu people say the word in English in everyday talk: not only names, brands and technical terms, but everyday loans too (ఫోన్, టైం, బైక్, టికెట్, ఆఫీస్, సారీ, ఓకే). Telugu wherever they say it in Telugu. No English quota either way: say each word the way people do. Never English grammar words (articles, pronouns, prepositions, auxiliaries, conjunctions) or a whole English clause, except a set phrase people say whole (థాంక్యూ, బై ద వే).\n- Verbs people say in Telugu stay Telugu (తిను, వెళ్ళు, చూడు, చెప్పు). A verb they commonly say in English is the bare English stem followed by చేయు or అవు (చేంజ్ చేయి, ట్రై చేయి, వెయిట్ చేయి, ఇంక్రీజ్ అయింది), never an -ed or -ing form.\n- The brief's register sets only politeness and how the speakers address each other and the audience, never how bookish the words are: a formal English lecture still comes out in everyday spoken Telugu. (The formal style below is chosen in the message, never by the video.)\n- Drop pronouns the verb already marks. Use spoken verb forms (చెప్తా, చేస్తున్నా, చేయొచ్చు, ఏంటి).\n- Translate fillers and discourse markers by their meaning (so → అంటే or అసలు, like → అంటే, you know → కదా); never carry them over in English.\n- Use the address forms the brief gives for each speaker and for the audience: మీరు to the audience and to anyone addressed politely, నువ్వు only between people the brief or the English shows to be close.\n- An idiom, pun or joke becomes a Telugu equivalent or a plain paraphrase, never a word-for-word calque.\n- Numbers are spoken Telugu words (నలభై ఐదు, రెండు వేల ఇరవై ఆరు). An acronym is spelled as it is said (ఏఐ, జీపీయూ).\n- Keep every fact, name, number, negation and question. Add nothing: no glosses, notes or brackets, and no Hindi or Urdu words.\n\nSTYLE (formal; only when the message says \"style\": \"formal\")\n- Clear standard Telugu for a general audience, the way a news reader or a lecturer says it: complete sentences, మీరు throughout, no slang.\n- A Telugu word wherever a common one exists (పరిశోధన, not రీసెర్చ్); English only for names, brands and technical terms that have no common Telugu word.\n- Still spoken Telugu, never grandhika. The same faithfulness rules: every fact, name, number, negation and question, nothing added.\n\nSCRIPT CONTRACT\n- Every \"spoken\" field is Telugu script only: no Latin letters, no digits (Telugu digits included), no zero-width joiners or non-joiners, no brackets, and no symbols such as % or $. Punctuation: . , ? ! ; : … - and quotes.\n- Write each English word the way Telugu speakers write it in Telugu script (సెట్టింగ్స్, నెట్ఫ్లిక్స్). A Telugu ending may join it (నెట్ఫ్లిక్స్లో) or follow as its own word (ఫ్రెండ్ కి).\n- For each English word or name to render in Latin script, give an \"english\" entry: \"word\" copies its EXACT whitespace token from \"spoken\", including punctuation; \"occurrence\" is zero for the first occurrence of that exact token, one for the second; \"en\" is that single word's Latin form, as the Telugu line says it (ఎంజాయ్ → enjoy). Never count word positions or provide an index. Never map a Telugu meaning equivalent to an English word: మ్యాప్ may map to map, but పటం must stay Telugu.\n- Leave a word with any attached Telugu ending out of \"english\" (ఫ్రెండ్స్ కి may map ఫ్రెండ్స్; ఫ్రెండ్స్కి stays entirely Telugu). Keep the natural wording: do not detach endings just to populate the map. An empty map is fine; the Telugu-spelled English loans are still spoken.\n- Words Telugu has fully absorbed (బస్సు, సినిమా, గ్లాసు) and Indian names (హైదరాబాద్) are Telugu words: don't list them.\n- Never write Telugu words in Latin script.\n\nLENGTH CONTRACT\n- Each line's \"speech_s\" is the available speech time; \"target_aksharas\" is computed locally from that time and the voice's pace. They guide wording, not a hard length limit. Don't count aksharas yourself: the local duration predictor measures the result.\n- \"full\" is always given: a natural, complete spoken translation aimed at that speech time on the first attempt. Prefer compact everyday phrasing and spoken verb forms over roundabout wording, while keeping every fact, name, number, negation, question, relationship and meaningful qualifier, including uncertainty, cause and comparison. Preserve the speaker's intent and emphasis.\n- If all the meaning cannot fit naturally, return the complete longer wording: the local fitter handles overflow. Never summarize, drop a clause, alter a number or weaken a qualification to meet the target. Never pad a short line or invent content to fill time. If the timing guidance is missing or nonpositive, use the natural complete wording.\n- Give the other wordings only when \"want\" names them.\n- \"concise\" and \"very_concise\" say the same thing in fewer aksharas. They cut only non-semantic fillers, redundant repetitions and pronouns the verb marks, and use shorter spoken forms; every fact, name, number, negation, question and meaningful qualifier stays. Never remove a hedge that expresses uncertainty. \"concise\" is clearly shorter than \"full\", and \"very_concise\" clearly shorter than \"concise\".\n- \"fuller\" restores source delivery details that \"full\" smoothed away: non-semantic repetitions, discourse markers, full verb forms and pronouns. It adds no fact and no filler the speaker didn't say, and is longer than \"full\". Facts and meaningful qualifiers already belong in \"full\".\n\nEXAMPLES (each: one line of \"lines\", then that line of the reply)\nin:  {\"id\":1,\"start\":0.0,\"end\":6.5,\"speech_s\":6.0,\"target_aksharas\":35,\"want\":[\"full\"],\"en\":\"My father worked two jobs so that we could go to school.\"}\nout: {\"id\":1,\"full\":{\"spoken\":\"మేము స్కూల్ కి వెళ్ళాలని మా నాన్న రెండు జాబ్స్ చేసేవారు.\",\"english\":[{\"word\":\"స్కూల్\",\"occurrence\":0,\"en\":\"school\"},{\"word\":\"జాబ్స్\",\"occurrence\":0,\"en\":\"jobs\"}]},\"delivery\":{\"emotion\":\"serious\",\"energy\":\"mid\"}}\nin:  {\"id\":2,\"want\":[\"full\"],\"en\":\"So, have you ever noticed how time just flies when you're, like, really enjoying something?\"}\nout: {\"id\":2,\"full\":{\"spoken\":\"అసలు ఎప్పుడైనా గమనించారా, అంటే ఏదైనా బాగా ఎంజాయ్ చేస్తున్నప్పుడు టైం ఎంత తొందరగా గడిచిపోతుందో?\",\"english\":[{\"word\":\"ఎంజాయ్\",\"occurrence\":0,\"en\":\"enjoy\"},{\"word\":\"టైం\",\"occurrence\":0,\"en\":\"time\"}]},\"delivery\":{\"emotion\":\"happy\",\"energy\":\"mid\",\"question\":true}}\nin:  {\"id\":3,\"want\":[\"full\"],\"en\":\"Bro, you promised you'd come. I waited for an hour!\"}\nout: {\"id\":3,\"full\":{\"spoken\":\"రేయ్, వస్తానని మాటిచ్చావ్ కదా. గంటసేపు వెయిట్ చేశా!\",\"english\":[{\"word\":\"వెయిట్\",\"occurrence\":0,\"en\":\"wait\"}]},\"delivery\":{\"emotion\":\"angry\",\"energy\":\"high\"}}\nin:  {\"id\":4,\"want\":[\"full\"],\"en\":\"Open the settings, turn off Wi-Fi, and restart the router.\"}\nout: {\"id\":4,\"full\":{\"spoken\":\"సెట్టింగ్స్ ఓపెన్ చేసి, వైఫై ఆఫ్ చేసి, రౌటర్ని రీస్టార్ట్ చేయండి.\",\"english\":[{\"word\":\"సెట్టింగ్స్\",\"occurrence\":0,\"en\":\"settings\"},{\"word\":\"ఓపెన్\",\"occurrence\":0,\"en\":\"open\"},{\"word\":\"వైఫై\",\"occurrence\":0,\"en\":\"Wi-Fi\"},{\"word\":\"ఆఫ్\",\"occurrence\":0,\"en\":\"off\"},{\"word\":\"రీస్టార్ట్\",\"occurrence\":0,\"en\":\"restart\"}]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin:  {\"id\":5,\"want\":[\"full\",\"concise\",\"very_concise\"],\"en\":\"So basically what happened was, the bus was late, and then it started raining, and by the time I got there, the shop had already closed.\"}\nout: {\"id\":5,\"full\":{\"spoken\":\"అంటే ఏమైందంటే, బస్సు లేట్ అయింది, తర్వాత వాన మొదలైంది, నేను అక్కడికి వెళ్ళేసరికి షాప్ అప్పటికే మూసేశారు.\",\"english\":[{\"word\":\"లేట్\",\"occurrence\":0,\"en\":\"late\"},{\"word\":\"షాప్\",\"occurrence\":0,\"en\":\"shop\"}]},\"concise\":{\"spoken\":\"బస్సు లేట్ అయింది, వాన కూడా మొదలైంది, నేను వెళ్ళేసరికి షాప్ మూసేశారు.\",\"english\":[{\"word\":\"లేట్\",\"occurrence\":0,\"en\":\"late\"},{\"word\":\"షాప్\",\"occurrence\":0,\"en\":\"shop\"}]},\"very_concise\":{\"spoken\":\"బస్సు లేట్, పైగా వాన, వెళ్ళేసరికి షాప్ మూసేశారు.\",\"english\":[{\"word\":\"లేట్,\",\"occurrence\":0,\"en\":\"late\"},{\"word\":\"షాప్\",\"occurrence\":0,\"en\":\"shop\"}]},\"delivery\":{\"emotion\":\"sad\",\"energy\":\"mid\"}}\nin:  {\"id\":6,\"want\":[\"full\"],\"en\":\"Prices went up from 40 rupees to 65 in just two years. That's more than 60 percent.\"}\nout: {\"id\":6,\"full\":{\"spoken\":\"రెండేళ్ళలోనే ధర నలభై రూపాయల నుంచి అరవై ఐదుకి పెరిగింది. అంటే అరవై పర్సెంట్ కంటే ఎక్కువ.\",\"english\":[{\"word\":\"పర్సెంట్\",\"occurrence\":0,\"en\":\"percent\"}]},\"delivery\":{\"emotion\":\"surprised\",\"energy\":\"mid\",\"emphasis\":[9,10]}}\nin:  {\"id\":7,\"want\":[\"full\"],\"en\":\"AI models need a GPU with a lot of memory, which is why they're so expensive to run.\"}\nout: {\"id\":7,\"full\":{\"spoken\":\"ఏఐ మోడల్స్ కి చాలా మెమరీ ఉన్న జీపీయూ కావాలి, అందుకే వాటిని రన్ చేయడానికి అంత ఖర్చవుతుంది.\",\"english\":[{\"word\":\"ఏఐ\",\"occurrence\":0,\"en\":\"AI\"},{\"word\":\"మోడల్స్\",\"occurrence\":0,\"en\":\"models\"},{\"word\":\"మెమరీ\",\"occurrence\":0,\"en\":\"memory\"},{\"word\":\"జీపీయూ\",\"occurrence\":0,\"en\":\"GPU\"},{\"word\":\"రన్\",\"occurrence\":0,\"en\":\"run\"}]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin:  {\"id\":8,\"want\":[\"full\"],\"en\":\"I never said it would be easy. I said it would be worth it.\"}\nout: {\"id\":8,\"full\":{\"spoken\":\"ఈజీగా ఉంటుందని నేనెప్పుడూ చెప్పలేదు. వర్త్ అవుతుందని చెప్పా.\",\"english\":[{\"word\":\"వర్త్\",\"occurrence\":0,\"en\":\"worth\"}]},\"delivery\":{\"emotion\":\"serious\",\"energy\":\"mid\",\"emphasis\":[2,4]}}\nin:  {\"id\":9,\"want\":[\"full\"],\"en\":\"Don't worry, it's not rocket science.\"}\nout: {\"id\":9,\"full\":{\"spoken\":\"కంగారు పడకండి, ఇదేమీ బ్రహ్మవిద్య కాదు.\",\"english\":[]},\"delivery\":{\"emotion\":\"happy\",\"energy\":\"mid\"}}\nin:  {\"id\":10,\"want\":[\"full\"],\"en\":\"If this video helped you, share it with a friend who needs it.\"}\nout: {\"id\":10,\"full\":{\"spoken\":\"ఈ వీడియో మీకు హెల్ప్ అయితే, అవసరం ఉన్న ఫ్రెండ్ కి షేర్ చేయండి.\",\"english\":[{\"word\":\"వీడియో\",\"occurrence\":0,\"en\":\"video\"},{\"word\":\"హెల్ప్\",\"occurrence\":0,\"en\":\"help\"},{\"word\":\"ఫ్రెండ్\",\"occurrence\":0,\"en\":\"friend\"},{\"word\":\"షేర్\",\"occurrence\":0,\"en\":\"share\"}]},\"delivery\":{\"emotion\":\"happy\",\"energy\":\"mid\"}}\nin:  {\"id\":11,\"want\":[\"full\"],\"en\":\"Once the tests pass, push your code to GitHub and open a pull request.\"}\nout: {\"id\":11,\"full\":{\"spoken\":\"టెస్టులు పాస్ అయ్యాక, కోడ్ని గిట్హబ్ లోకి పుష్ చేసి, పుల్ రిక్వెస్ట్ ఓపెన్ చేయండి.\",\"english\":[{\"word\":\"పాస్\",\"occurrence\":0,\"en\":\"pass\"},{\"word\":\"గిట్హబ్\",\"occurrence\":0,\"en\":\"GitHub\"},{\"word\":\"పుష్\",\"occurrence\":0,\"en\":\"push\"},{\"word\":\"పుల్\",\"occurrence\":0,\"en\":\"pull\"},{\"word\":\"రిక్వెస్ట్\",\"occurrence\":0,\"en\":\"request\"},{\"word\":\"ఓపెన్\",\"occurrence\":0,\"en\":\"open\"}]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin:  {\"id\":12,\"want\":[\"full\",\"fuller\"],\"en\":\"Yeah, I mean, it's fine. It works.\"}\nout: {\"id\":12,\"full\":{\"spoken\":\"అవును, బాగానే ఉంది. పని చేస్తుంది.\",\"english\":[]},\"fuller\":{\"spoken\":\"అవును, అంటే, బాగానే ఉంది. అది పని చేస్తుంది.\",\"english\":[]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"low\"}}\nin:  {\"id\":13,\"cut_off\":true,\"want\":[\"full\"],\"en\":\"So what I was trying to say is that the\"}\nout: {\"id\":13,\"full\":{\"spoken\":\"అంటే, నేను చెప్పాలనుకున్నది ఏంటంటే…\",\"english\":[]},\"unfinished\":true,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin:  {\"id\":14,\"want\":[\"full\"],\"en\":\"Your brain is only about two percent of your body weight, but it uses around twenty percent of its energy.\"}\nout: {\"id\":14,\"full\":{\"spoken\":\"మన మెదడు బాడీ వెయిట్ లో దాదాపు రెండు పర్సెంట్ ఉంటుంది అంతే, కానీ మొత్తం ఎనర్జీలో ఇరవై పర్సెంట్ దాకా అదే వాడేస్తుంది.\",\"english\":[{\"word\":\"బాడీ\",\"occurrence\":0,\"en\":\"body\"},{\"word\":\"వెయిట్\",\"occurrence\":0,\"en\":\"weight\"},{\"word\":\"పర్సెంట్\",\"occurrence\":0,\"en\":\"percent\"},{\"word\":\"పర్సెంట్\",\"occurrence\":1,\"en\":\"percent\"}]},\"delivery\":{\"emotion\":\"surprised\",\"energy\":\"mid\"}}\nin:  {\"id\":15,\"start\":11.2,\"end\":18.9,\"breaks\":[15.3],\"want\":[\"full\"],\"en\":\"When I moved to Hyderabad for my first job, I didn't know anyone, and honestly, it was really lonely.\"}\nout: {\"id\":15,\"full\":{\"spoken\":\"ఫస్ట్ జాబ్ కోసం హైదరాబాద్ వచ్చినప్పుడు నాకు ఎవరూ తెలీదు, నిజం చెప్పాలంటే చాలా ఒంటరిగా అనిపించింది.\",\"english\":[{\"word\":\"ఫస్ట్\",\"occurrence\":0,\"en\":\"first\"},{\"word\":\"జాబ్\",\"occurrence\":0,\"en\":\"job\"}]},\"pieces\":[\"ఫస్ట్ జాబ్ కోసం హైదరాబాద్ వచ్చినప్పుడు నాకు ఎవరూ తెలీదు,\",\"నిజం చెప్పాలంటే చాలా ఒంటరిగా అనిపించింది.\"],\"delivery\":{\"emotion\":\"sad\",\"energy\":\"low\"}}\nin:  {\"id\":16,\"want\":[\"full\"],\"en\":\"Researchers found that people who slept less than six hours made more mistakes the next day.\"}\nout: {\"id\":16,\"full\":{\"spoken\":\"ఆరు గంటల కంటే తక్కువ పడుకున్నవాళ్ళు మర్నాడు ఎక్కువ తప్పులు చేశారని రీసెర్చ్ లో తేలింది.\",\"english\":[{\"word\":\"రీసెర్చ్\",\"occurrence\":0,\"en\":\"research\"}]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin (formal style): {\"id\":17,\"want\":[\"full\"],\"en\":\"Researchers found that people who slept less than six hours made more mistakes the next day.\"}\nout: {\"id\":17,\"full\":{\"spoken\":\"ఆరు గంటల కంటే తక్కువ నిద్రపోయినవారు మరుసటి రోజు ఎక్కువ తప్పులు చేశారని పరిశోధకులు కనుగొన్నారు.\",\"english\":[]},\"delivery\":{\"emotion\":\"serious\",\"energy\":\"mid\"}}\nin:  {\"id\":18,\"want\":[\"full\"],\"en\":\"In this lecture, we shall examine the principal factors contributing to the decline of soil fertility.\"}\nout: {\"id\":18,\"full\":{\"spoken\":\"ఈ లెక్చర్ లో, నేల సారం తగ్గిపోవడానికి ముఖ్యమైన కారణాలు ఏంటో చూద్దాం.\",\"english\":[{\"word\":\"లెక్చర్\",\"occurrence\":0,\"en\":\"lecture\"}]},\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\"}}\nin:  {\"id\":19,\"want\":[\"full\"],\"en\":\"Did you watch the new Marvel movie on Netflix last weekend?\"}\nout: {\"id\":19,\"full\":{\"spoken\":\"పోయిన వీకెండ్ నెట్ఫ్లిక్స్లో కొత్త మార్వెల్ సినిమా చూశారా?\",\"english\":[{\"word\":\"వీకెండ్\",\"occurrence\":0,\"en\":\"weekend\"},{\"word\":\"మార్వెల్\",\"occurrence\":0,\"en\":\"Marvel\"}]},\"delivery\":{\"emotion\":\"happy\",\"energy\":\"high\",\"question\":true}}\n\nVIDEO BRIEF (version 1). Follow its glossary spellings, each speaker's gender (for verb agreement) and address forms, and its numbers convention. Apply its ASR fixes only to the words listed. In the formal style, a term with a common Telugu word is said in Telugu even when its glossary entry keeps English.\n{\"video\":{\"title\":\"Original dialogue: checking a bus trip\",\"channel\":\"Maata original fixture\"},\"topic\":\"Two close friends check the price, travel date and uncertain bus arrival before paying.\",\"register\":\"Friendly everyday dialogue; Ravi and Meena address each other familiarly with నువ్వు.\",\"speakers\":[{\"id\":\"S1\",\"name\":\"Ravi\",\"gender\":\"male\",\"role\":\"friend\",\"audience\":\"familiar\",\"address\":[{\"to\":\"S2\",\"form\":\"familiar\"}]},{\"id\":\"S2\",\"name\":\"Meena\",\"gender\":\"female\",\"role\":\"friend\",\"audience\":\"familiar\",\"address\":[{\"to\":\"S1\",\"form\":\"familiar\"}]}],\"glossary\":[{\"term\":\"WhatsApp\",\"spoken\":\"వాట్సాప్\",\"keep_english\":true}],\"entities\":[\"Ravi\",\"Meena\",\"Vijayawada\"],\"idioms\":[\"count our chickens before they hatch\"],\"numbers\":\"Use spoken Telugu numbers and rupees.\"}\n\nJSON CONTRACT\nThe message is JSON; \"call\" says what to do.\n- \"scene\": dub every line in \"lines\". \"context_before\" (earlier lines, with the Telugu used for them when there is one), \"context_done\" (lines of this scene already dubbed) and \"context_after_en\" (the lines that follow) are context only: never dub them and never return their ids.\n- \"fit\": each line's \"current\" is the wording chosen for it, and \"overflow_aksharas\" is how far it runs over its slot (negative: under). Give new wordings, closer to the slot, for the tiers in \"want\". A fit never changes the natural line: \"full\" is \"current\" copied unchanged.\n- \"retranslate\": a review found content missing, and \"missing\" names the English words. Translate the English afresh so their meaning is there; don't rework any earlier Telugu.\n- \"rephrase\": the Telugu voice couldn't say \"failing\" cleanly, and \"finding\" says what went wrong. Give a simpler \"full\" with the same meaning (plainer words, another common form of a hard term) and the tiers in \"want\".\n- \"problems\" on a line lists what was wrong with your last answer for it: fix exactly that.\n- \"glossary_recent\" holds spellings decided in earlier scenes: use them.\nReply with one JSON object: {\"lines\": [...], \"glossary_additions\": [...]}.\n- Every requested id exactly once, in any order.\n- \"full\" always; other tiers only when \"want\" names them.\n- \"pieces\" only for a line with \"breaks\": at most one piece more than there are breaks, split where Telugu naturally pauses. Restructure so each piece can be said on its own; the pieces joined with single spaces must be exactly full.spoken. Content that had to move to another piece is listed, in English, in \"moved\".\n- \"unfinished\": true for a \"cut_off\" line: keep it unfinished (a non-finite form ending in …), never complete the thought.\n- \"delivery\": how to say it: \"emotion\" and \"energy\", \"question\": true for a question, and \"emphasis\": the indices of stressed words in full.spoken.\n- \"glossary_additions\": names and terms first used in this reply that later scenes must spell the same way, with the Telugu-script spelling used (\"spoken\") and \"keep_english\": true when it is said in English.",
+  "prompt": "{\"scene\":1,\"call\":\"scene\",\"style\":\"colloquial\",\"glossary_recent\":[],\"context_before\":[{\"en\":\"Ravi and Meena are close friends planning a bus trip to Vijayawada. They are comparing the fare before paying.\"}],\"context_after_en\":[\"They agree to check the travel date and arrival time before buying the tickets.\"],\"lines\":[{\"id\":1,\"speaker\":\"S1\",\"to\":\"S2\",\"start\":0.0,\"end\":8.0,\"speech_s\":8.0,\"target_aksharas\":40,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"Meena, the bus tickets to Vijayawada cost two hundred and fifty rupees for both of us.\"},{\"id\":2,\"speaker\":\"S2\",\"to\":\"S1\",\"start\":8.3,\"end\":12.3,\"speech_s\":4.0,\"target_aksharas\":20,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"You haven't paid yet, have you? Seriously?\"},{\"id\":3,\"speaker\":\"S1\",\"to\":\"S2\",\"start\":12.6,\"end\":17.6,\"speech_s\":5.0,\"target_aksharas\":25,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"No, I only saved the booking page on my phone.\"},{\"id\":4,\"speaker\":\"S2\",\"to\":\"S1\",\"start\":17.9,\"end\":23.9,\"speech_s\":6.0,\"target_aksharas\":30,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"Good, it may arrive by six, but the driver hasn't confirmed that.\"},{\"id\":5,\"speaker\":\"S1\",\"to\":\"S2\",\"start\":24.2,\"end\":31.7,\"speech_s\":7.5,\"target_aksharas\":38,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"Let's not count our chickens before they hatch; we still need to check the date.\"},{\"id\":6,\"speaker\":\"S2\",\"to\":\"S1\",\"start\":32.0,\"end\":39.0,\"speech_s\":7.0,\"target_aksharas\":35,\"want\":[\"full\"],\"breaks\":[],\"cut_off\":false,\"en\":\"Then send me the link on WhatsApp, and I'll check it after the meeting.\"}]}",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "lines"
+    ],
+    "definitions": {
+      "wording": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "spoken",
+          "english"
+        ],
+        "properties": {
+          "spoken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "english": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "word",
+                "occurrence",
+                "en"
+              ],
+              "properties": {
+                "word": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "occurrence": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "en": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "properties": {
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "full",
+            "delivery"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "full": {
+              "$ref": "#/definitions/wording"
+            },
+            "fuller": {
+              "$ref": "#/definitions/wording"
+            },
+            "concise": {
+              "$ref": "#/definitions/wording"
+            },
+            "very_concise": {
+              "$ref": "#/definitions/wording"
+            },
+            "pieces": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "moved": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "unfinished": {
+              "type": "boolean"
+            },
+            "delivery": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "emotion",
+                "energy"
+              ],
+              "properties": {
+                "emotion": {
+                  "enum": [
+                    "neutral",
+                    "happy",
+                    "sad",
+                    "angry",
+                    "surprised",
+                    "serious"
+                  ]
+                },
+                "energy": {
+                  "enum": [
+                    "low",
+                    "mid",
+                    "high"
+                  ]
+                },
+                "question": {
+                  "type": "boolean"
+                },
+                "emphasis": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "glossary_additions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "term",
+            "spoken"
+          ],
+          "properties": {
+            "term": {
+              "type": "string"
+            },
+            "spoken": {
+              "type": "string"
+            },
+            "keep_english": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    }
+  },
+  "prompt_hash": "9550fc5e1ac9",
+  "review_hash": "4cdb4f668364",
+  "shots_version": "scene-v7",
+  "arms": [
+    [
+      "luna",
+      "gpt-6-luna",
+      "low"
+    ],
+    [
+      "sol",
+      "gpt-6.1-sol",
+      "medium"
+    ],
+    [
+      "astra",
+      "gpt-6-astra",
+      "medium"
+    ]
+  ],
+  "review_model": "gpt-6-astra",
+  "review_effort": "high"
+}

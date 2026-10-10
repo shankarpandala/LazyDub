@@ -22,8 +22,8 @@ def test_no_english_quota_anywhere_in_the_module():
 @pytest.mark.parametrize("spoken,english,latin", [
     ("సెట్టింగ్స్ ఓపెన్ చేసి, వైఫై ఆఫ్ చేయండి.", [(0, "settings"), (1, "open"), (3, "Wi-Fi"), (4, "off")],
      "settings open చేసి, Wi-Fi off చేయండి."),
-    ("పోయిన వీకెండ్ నెట్ఫ్లిక్స్లో ఏం చూశారు?", [(1, "weekend"), (2, "Netflix")], "పోయిన weekend Netflix లో ఏం చూశారు?"),
-    ("మా రౌటర్ని రీస్టార్ట్ చేశా.", [(1, "router"), (2, "restart")], "మా router ని restart చేశా."),
+    ("పోయిన వీకెండ్ నెట్ఫ్లిక్స్లో ఏం చూశారు?", [(1, "weekend"), (2, "Netflix")], "పోయిన weekend నెట్ఫ్లిక్స్లో ఏం చూశారు?"),
+    ("మా రౌటర్ని రీస్టార్ట్ చేశా.", [(1, "router"), (2, "restart")], "మా రౌటర్ని restart చేశా."),
     ("\"ఫోన్,\" అని అడిగాడు.", [(0, "phone")], "\"phone,\" అని అడిగాడు."),
     ("ఫ్లో బాగుంది, హలో చెప్పండి.", [(0, "flow"), (2, "hello")], "flow బాగుంది, hello చెప్పండి."),  # not a case ending
     ("ఇంట్లో అందరూ బాగున్నారు.", [], "ఇంట్లో అందరూ బాగున్నారు."),

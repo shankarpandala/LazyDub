@@ -1,0 +1,154 @@
+{
+  "number": 3,
+  "call": "review",
+  "tags": {
+    "scene": 1,
+    "lines": 2,
+    "correction": true
+  },
+  "model": "gpt-6-luna",
+  "effort": "low",
+  "system": "You check a Telugu dub against its English, line by line, for meaning only: never style, word choice, spelling or length.\nThe message is JSON. \"lines\" holds the lines to check, each {\"id\", \"en\", \"te\", \"tts\"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. \"context_before\" (earlier lines, with their Telugu when there is one) and \"context_after_en\" (the lines that follow) are context only: never return them.\nThe Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is \"settings\"). A line with \"cut_off\": true was interrupted in the English, and its Telugu is unfinished on purpose.\nReply with every id in \"lines\" exactly once, with \"class\":\n- \"C\": complete: every fact, name, number, negation, question and meaningful qualification of the English is there, and nothing is added;\n- \"m\": a minor drop only: a conversational filler or discourse marker, \"okay\", a trailing backchannel, or emphasis that does not change the factual claim;\n- \"P\": a content phrase or clause of the English is missing;\n- \"E\": a meaning error: a negation lost or added, a number, name or question changed, or content that isn't in the English.\nUncertainty, conditions, frequency and bounds qualify a factual claim. If a meaningful qualification is lost or certainty is strengthened, classify P or E, never m or C: \"may cost\" must not become \"will cost\", and \"rarely\" must not disappear.\nWith it: \"missing\", the English words (as the English has them) whose meaning is not in the Telugu, empty for \"C\"; \"added\", Telugu content that isn't in the English, said in English; \"error\", the kind of an \"E\" error, else \"none\".\nSome input lines also offer \"fallback\": an existing full wording with its own \"te\" and actual \"tts\". Only when the main wording is P or E, check that fallback against the SAME English and context, including its actual TTS form. Return its verdict in \"fallback\" with \"class\", \"missing\", \"added\" and \"error\"; otherwise omit it or return null. C requires every meaning detail, including uncertainty, conditions and quantities, with no additions; use empty missing/added and error none. Do not assume a longer wording is complete. Judge natural Telugu paraphrases and implicit subjects by meaning, not literal word matches. Do not rewrite, copy or generate a translation.",
+  "prompt": "{\"scene\":1,\"call\":\"review\",\"context_before\":[],\"lines\":[{\"id\":1,\"en\":\"Ravi will return the red book tomorrow.\",\"te\":\"రవి రేపు ఎర్ర పుస్తకం తిరిగి ఇస్తాడు.\",\"tts\":\"రవి రేపు ఎర్ర పుస్తకం తిరిగి ఇస్తాడు.\"},{\"id\":2,\"en\":\"The battery may last six hours, but that is not guaranteed.\",\"te\":\"బ్యాటరీ ఆరు గంటలు ఉండొచ్చు, కానీ అంతసేపు ఉంటుందని గ్యారంటీ లేదు.\",\"tts\":\"బ్యాటరీ ఆరు గంటలు ఉండొచ్చు, కానీ అంతసేపు ఉంటుందని గ్యారంటీ లేదు.\"}],\"context_after_en\":[]}",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "lines"
+    ],
+    "properties": {
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "class",
+            "missing",
+            "added",
+            "error"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "class": {
+              "enum": [
+                "C",
+                "m",
+                "P",
+                "E"
+              ]
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "added": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "error": {
+              "enum": [
+                "none",
+                "negation",
+                "number",
+                "name",
+                "question",
+                "addition",
+                "other"
+              ]
+            },
+            "fallback": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "class",
+                "missing",
+                "added",
+                "error"
+              ],
+              "properties": {
+                "class": {
+                  "enum": [
+                    "C",
+                    "m",
+                    "P",
+                    "E"
+                  ]
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "added": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "error": {
+                  "enum": [
+                    "none",
+                    "negation",
+                    "number",
+                    "name",
+                    "question",
+                    "addition",
+                    "other"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "status": "completed",
+  "reply": {
+    "text": "{\"lines\":[{\"id\":1,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null}]}",
+    "data": {
+      "lines": [
+        {
+          "id": 1,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 2,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        }
+      ]
+    },
+    "seconds": 4.643269082996994,
+    "usage": {
+      "input_tokens": 5541,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 59,
+      "reasoning_output_tokens": 0
+    },
+    "model": "gpt-6-luna",
+    "rate_limit": null,
+    "startup_s": 0.07427754200762138
+  },
+  "wall_seconds": 4.645
+}

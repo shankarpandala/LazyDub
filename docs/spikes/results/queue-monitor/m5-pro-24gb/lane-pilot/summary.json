@@ -1,0 +1,280 @@
+{
+  "scope": "Bounded original-text lane scheduling pilot; no audio, moving voicer frontier, or video completion claim",
+  "status": "bounded_partial",
+  "models": {
+    "scene": "gpt-6-luna",
+    "review": "gpt-6-luna",
+    "effort": "low",
+    "review_effort": "low",
+    "light_effort": "low"
+  },
+  "weights": {
+    "A": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "B": [
+      1.0,
+      1.5,
+      2.0
+    ]
+  },
+  "plans": {
+    "A": [
+      [
+        1,
+        2,
+        3
+      ],
+      [
+        4,
+        5,
+        6
+      ],
+      [
+        7,
+        8,
+        9
+      ]
+    ],
+    "B": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7,
+        8,
+        9
+      ]
+    ]
+  },
+  "order": "ABBA",
+  "n_per_arm": {
+    "A": 1,
+    "B": 2
+  },
+  "minimum_five_per_configuration_met": false,
+  "default_recommendation": "retain balanced pending sufficiently repeated whole-pipeline comparison and semantic audit",
+  "limitations": [
+    "Two runs per arm maximum, below production measurement minimum five.",
+    "Provider prefix cache uncontrolled; fresh local text cache per arm.",
+    "No native-speaker/human listening evaluation; automated coverage does not establish meaning correctness.",
+    "Original fixture and generated text retained only under /tmp; no user transcript/audio used.",
+    "Only the first AB forms a complete pair; B2 is an extra weighted replication, not a second balanced pair.",
+    "Model outputs are stochastic and adaptive fit/correction counts differ; timing differences cannot be attributed to lane weights alone.",
+    "All completed arms have some selected other-tier coverage and fail strict quality eligibility; reported times are raw pilot observations only.",
+    "No1:2:4 arm was justified:1:1.5:2 already showed a slower tail and has not established an overall pipeline benefit.",
+    "Shared-host CPU/mock engine test suites ran during the calls; no competing live audio inference or GPU models. Thermal state remained nominal on AC, but local load was not fully isolated."
+  ],
+  "source_sha256": {
+    "engine/src/maata_engine/render.py": "53fcc688b086d23b02634ca22fff4f6a818fee9a3f6045d74823f57d2e29c621",
+    "engine/src/maata_engine/dubber.py": "4a6e04a5cfc5dd5a1b4e000bee377b41e3f0a5ed20aefc3fa38e89aed925960d",
+    "engine/src/maata_engine/backends/claude_translator.py": "8fc68d99a45ad7dece11fd4092481e8744dc2b18e06052725d65374501742074",
+    "engine/src/maata_engine/codex_cli.py": "a7216fd7ccb8fa0f50c2fb78a2407d6b27b803700144586d31308387366b1c20",
+    "scripts/bench_translation_scenes.py": "5e8aff49a06fe27c58643142f27e75403f5ccedee6e459b35a271e752f3ccd52"
+  },
+  "harness_sha256": "3aa99c18062d9cee57060913f7f800caa1dab050e1f8690b7fb01fee8322f311",
+  "runs": [
+    {
+      "sequence": 1,
+      "arm": "A",
+      "status": "completed",
+      "prefix_seconds": {
+        "6": 40.34204983399832,
+        "12": 90.11135395900055,
+        "18": 114.28184916700047,
+        "24": 114.28184916700047,
+        "30": 114.28184916700047,
+        "36": 120.48953687500034,
+        "42": 120.48953687500034,
+        "48": 120.48953687500034,
+        "54": 120.48953687500034
+      },
+      "first_contiguous_ready_seconds": 40.34204983399832,
+      "all_text_ready_seconds": 120.48953687500034,
+      "translation_stage_seconds": 120.48964229199919,
+      "selected_classes": {
+        "C": 51,
+        "other_tier": 3
+      },
+      "quality_eligible": false,
+      "calls": 28,
+      "usage": {
+        "input_tokens": 242614,
+        "output_tokens": 11094,
+        "cache_read_tokens": 92160,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "valid_hygiene": true,
+      "model_mismatch": false,
+      "call_kinds": {
+        "scene": 9,
+        "review": 9,
+        "retranslate": 4,
+        "fit": 6
+      },
+      "retranslated_lines": 4,
+      "replaced_lines": 4,
+      "cached_input_fraction": 0.3798626625009274,
+      "verified_model_efforts": [
+        [
+          "gpt-6-luna",
+          "low"
+        ]
+      ],
+      "errors": {}
+    },
+    {
+      "sequence": 2,
+      "arm": "B",
+      "status": "completed",
+      "prefix_seconds": {
+        "6": 47.680823083002906,
+        "12": 87.89256475000002,
+        "18": 87.89256475000002,
+        "24": 87.89256475000002,
+        "30": 133.1392349170019,
+        "36": 133.1392349170019,
+        "42": 133.1392349170019,
+        "48": 133.1392349170019,
+        "54": 144.7019877920029
+      },
+      "first_contiguous_ready_seconds": 47.680823083002906,
+      "all_text_ready_seconds": 144.7019877920029,
+      "translation_stage_seconds": 144.70207262500116,
+      "selected_classes": {
+        "C": 44,
+        "other_tier": 10
+      },
+      "quality_eligible": false,
+      "calls": 30,
+      "usage": {
+        "input_tokens": 256666,
+        "output_tokens": 12106,
+        "cache_read_tokens": 110592,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "valid_hygiene": true,
+      "model_mismatch": false,
+      "call_kinds": {
+        "scene": 9,
+        "review": 9,
+        "fit": 7,
+        "retranslate": 5
+      },
+      "retranslated_lines": 5,
+      "replaced_lines": 5,
+      "cached_input_fraction": 0.43087904124426296,
+      "verified_model_efforts": [
+        [
+          "gpt-6-luna",
+          "low"
+        ]
+      ],
+      "errors": {}
+    },
+    {
+      "sequence": 3,
+      "arm": "B",
+      "status": "completed",
+      "prefix_seconds": {
+        "6": 46.5145170830001,
+        "12": 85.48817037499975,
+        "18": 85.48817037499975,
+        "24": 85.48817037499975,
+        "30": 105.58192237500043,
+        "36": 105.58192237500043,
+        "42": 105.58192237500043,
+        "48": 105.58192237500043,
+        "54": 129.985417625001
+      },
+      "first_contiguous_ready_seconds": 46.5145170830001,
+      "all_text_ready_seconds": 129.985417625001,
+      "translation_stage_seconds": 129.98548945800212,
+      "selected_classes": {
+        "C": 50,
+        "other_tier": 4
+      },
+      "quality_eligible": false,
+      "calls": 26,
+      "usage": {
+        "input_tokens": 211133,
+        "output_tokens": 10411,
+        "cache_read_tokens": 63744,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0
+      },
+      "valid_hygiene": true,
+      "model_mismatch": false,
+      "call_kinds": {
+        "scene": 9,
+        "review": 9,
+        "retranslate": 3,
+        "fit": 5
+      },
+      "retranslated_lines": 3,
+      "replaced_lines": 3,
+      "cached_input_fraction": 0.30191395944736255,
+      "verified_model_efforts": [
+        [
+          "gpt-6-luna",
+          "low"
+        ]
+      ],
+      "errors": {}
+    }
+  ],
+  "raw_observed_pilot_medians": {
+    "A": {
+      "n": 1,
+      "prefix_seconds": {
+        "6": 40.34204983399832,
+        "12": 90.11135395900055,
+        "18": 114.28184916700047,
+        "24": 114.28184916700047,
+        "30": 114.28184916700047,
+        "36": 120.48953687500034,
+        "42": 120.48953687500034,
+        "48": 120.48953687500034,
+        "54": 120.48953687500034
+      },
+      "all_text_ready_seconds": 120.48953687500034,
+      "quality_eligible_n": 0
+    },
+    "B": {
+      "n": 2,
+      "prefix_seconds": {
+        "6": 47.0976700830015,
+        "12": 86.69036756249989,
+        "18": 86.69036756249989,
+        "24": 86.69036756249989,
+        "30": 119.36057864600116,
+        "36": 119.36057864600116,
+        "42": 119.36057864600116,
+        "48": 119.36057864600116,
+        "54": 137.34370270850195
+      },
+      "all_text_ready_seconds": 137.34370270850195,
+      "quality_eligible_n": 0
+    }
+  },
+  "requested_order": "ABBA",
+  "executed_order": "ABB",
+  "bounded_stop_reason": "Fourth arm was skipped after three completed arms to keep the pilot within roughly eight minutes.",
+  "planned_order": "ABBA",
+  "actual_order": "ABB",
+  "production_default_changed": false,
+  "interpretation": "Raw bounded pilot observations only. These data establish neither a speedup nor equivalent semantic quality and do not justify a production default change. Balanced lanes remain the default.",
+  "semantic_audit": "semantic-audit.json",
+  "live_calls_finished": true
+}

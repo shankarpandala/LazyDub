@@ -1,7 +1,7 @@
 """A render job's translation of its lines and the dub loop's side of it (ARCHITECTURE §4.1-4.6, §4.9; OFFLINE-RENDER
 §2.8-§2.10): the whole video's scene cuts, `want` tiers from the k prior, the band rule and its fits, the coverage
 review, the Claude CLI off the dub loop, Claude failures and the banner, and the TTS script switch. No Claude: the mock
-translator, small stand-ins, or a fake `claude` executable. All English and Telugu here is original test text (the
+translator, small stand-ins, or a fake `codex` executable. All English and Telugu here is original test text (the
 demo lines included). Ported from the streaming session's tests (OFFLINE-RENDER §10 step 6)."""
 
 from __future__ import annotations
@@ -35,26 +35,28 @@ from maata_engine.timing.duration import DEFAULT_OVERHEAD, DEFAULT_RATE, Duratio
 from maata_engine.timing.planner import Plan  # noqa: E402
 from maata_engine.types import SourceUnit, TimedWord  # noqa: E402
 
-# A fake `claude`: answers scene, fit and rephrase calls from the message (Telugu script, one made-up word per id), brief
+# A fake `codex`: answers scene, fit and rephrase calls from the message (Telugu script, one made-up word per id), brief
 # calls with a small brief and review calls with every line complete, after FAKE_DELAY s; FAKE_MODE=not_signed_in fails
 # every call as the CLI does. Each call leaves {call, scene, ids, t0, t1} in FAKE_LOG.
 FAKE = r"""#!@PYTHON@
 import json, os, sys, time
 argv = sys.argv[1:]
 if argv[:1] == ["--version"]:
-    print("2.1.281 (Claude Code)")
+    print("codex-cli 0.160.0")
     sys.exit(0)
-if argv[:2] == ["auth", "status"]:
+if argv[:2] == ["login", "status"]:
     time.sleep(float(os.environ.get("FAKE_AUTH_DELAY", "0")))
-    print(json.dumps({"loggedIn": os.environ.get("FAKE_SIGNED_IN", "1") == "1", "authMethod": "claude.ai"}))
-    sys.exit(0)
-msg = json.loads(sys.stdin.read())
+    signed_in = os.environ.get("FAKE_SIGNED_IN", "1") == "1"
+    print("Logged in using ChatGPT" if signed_in else "Not logged in")
+    sys.exit(0 if signed_in else 1)
+msg = json.loads(json.loads(sys.stdin.read())["input"])
 t0 = time.time()
 def emit(ev):
     print(json.dumps(ev, ensure_ascii=False), flush=True)
-emit({"type": "system", "subtype": "init"})
+emit({"type": "thread.started", "thread_id": "fake"})
+emit({"type": "turn.started"})
 if os.environ.get("FAKE_MODE") == "not_signed_in":
-    emit({"type": "result", "subtype": "success", "is_error": True, "result": "Not logged in · Please run /login"})
+    emit({"type": "turn.failed", "error": {"message": "Not logged in"}})
     sys.exit(1)
 time.sleep(float(os.environ.get("FAKE_DELAY", "0")))
 if msg.get("call") == "brief":
@@ -76,8 +78,8 @@ else:
             out["fuller"] = w(["అంటే"] + words)
         lines.append(out)
     data = {"lines": lines}
-emit({"type": "result", "subtype": "success", "is_error": False, "result": "", "structured_output": data,
-      "usage": {"input_tokens": 1, "output_tokens": 1}, "modelUsage": {}})
+emit({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps(data, ensure_ascii=False)}})
+emit({"type": "turn.completed", "usage": {"input_tokens": 1, "cached_input_tokens": 0, "output_tokens": 1}})
 with open(os.environ["FAKE_LOG"], "a") as f:
     f.write(json.dumps({"call": msg.get("call"), "scene": msg.get("scene"),
                         "ids": [x["id"] for x in msg.get("lines", [])], "t0": t0, "t1": time.time()}) + "\n")
@@ -86,7 +88,7 @@ with open(os.environ["FAKE_LOG"], "a") as f:
 
 @pytest.fixture()
 def fake_cli(tmp_path, monkeypatch):
-    exe = tmp_path / "claude"
+    exe = tmp_path / "codex"
     exe.write_text(FAKE.replace("@PYTHON@", sys.executable))
     exe.chmod(exe.stat().st_mode | stat.S_IXUSR)
     log = tmp_path / "calls.jsonl"
@@ -145,20 +147,91 @@ def lines_every(seconds: float, n: int, length: float = 3.0, text: str = "A line
     return [unit(i, i * seconds, i * seconds + length, speaker, text) for i in range(n)]
 
 
-def test_a_scene_holds_at_most_150_s_and_30_lines_cut_at_a_turn_or_pause():
+def test_legacy_scene_caps_remain_available_for_controlled_comparisons():
+    def legacy(run):
+        return scene_cut(run, max_seconds=150.0, max_units=30)
+
     run = lines_every(4.0, 60, length=3.5)
-    assert scene_cut(run) == 30                                       # 30 lines come first (they end at 119.5 s)
+    assert legacy(run) == 30                                         # 30 lines come first (they end at 119.5 s)
     sparse = lines_every(8.0, 40)                                     # 5 s gaps between lines: every boundary a pause
-    assert scene_cut(sparse) == 19                                    # ends at 147 s, the last pause under 150 s
+    assert legacy(sparse) == 19                                      # ends at 147 s, the last pause under 150 s
     turns = [unit(i, 10.0 * i, 10.0 * i + 9.5, "S1" if i < 11 else "S2") for i in range(20)]
-    assert scene_cut(turns) == 11                                     # the speaker turn at 110 s, not the limit
+    assert legacy(turns) == 11                                       # the speaker turn at 110 s, not the limit
     early = [unit(i, 10.0 * i, 10.0 * i + 9.5, "S1" if i < 3 else "S2") for i in range(20)]
-    assert scene_cut(early) == 15                                     # a turn in the first half doesn't count
-    assert scene_cut([unit(0, 0.0, 170.0)]) == 1                      # one sentence longer than a scene still goes
+    assert legacy(early) == 15                                       # a turn in the first half doesn't count
+    assert legacy([unit(0, 0.0, 170.0)]) == 1                          # one sentence longer than a scene still goes
+
+
+def test_production_scenes_hold_at_most_30_seconds_and_six_whole_lines():
+    assert (SCENE_MAX_S, SCENE_MAX_UNITS) == (30.0, 6)
+    assert scene_cut(lines_every(4.0, 20, length=3.5)) == 6
+    assert scene_cut(lines_every(8.0, 20)) == 4
+    turns = [unit(i, 5.0 * i, 5.0 * i + 4.5, "S1" if i < 4 else "S2") for i in range(10)]
+    assert scene_cut(turns) == 4
+    assert scene_cut([unit(0, 0.0, 45.0), unit(1, 46.0, 48.0)]) == 1
 
 
 def test_the_rest_of_the_video_under_the_limit_is_one_scene():
-    assert scene_cut(lines_every(4.0, 20)) == 20                      # 79 s and 20 lines: all of it
+    assert scene_cut(lines_every(4.0, 5)) == 5                       # 19 s and 5 lines: all of it
+    assert scene_cut(lines_every(4.0, 20), max_seconds=150.0, max_units=30) == 20
+
+
+@pytest.mark.parametrize("seconds,limit", [(7.5, 1), (30.0, 6), (40.0, 6), (45.0, 8), (150.0, 30), (240.0, 40)])
+def test_explicit_scene_caps_cover_every_whole_sentence_and_match_a_bounded_window(seconds, limit):
+    run, start = [], 0.0
+    for i in range(83):
+        end = start + (170.0 if i == 12 else 2.0 + i % 4)
+        run.append(unit(i, start, end, f"S{1 + i // 7 % 2}"))
+        start = end + (1.2 if i % 11 == 0 else 0.2)
+    remaining, seen = run, []
+    while remaining:
+        n = scene_cut(remaining, max_seconds=seconds, max_units=limit)
+        assert n == scene_cut(remaining[:limit + 1], max_seconds=seconds, max_units=limit)
+        assert 1 <= n <= limit
+        assert n == 1 or remaining[n - 1].end - remaining[0].start <= seconds
+        seen.extend(u.id for u in remaining[:n])
+        remaining = remaining[n:]
+    assert seen == list(range(len(run)))
+
+
+def test_explicit_scene_cap_uses_its_own_second_half_for_turns_and_pauses():
+    turns = [unit(i, 5.0 * i, 5.0 * i + 4.6, "S1" if i < 4 else "S2") for i in range(10)]
+    assert scene_cut(turns, max_seconds=30.0, max_units=10) == 4  # the turn at 20 s is in this cap's second half
+    early = [replace(u, speaker="S1" if i < 2 else "S2") for i, u in enumerate(turns)]
+    assert scene_cut(early, max_seconds=30.0, max_units=10) == 6  # the turn at 10 s is too early
+    pauses = [replace(u, speaker="S1", end=u.end - (0.7 if i == 3 else 0.0)) for i, u in enumerate(turns)]
+    assert scene_cut(pauses, max_seconds=30.0, max_units=10) == 4  # the 1.1 s pause wins
+    assert scene_cut([unit(0, 0.0, 170.0)], max_seconds=30.0, max_units=6) == 1
+
+
+@pytest.mark.parametrize("seconds,limit", [(0.0, 6), (-1.0, 6), (float("inf"), 6), (float("nan"), 6),
+                                          (30.0, 0), (30.0, -1), (30.0, 1.5)])
+def test_invalid_scene_caps_are_rejected(seconds, limit):
+    with pytest.raises(ValueError, match="scene limits"):
+        scene_cut(lines_every(4.0, 4), max_seconds=seconds, max_units=limit)
+
+
+def test_explicit_production_caps_match_defaults_and_omitted_caps_follow_the_default_constants(monkeypatch):
+    for run in (lines_every(4.0, 60, length=3.5), lines_every(8.0, 40), [unit(0, 0.0, 170.0)]):
+        assert scene_cut(run) == scene_cut(run, max_seconds=30.0, max_units=6)
+    monkeypatch.setattr(dubber, "SCENE_MAX_S", 40.0)
+    monkeypatch.setattr(dubber, "SCENE_MAX_UNITS", 8)
+    run = lines_every(4.0, 60, length=3.5)
+    assert scene_cut(run) == scene_cut(run, max_seconds=40.0, max_units=8) == 8
+
+
+@pytest.mark.parametrize("seconds,limit", [(30.0, 6), (240.0, 40)])
+def test_render_scene_cap_hook_is_deterministic_across_preview_and_cached_state(tmp_path, seconds, limit):
+    job = bare_job(tmp_path)
+    put(job, *(UnitState(u, None, speech_s=3.0) for u in lines_every(4.0, 85)))
+    before = job._cut_scenes(max_seconds=seconds, max_units=limit)
+    assert len(before[0].lines) == limit  # a larger test cap is not silently constrained by the old 30-line slice
+    job.settings = replace(job.settings, stop_at=20.0)
+    for st in job._order[:15]:
+        st.voiced = True
+    after = job._cut_scenes(max_seconds=seconds, max_units=limit)
+    assert [(sc.no, sc.k, [st.unit.id for st in sc.lines]) for sc in before] == \
+           [(sc.no, sc.k, [st.unit.id for st in sc.lines]) for sc in after]
 
 
 def test_the_whole_videos_scenes_are_cut_once_from_the_first_line_to_the_last(tmp_path):
@@ -242,6 +315,73 @@ def test_otherwise_the_closest_from_below(tmp_path):
     assert not job._choose(st) and st.tier == "very_concise"
     job, st = band_case(tmp_path / "2", {"full": 12.0, "concise": 9.0})  # nothing below: the closest from above
     assert not job._choose(st) and st.tier == "concise"
+
+
+@pytest.mark.parametrize("change,eligible", [("none", True), ("too_long", False), ("voicing", False),
+                                              ("voiced", False), ("full_selected", False), ("same_text", False)])
+async def test_initial_full_fallback_requires_unvoiced_distinct_text_and_current_planner_room(
+        tmp_path, monkeypatch, change, eligible):
+    job, st = band_case(tmp_path, {"full": 4.8, "concise": 4.0})
+    st.unit = replace(st.unit, text="Bring three copies by Friday, but do not send the original.")
+    full = Wording("శుక్రవారంలోగా మూడు కాపీలు తీసుకురండి, కానీ అసలు పత్రాన్ని పంపకండి.")
+    short = Wording("కాపీలు తీసుకురండి.")
+    st.line = LineResult(0, {"full": full, "concise": short})
+    full_seconds = 12.0 if change == "too_long" else 4.0 if change == "full_selected" else 4.8
+    if change == "same_text":
+        st.line.tiers["concise"] = full
+    st.voicing, st.voiced = change == "voicing", change == "voiced"
+    monkeypatch.setattr(job.estimator, "estimate", lambda text, key: full_seconds if text == full.spoken else 4.0)
+
+    class Review:
+        supports_full_fallback = True
+
+        async def review(self, req, lines, chosen, *, fallbacks, fallback_check):
+            assert fallbacks == ({0} if eligible else set())
+            assert fallback_check(0) is eligible
+            if eligible:
+                # The callback is evaluated at the eventual review result, not just when the request is queued.
+                st.voicing = True
+                assert not fallback_check(0)
+                st.voicing = False
+                monkeypatch.setattr(job.estimator, "estimate", lambda *_: 30.0)
+                assert not fallback_check(0)
+            return SceneResult(req.scene, "review", lines=lines)
+
+    job.tr = Review()
+    await job._review(SceneRequest(1, (job._spec(st),)), {0: st.line})
+
+
+@pytest.mark.parametrize("first", ["P", "E"])
+def test_semantically_approved_full_is_kept_when_estimated_pace_changes(tmp_path, first):
+    job, st = band_case(tmp_path, {"fuller": 3.9, "full": 12.0, "concise": 4.0, "very_concise": 2.0})
+    st.line.coverage = Coverage("C", tier="full", by="review", first=first)
+    assert not job._choose(st) and st.tier == "full"  # neither a fitting fuller nor known-bad concise can replace it
+    job._wording(st, job._key("S1"))
+    assert st.tier == "full" and st.telugu == st.line.full.spoken
+    assert job._fit_spec(st) is None and job._shorter_tier(st, job._key("S1"), 4.0) is None
+    assert set(st.line.tiers) == {"fuller", "full", "concise", "very_concise"}  # retain diagnostic alternatives
+
+
+async def test_fit_already_in_flight_cannot_replace_newly_approved_full(tmp_path):
+    job, st = band_case(tmp_path, {"full": 12.0, "concise": 4.0})
+    submitted, release = asyncio.Event(), asyncio.Event()
+    replacement = LineResult(0, {"full": Wording("కొత్త చిన్న వాక్యం.")})
+
+    class Fit:
+        async def submit(self, req):
+            submitted.set()
+            await release.wait()
+            return SceneResult(req.scene, req.call, lines={0: replacement})
+
+    job.tr = Fit()
+    pending = asyncio.create_task(job._fit(SceneRequest(1, (job._line_spec(st, ("concise",)),), "fit")))
+    await submitted.wait()
+    approved = replace(st.line, coverage=Coverage("C", tier="full", first="P"))
+    st.line = approved
+    job._choose(st)
+    release.set()
+    await pending
+    assert st.line is approved and st.tier == "full" and st.telugu == approved.full.spoken
 
 
 def test_a_line_short_of_its_slot_asks_a_fit_for_fuller_and_one_too_long_for_shorter_tiers(tmp_path):
@@ -362,14 +502,14 @@ async def test_a_fit_that_comes_back_while_its_line_is_being_voiced_is_not_folde
 
 
 # ---- a scene call and its review (§4.6) -------------------------------------------------------------------------------
-@pytest.mark.parametrize("english,warns", [(0, True), (1, False), (3, False), (5, True)])
-async def test_a_scenes_code_mixing_is_logged_and_warned_about_only_well_outside_20_to_40(tmp_path, caplog, english,
-                                                                                          warns):
-    """Ten words, `english` of them English: a code-mixing index of 0, 10, 30 or 50 %. It tops out at 50 (as many English
-    words as Telugu), so the upper warning must sit below that to ever fire."""
+@pytest.mark.parametrize("english", [0, 1, 3, 5])
+async def test_reviewed_latin_substitution_index_is_logged_without_a_mixing_quota_warning(tmp_path, caplog, english):
+    """The compatible trace value counts approved substitutions; unmapped loans still have Telugu spellings.
+    Neither zero substitutions nor many imply a quality problem or an English quota."""
     job = bare_job(tmp_path)
     spoken = "ఒకటి రెండు మూడు నాలుగు ఐదు ఆరు ఏడు ఎనిమిది తొమ్మిది పది."
-    line = LineResult(0, {"full": Wording(spoken, tuple((i, "word") for i in range(english)))})
+    line = LineResult(0, {"full": Wording(spoken, tuple((i, "word") for i in range(english)))},
+                      coverage=Coverage("C", tier="full"))
     st = UnitState(SourceUnit(0, "S1", 10.0, 16.0, "One two three four five six seven eight nine ten."), 17.0,
                    speech_s=6.0, scene=1)
     put(job, st)
@@ -390,7 +530,7 @@ async def test_a_scenes_code_mixing_is_logged_and_warned_about_only_well_outside
         await job._scene(SceneRequest(1, (job._spec(st),)))
     (scene,) = trace(job, "scene")
     assert scene["cmi"] == 10.0 * min(english, 10 - english)                   # logged for every scene
-    assert ("code-mixing index" in caplog.text) == warns and st.line is line   # a warning at most: the line is used
+    assert "code-mixing index" not in caplog.text and st.line == line
 
 
 def test_a_scenes_classes_count_only_where_the_class_is_of_the_wording_chosen(tmp_path):
@@ -522,7 +662,7 @@ async def test_a_claude_failure_holds_translation_says_what_to_do_and_recovers(t
     try:
         await until(lambda: any(e["type"] == "claude_error" for e in events))
         err = next(e for e in events if e["type"] == "claude_error")
-        assert err["kind"] == "not_signed_in" and err["retryIn"] >= 0 and "Not logged in" in err["message"]
+        assert err["kind"] == "not_signed_in" and err["retryIn"] >= 0 and "codex login" in err["message"]
         await until(lambda: job.doc["status"] == "waiting")  # the job waits out the hold
         assert not (job.render_dir / "takes.jsonl").exists() and not job.skipped  # lines wait, never skipped
         fake_cli.env.setenv("FAKE_MODE", "ok")  # the user signs in
@@ -741,8 +881,11 @@ class Reviewing(MockClaude):
         reply = super().ask(system, prompt, schema, call, effort=effort, cancel=cancel, tags=tags)
         if call == "review":
             en = {x["id"]: x["en"] for x in json.loads(prompt)["lines"]}
+            te = {x["id"]: x["te"] for x in json.loads(prompt)["lines"]}
             for x in reply.data["lines"]:
                 cls, missing = next((v for k, v in self.classes.items() if en[x["id"]].startswith(k)), ("C", []))
+                if te[x["id"]].startswith("సరిగ్గా "):
+                    cls, missing = "C", []  # the explicit reviewer recognizes this fixture's exact correction
                 x.update({"class": cls, "missing": missing})
         elif call == "retranslate":
             for x in reply.data["lines"]:
@@ -750,7 +893,7 @@ class Reviewing(MockClaude):
                     if tier in x:
                         w = x[tier]
                         x[tier] = {"spoken": "సరిగ్గా " + w["spoken"],
-                                   "english": [{"i": e["i"] + 1, "en": e["en"]} for e in w["english"]]}
+                                   "english": w["english"]}
         return reply
 
 
@@ -788,7 +931,7 @@ async def test_a_scenes_lines_count_as_translated_only_once_their_review_is_back
     units = trace(job, "unit")
     assert units and all(u["coverage"]["class"] == "C" and u["coverage"]["by"] == "review" for u in units)
     assert all(u["coverage"]["tier"] in u["tiers"] for u in units)
-    assert all(c["effort"] == "high" for c in reviews(clis[0]))
+    assert all(c["effort"] == "low" for c in reviews(clis[0]))
     (scene,) = [e for e in trace(job, "scene") if e["scene"] == 1]
     assert scene["coverage"]["C"] == scene["translated"] and scene["unreviewed"] == 0
 
@@ -798,10 +941,10 @@ async def test_a_line_the_review_finds_a_phrase_missing_from_is_retranslated_and
     job = bare_job(tmp_path, translator=factory)
     assert await job.run() == "done"
     redo = [c for c in clis[0].calls if c["call"] == "retranslate"]
-    assert redo and redo[0]["message"]["lines"][0]["missing"] == ["exactly"] and redo[0]["effort"] == "medium"
+    assert redo and redo[0]["message"]["lines"][0]["missing"] == ["exactly"] and redo[0]["effort"] == "low"
     unit = next(e for e in trace(job, "unit") if e["source"].startswith("Every line"))
-    assert "సరిగ్గా" in unit["telugu"].split()  # the re-translation says more: classed C by the checks, and voiced
-    assert unit["coverage"] == {"class": "C", "by": "validators", "tier": "full", "first": "P", "missing": [],
+    assert "సరిగ్గా" in unit["telugu"].split()  # explicitly re-reviewed and actually voiced
+    assert unit["coverage"] == {"class": "C", "by": "review", "tier": "full", "first": "P", "missing": [],
                                 "added": [], "error": None}
     others = [e for e in trace(job, "unit") if not e["source"].startswith("Every line")]
     assert others and all(e["coverage"]["class"] == "C" and "సరిగ్గా" not in e["telugu"].split() for e in others)
@@ -861,18 +1004,19 @@ async def test_units_jsonl_has_each_lines_class_speech_fill_and_required_rate(tm
 
 # ---- Claude's state for the UI (hello) --------------------------------------------------------------------------------
 def test_health_says_installed_version_signed_in_and_models(tmp_path, fake_cli, monkeypatch):
-    from maata_engine import claude_cli
+    from maata_engine import codex_cli
 
-    ok = claude_cli.ClaudeCLI(tmp_path, binary=str(fake_cli.exe)).health()
-    assert ok == {"installed": True, "version": "2.1.281", "signedIn": True,
-                  "models": ["claude-sonnet-5", "claude-opus-5-5"], "model": "claude-opus-5-5", "problem": None,
-                  "message": ""}
+    ok = codex_cli.CodexCLI(tmp_path, binary=str(fake_cli.exe)).health()
+    assert ok["models"] == ["gpt-6-luna"]
+    assert {k: v for k, v in ok.items() if k != "models"} == {
+        "installed": True, "version": "0.160.0", "signedIn": True, "model": "gpt-6-luna",
+        "provider": "codex", "problem": None, "message": ""}
     fake_cli.env.setenv("FAKE_SIGNED_IN", "0")
-    out = claude_cli.ClaudeCLI(tmp_path, binary=str(fake_cli.exe)).health()
-    assert out["signedIn"] is False and out["problem"] == "not_signed_in" and "claude auth login" in out["message"]
-    monkeypatch.setattr(claude_cli, "find_binary", lambda explicit=None: None)
-    gone = claude_cli.ClaudeCLI(tmp_path).health()
-    assert gone["installed"] is False and gone["problem"] == "missing" and "Install Claude Code" in gone["message"]
+    out = codex_cli.CodexCLI(tmp_path, binary=str(fake_cli.exe)).health()
+    assert out["signedIn"] is False and out["problem"] == "not_signed_in" and "codex login" in out["message"]
+    monkeypatch.setattr(codex_cli, "find_binary", lambda explicit=None: None)
+    gone = codex_cli.CodexCLI(tmp_path).health()
+    assert gone["installed"] is False and gone["problem"] == "missing" and "Codex" in gone["message"]
 
 
 async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, fake_cli):
@@ -881,7 +1025,7 @@ async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, f
 
     from maata_engine.server import Engine
 
-    fake_cli.env.setenv("MAATA_CLAUDE_BIN", str(fake_cli.exe))  # never the real CLI in a test
+    fake_cli.env.setenv("MAATA_CODEX_BIN", str(fake_cli.exe))  # never the real CLI in a test
     eng = Engine("mock", tmp_path / "models", tmp_path / "cache", None, "tok", demo=True)
     async with serve(eng.handler, "127.0.0.1", 0, process_request=eng.process_request) as server:
         url = f"ws://127.0.0.1:{server.sockets[0].getsockname()[1]}/ws?token=tok"
@@ -895,5 +1039,5 @@ async def test_hello_carries_claude_health_except_on_the_demo_engine(tmp_path, f
         t0 = time.monotonic()
         async with connect(url) as ws:
             stuck = json.loads(await ws.recv())
-    assert hello["claude"]["installed"] and hello["claude"]["version"] == "2.1.281" and hello["claude"]["signedIn"]
+    assert hello["claude"]["installed"] and hello["claude"]["version"] == "0.160.0" and hello["claude"]["signedIn"]
     assert time.monotonic() - t0 < 2.5 and stuck["claude"]["problem"] == "stalled"  # hello isn't held up by it

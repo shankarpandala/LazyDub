@@ -1,0 +1,132 @@
+{
+  "created_utc": "2026-10-10T09:37:37.709636+00:00",
+  "scope": "Apple OmniVoice automatic-mode integration, semantic correction review, cache retention and native launch; no full-video quality or throughput claim.",
+  "test_runs": {
+    "full_engine_before_final_automatic_policy": {
+      "passed": 1400,
+      "seconds": 462.65,
+      "log_sha256": "fef1af84ed4604ba8908f360249b8a50b2d020c99b1446dafb28a9a2c7e07d84"
+    },
+    "final_adapter_focused": {
+      "passed": 37,
+      "seconds": 2.8
+    },
+    "server_retention_and_lifecycle": {
+      "passed": 51,
+      "seconds": 103.3
+    },
+    "ui": {
+      "passed": 73
+    },
+    "svelte_check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "full_engine_automatic_policy_before_final_error_routing": {
+      "passed": 1414,
+      "seconds": 657.44,
+      "command": "engine/.venv/bin/python -m pytest -q engine/tests",
+      "log_sha256": "46aee62f023d692e7e748489c7ff435764b4d56f32b409546545359247d1869c",
+      "note": "Concurrent client-started dub; suite duration is not a performance benchmark. Final exception-routing patch has separate focused validation."
+    },
+    "final_speech_failure_routing": {
+      "passed": 7,
+      "seconds": 10.4,
+      "new_cases": 3,
+      "existing_cases": 4,
+      "scope": "Real RenderJob.run/voice-loop/GPU path with mocked worker timeout, empty output and cancellation; no persisted skipped line, unusable take or export; successful resume. Existing unusable-audio and cancellation coverage also included."
+    }
+  },
+  "build": {
+    "command": "PATH=/opt/homebrew/bin:$PATH CARGO_NET_OFFLINE=true npm run tauri build -- --bundles app",
+    "cwd": "app",
+    "exit_code": 0,
+    "release_compile_seconds": 31.5,
+    "native_launch_verified_through_CUA": true,
+    "visible_backend": "Apple Silicon \u00b7 OmniVoice",
+    "final_python_fix_activated_by_native_restart": true
+  },
+  "provisioning": {
+    "command": "MAATA_SETUP_OFFLINE=1 scripts/setup-omnivoice.sh",
+    "exit_code": 0,
+    "existing_runtime_and_verified_models_reused": true,
+    "production_engine_venv_unchanged": true
+  },
+  "audio_evidence": "audio/adapter-auto-summary.json",
+  "correction_evidence": "correction-smoke/report.json",
+  "startup_evidence": "startup-preservation-result.json",
+  "independent_integration_review": "Final retry audit found initial-line OmniVoiceError swallowed by a generic line-skip handler; narrow routing fix now re-raises worker errors and backend cancellation. Separate production-loop regression coverage and a graceful native restart activate the fix. Cache/provenance, calibration, take restoration, watermark order, pause admission and worker shutdown were also reviewed.",
+  "limits": [
+    "Automatic speech is not a fixed speaker clone; native listening across real passages is pending.",
+    "Short original smoke uses authored windows and no background bed; real-source underfill remains unresolved.",
+    "The live client-started test is separate from the controlled smoke and was still running at startup audit.",
+    "The rejected conditioned trial is retained in adapter-timed-summary.json; it was not adopted."
+  ],
+  "full_suite_source_sha256": {
+    "app/src/lib/components/Library.svelte": "4bd1a88fbd8a4f07c6198bcbb1472b7375b1078d5e72a16ca3dd04746c785e36",
+    "app/src/lib/components/SpeakersFound.svelte": "112fd2cbfc60796d0b9a399a2af58505a0b0578de8303fba5affaae4bfb3a0bc",
+    "app/src/lib/components/TopBar.svelte": "b04e5204c29240023ac8a4718948b4e5ee477f26c61ab386f059ad51a013cb95",
+    "app/src/lib/components/voice-mode.test.ts": "ca35f3c7526fb68263bc749e33424bd43231f0b956d74480fd7bf1acd14395d4",
+    "app/src/lib/state.svelte.ts": "dfbbcaa1a4a111201a638190a68f7b6d9385fc42fe19b5149dbcbcc1592451c4",
+    "app/src/lib/state.test.ts": "53d11b5ecb7a90aae5c88864b943a811d371ce3d83c0b0f1913d5929bdefc549",
+    "app/src/lib/types.ts": "ffffe1470b10d9d7983e380a80dadee56a554d6287e97f35b48220a85e8b26aa",
+    "engine/runtimes/omnivoice/README.md": "2d86aa2d77e9a36c98bb36bec813cb6e126e6d7629e98e05852dea9eddef6a59",
+    "engine/runtimes/omnivoice/create_seed.py": "ffb007409acff349209efebb5b69af5ee9b88dbbe50819aa31cb6886227883c4",
+    "engine/runtimes/omnivoice/models.lock.json": "93a76f25705a671bdd25e6ac3ed41f2cb393527ee90fe0e8a72ac373f0a9d0d2",
+    "engine/runtimes/omnivoice/pyproject.toml": "baadf0fe7df8eef7227dd610badb4061ca4ba9de0ee31f3e0712344e9d3f2acd",
+    "engine/runtimes/omnivoice/uv.lock": "b5248a1e2c1ebbbbd0bfeb327444f740bc68421286333fac6b8b03ece0d5fa97",
+    "engine/src/maata_engine/backends/_omnivoice_worker.py": "7b564b1b0a4e1753b65ec14935c56d3e74285e6171442f2e4573751198a4f252",
+    "engine/src/maata_engine/backends/apple.py": "510aa39cd6ad25568170b3b02844d00b410d8e8df2952b0931d8f78d193cba4e",
+    "engine/src/maata_engine/backends/base.py": "3ad7f1ea7ec51381b8d2ac2aa4ffb05b04bc3825660768fe068ac400c8ac7e40",
+    "engine/src/maata_engine/backends/claude_translator.py": "8c5d73c75f260d69c60d9da6cf5a518744b4714d70ff80fb99a0abf266f50e06",
+    "engine/src/maata_engine/backends/omnivoice.py": "0d45714bb71a9c2c4420e7495735dc242d53f9aaadf292a4b0bd1c253f18b763",
+    "engine/src/maata_engine/dubber.py": "1ca44fdce54299bfbd94e27b5bc73c6eba1a5b62501464e86af6a702345a21e8",
+    "engine/src/maata_engine/qa/coverage.py": "4684146685d4077d82d0b69f9098aa453956174baaf6b8b0a55eda52a6573d1a",
+    "engine/src/maata_engine/render.py": "4b810539bf46e1337657798a2ca090637ec0515a6a0420bbc15a5392f50963fe",
+    "engine/src/maata_engine/server.py": "874af7f9b241352d632f8f823f017ec6707c7a5fdfaa9e3aa8f59f5350b02e13",
+    "engine/src/maata_engine/types.py": "7e1c6285a0cd3de0c99cc3d16d7cefe688f0f020a6d6ff0b9f65cac6b6d5d2b5",
+    "engine/tests/test_claude_translator.py": "e518f325510f9bbf5d2088891e4353bac1ee6b123afa7eef94bbb66f6e82daa1",
+    "engine/tests/test_coverage.py": "dc76685890b09309c448d4df64e45a3eb2b14741690aa3a68cfe38c64094b401",
+    "engine/tests/test_engine_ws.py": "b22bd26a70f57da0546081b31a4527a99497993d585fdc3157be0db99f06ca16",
+    "engine/tests/test_lines_translate.py": "cd54f6064886126a2740c1a5808ef7d25bf57938057e6b1f8779914c887083cf",
+    "engine/tests/test_omnivoice.py": "32377e587035b08a01ddf22f2cead3df3f7ea2dd5b92cb8d3bfc97c521c3f2e1",
+    "engine/tests/test_omnivoice_worker.py": "34d5588d2a3756402f938a3b5c701d988573a2d185c76b51d124099b7d5e069f",
+    "engine/tests/test_render.py": "9d5644f9404489dc94388cb3fef909670ff9758575cd339a7fe342cf7148353b",
+    "scripts/setup-mac.sh": "59976d654a43bd79b0f51b91766489d7dfbec4c52d6f4310e878ab69c479fd4e",
+    "scripts/setup-omnivoice.sh": "c261ea9eaf60fa19b7005d5882596851a3ef8d71b7e51d1b3d2f6154e5dc1ccd"
+  },
+  "final_source_sha256": {
+    "app/src/lib/components/Library.svelte": "4bd1a88fbd8a4f07c6198bcbb1472b7375b1078d5e72a16ca3dd04746c785e36",
+    "app/src/lib/components/SpeakersFound.svelte": "112fd2cbfc60796d0b9a399a2af58505a0b0578de8303fba5affaae4bfb3a0bc",
+    "app/src/lib/components/TopBar.svelte": "b04e5204c29240023ac8a4718948b4e5ee477f26c61ab386f059ad51a013cb95",
+    "app/src/lib/components/voice-mode.test.ts": "ca35f3c7526fb68263bc749e33424bd43231f0b956d74480fd7bf1acd14395d4",
+    "app/src/lib/state.svelte.ts": "dfbbcaa1a4a111201a638190a68f7b6d9385fc42fe19b5149dbcbcc1592451c4",
+    "app/src/lib/state.test.ts": "53d11b5ecb7a90aae5c88864b943a811d371ce3d83c0b0f1913d5929bdefc549",
+    "app/src/lib/types.ts": "ffffe1470b10d9d7983e380a80dadee56a554d6287e97f35b48220a85e8b26aa",
+    "engine/runtimes/omnivoice/README.md": "2d86aa2d77e9a36c98bb36bec813cb6e126e6d7629e98e05852dea9eddef6a59",
+    "engine/runtimes/omnivoice/create_seed.py": "ffb007409acff349209efebb5b69af5ee9b88dbbe50819aa31cb6886227883c4",
+    "engine/runtimes/omnivoice/models.lock.json": "93a76f25705a671bdd25e6ac3ed41f2cb393527ee90fe0e8a72ac373f0a9d0d2",
+    "engine/runtimes/omnivoice/pyproject.toml": "baadf0fe7df8eef7227dd610badb4061ca4ba9de0ee31f3e0712344e9d3f2acd",
+    "engine/runtimes/omnivoice/uv.lock": "b5248a1e2c1ebbbbd0bfeb327444f740bc68421286333fac6b8b03ece0d5fa97",
+    "engine/src/maata_engine/backends/_omnivoice_worker.py": "7b564b1b0a4e1753b65ec14935c56d3e74285e6171442f2e4573751198a4f252",
+    "engine/src/maata_engine/backends/apple.py": "510aa39cd6ad25568170b3b02844d00b410d8e8df2952b0931d8f78d193cba4e",
+    "engine/src/maata_engine/backends/base.py": "3ad7f1ea7ec51381b8d2ac2aa4ffb05b04bc3825660768fe068ac400c8ac7e40",
+    "engine/src/maata_engine/backends/claude_translator.py": "8c5d73c75f260d69c60d9da6cf5a518744b4714d70ff80fb99a0abf266f50e06",
+    "engine/src/maata_engine/backends/omnivoice.py": "0d45714bb71a9c2c4420e7495735dc242d53f9aaadf292a4b0bd1c253f18b763",
+    "engine/src/maata_engine/dubber.py": "1ca44fdce54299bfbd94e27b5bc73c6eba1a5b62501464e86af6a702345a21e8",
+    "engine/src/maata_engine/qa/coverage.py": "4684146685d4077d82d0b69f9098aa453956174baaf6b8b0a55eda52a6573d1a",
+    "engine/src/maata_engine/render.py": "b6c5a19baeedefe0574f7a3d40df36be07c122bb3b0773f19ecca592b8e94d59",
+    "engine/src/maata_engine/server.py": "874af7f9b241352d632f8f823f017ec6707c7a5fdfaa9e3aa8f59f5350b02e13",
+    "engine/src/maata_engine/types.py": "7e1c6285a0cd3de0c99cc3d16d7cefe688f0f020a6d6ff0b9f65cac6b6d5d2b5",
+    "engine/tests/test_claude_translator.py": "e518f325510f9bbf5d2088891e4353bac1ee6b123afa7eef94bbb66f6e82daa1",
+    "engine/tests/test_coverage.py": "dc76685890b09309c448d4df64e45a3eb2b14741690aa3a68cfe38c64094b401",
+    "engine/tests/test_engine_ws.py": "b22bd26a70f57da0546081b31a4527a99497993d585fdc3157be0db99f06ca16",
+    "engine/tests/test_lines_translate.py": "cd54f6064886126a2740c1a5808ef7d25bf57938057e6b1f8779914c887083cf",
+    "engine/tests/test_omnivoice.py": "32377e587035b08a01ddf22f2cead3df3f7ea2dd5b92cb8d3bfc97c521c3f2e1",
+    "engine/tests/test_omnivoice_worker.py": "34d5588d2a3756402f938a3b5c701d988573a2d185c76b51d124099b7d5e069f",
+    "engine/tests/test_render.py": "535c2a270589b5eaf4a414d69132267c39d3923fd08c83545aeceb9593e57574",
+    "scripts/setup-mac.sh": "59976d654a43bd79b0f51b91766489d7dfbec4c52d6f4310e878ab69c479fd4e",
+    "scripts/setup-omnivoice.sh": "c261ea9eaf60fa19b7005d5882596851a3ef8d71b7e51d1b3d2f6154e5dc1ccd"
+  },
+  "maintenance_evidence": "maintenance-restart.json"
+}

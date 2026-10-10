@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AppState, REMOVE_GIVE_UP_MS, REMOVE_RETRY_MS, renderOf } from "./state.svelte";
 import { chip, live } from "./jobs";
+import { PRIVACY_KEY } from "./claude";
 import type { ClientMessage, EngineMessage, JobItem, Output, Render, SpeakersFound, StageRow, VideoInfo } from "./types";
 
 /** A fake engine connection that records what the UI sends. */
@@ -37,6 +38,19 @@ const hello = (over: Partial<Extract<EngineMessage, { type: "hello" }>> = {}): E
 });
 
 describe("hello", () => {
+  it("uses the announced voice mode and resets legacy defaults after reconnect", () => {
+    const app = new AppState();
+    const { send } = recorder();
+    expect(app.voiceMode).toBe("cloned");
+    expect(app.ttsModel).toBe("Chatterbox Telugu");
+    app.receive(hello({ voiceMode: "native", ttsModel: "OmniVoice" }), send);
+    expect(app.voiceMode).toBe("native");
+    expect(app.ttsModel).toBe("OmniVoice");
+    app.receive(hello(), send);
+    expect(app.voiceMode).toBe("cloned");
+    expect(app.ttsModel).toBe("Chatterbox Telugu");
+  });
+
   it("brings the library, the running job's progress and the settings", () => {
     const app = new AppState();
     const { send } = recorder();
@@ -253,6 +267,60 @@ describe("renders", () => {
 });
 
 describe("speakers_found", () => {
+  it("sends only a voice choice for a paused job and waits for the server's sample provenance", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    const videoId = "voicechoice1";
+    const found: SpeakersFound = {
+      videoId, mode: "auto", fresh: false, freeFor: 0, bounds: [1, 6], merged: [], voiceMode: "native",
+      speakers: [{ id: "S1", label: "Speaker 1", talkSeconds: 10, share: 1, firstAt: 0, turns: 1, activity: [],
+        voiceProfile: "auto", resolvedVoiceProfile: "male", voiceProfileSource: "acoustic" }],
+    };
+    app.receive(hello({ voiceMode: "native", renders: [item(videoId)] }), send);
+    app.receive({ type: "speakers_found", ...found }, send);
+    app.setVoiceProfile(videoId, "S1", "female", send);
+    expect(sent).toEqual([{ type: "set_voice_profile", videoId, speaker: "S1", voiceProfile: "female" }]);
+    expect(app.jobs[0]!.status).toBe("paused");
+    expect(app.foundBy[videoId]!.speakers[0]!.resolvedVoiceProfile).toBe("male");
+    expect(app.voiceProfileRequests[videoId]?.S1).toBe("female");
+    // A stale status update cannot re-enable the old sample while the choice is in flight.
+    app.receive({ type: "speakers_found", ...found }, send);
+    expect(app.voiceProfileRequests[videoId]?.S1).toBe("female");
+    app.receive({ type: "speakers_found", ...found, speakers: [{ ...found.speakers[0]!,
+      voiceProfile: "female", resolvedVoiceProfile: null, voiceProfileSource: "manual", voiceCompatible: false }] }, send);
+    expect(app.voiceProfileRequests[videoId]?.S1).toBeUndefined();
+    expect(app.foundBy[videoId]!.speakers[0]!.voiceCompatible).toBe(false);
+    app.setVoiceProfile(videoId, "S1", "female", send);
+    expect(sent).toHaveLength(1); // no-op selections do not request another regeneration
+  });
+
+  it("clears pending voice selections on errors/reconnect and ignores unsupported engines or missing speakers", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    app.setVoiceProfile("voicechoice1", "S1", "male", send);
+    app.receive(hello({ voiceMode: "native" }), send);
+    app.setVoiceProfile("voicechoice1", "missing", "female", send);
+    expect(sent).toEqual([]);
+    app.voiceProfileRequests = { voicechoice1: { S1: "female" } };
+    app.receive({ type: "error", message: "Voice choice could not be saved.", retryable: true }, send);
+    expect(app.voiceProfileRequests).toEqual({});
+    app.voiceProfileRequests = { voicechoice1: { S1: "male" } };
+    app.receive(hello({ voiceMode: "native" }), send);
+    expect(app.voiceProfileRequests).toEqual({});
+  });
+
+  it("keeps existing presets but never sends a voice switch in native mode", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    const existing = item("rrrrrrrrrrr");
+    existing.settings = { ...existing.settings, presets: ["S2"] };
+    app.receive(hello({ voiceMode: "native", ttsModel: "OmniVoice", renders: [existing] }), send);
+    app.setVoice(existing.videoId, "S2", false, send);
+    app.setVoice(existing.videoId, "S1", true, send);
+    expect(sent).toEqual([]);
+    expect(app.jobs[0]!.settings?.presets).toEqual(["S2"]);
+  });
+
   it("keeps each job's speaker check; the job view shows the open job's", () => {
     const app = new AppState();
     const { send } = recorder();
@@ -343,18 +411,18 @@ describe("continuing a job", () => {
   });
 });
 
-describe("Claude", () => {
-  const health = { installed: true, version: "2.1.281", signedIn: true, models: ["claude-sonnet-5"], model: "claude-sonnet-5",
+describe("Codex with the existing engine protocol", () => {
+  const health = { installed: true, version: "1.0.0", signedIn: true, models: ["gpt-6-luna"], model: "gpt-6-luna",
     problem: null, message: "" };
 
-  it("knows from hello whether the engine translates through Claude, and what is wrong with it already", () => {
+  it("knows from hello whether the engine translates through Codex, and what is wrong with it already", () => {
     const app = new AppState();
     app.setClaude(null);
     expect(app.claude).toBeNull();
     expect(app.claudeProblem).toBeNull();
-    app.setClaude({ ...health, signedIn: false, problem: "not_signed_in", message: "Run claude auth login." }, 5000);
-    expect(app.claude?.version).toBe("2.1.281");
-    expect(app.claudeProblem).toEqual({ kind: "not_signed_in", message: "Run claude auth login.", at: 5000 });
+    app.setClaude({ ...health, signedIn: false, problem: "not_signed_in", message: "Run codex login." }, 5000);
+    expect(app.claude?.version).toBe("1.0.0");
+    expect(app.claudeProblem).toEqual({ kind: "not_signed_in", message: "Run codex login.", at: 5000 });
     app.setClaude(health);
     expect(app.claudeProblem).toBeNull();
   });
@@ -369,8 +437,8 @@ describe("Claude", () => {
     expect(app.claudeProblem).toBeNull();
   });
 
-  it("remembers that the privacy notice was read", () => {
-    const store = new Map<string, string>();
+  it("requires the new provider notice even after the previous notice was read, then remembers it", () => {
+    const store = new Map<string, string>([["maata.claudePrivacySeen", "1"]]);
     const saved = globalThis.localStorage;
     Object.defineProperty(globalThis, "localStorage", {
       configurable: true,
@@ -381,6 +449,8 @@ describe("Claude", () => {
       expect(app.privacySeen).toBe(false);
       app.ackPrivacy();
       expect(app.privacySeen).toBe(true);
+      expect(store.get(PRIVACY_KEY)).toBe("1");
+      expect(store.get("maata.claudePrivacySeen")).toBe("1");
       expect(new AppState().privacySeen).toBe(true);
     } finally {
       Object.defineProperty(globalThis, "localStorage", { configurable: true, value: saved });

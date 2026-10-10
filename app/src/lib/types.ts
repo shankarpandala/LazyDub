@@ -11,6 +11,12 @@ export type TranslationStyle = "colloquial" | "formal";
  */
 export type TtsScript = "telugu" | "latin";
 
+/** Whether the engine uses automatic Telugu speech or clones each source speaker. */
+export type VoiceMode = "native" | "cloned";
+export type TtsModel = "OmniVoice" | "Chatterbox Telugu";
+/** A requested dubbing voice type, not an assertion about the source speaker's identity. */
+export type VoiceProfile = "auto" | "male" | "female";
+
 /** The engine's stages, in order (`render.STAGES`). */
 export type StageKey =
   | "fetch" | "speakers" | "transcript" | "units" | "voices" | "brief" | "separate" | "translate" | "voice_lines"
@@ -90,6 +96,7 @@ export type JobSettings = {
   ttsScript: TtsScript;
   /** Speakers voiced with a stock voice instead of their clone. */
   presets: string[];
+  voiceProfiles?: Record<string, VoiceProfile>;
 };
 
 /** A job of the library (`renders`), newest activity first. */
@@ -154,11 +161,21 @@ export type FoundSpeaker = {
   turns: number;
   /** Their share of each of 120 equal slices of the video. */
   activity: number[];
+  /** Absent on engines without per-speaker voice selection. */
+  voiceProfile?: VoiceProfile;
+  resolvedVoiceProfile?: "male" | "female" | null;
+  voiceProfileSource?: "manual" | "acoustic" | "unresolved";
+  /** False when this speaker's saved sample uses an earlier choice. */
+  voiceCompatible?: boolean;
 };
 
 /** The speaker check (§2.3): who the whole-file diarization found, and what it merged. */
 export type SpeakersFound = {
   videoId: string;
+  /** Saved voice provenance may differ from the engine's current choice. */
+  voiceMode?: VoiceMode;
+  /** False when a saved sample cannot represent the current voice/model. */
+  voiceCompatible?: boolean;
   mode: "auto" | "hint";
   fresh: boolean;
   /** Seconds, by the priors when it was sent, until the Telugu speech starts: correcting is free until then. */
@@ -170,11 +187,11 @@ export type SpeakersFound = {
 
 export type EngineSettings = { outputDir: string };
 
-/** Why translation through the Claude CLI can't go on, as the engine classes it (ADR-019). */
+/** Why translation through the Codex CLI can't go on. Claude type and wire names remain for compatibility. */
 export type ClaudeProblemKind =
   | "missing" | "not_signed_in" | "outdated" | "usage_limit" | "transient" | "stalled" | "timeout" | "bad_output" | "failed";
 
-/** The Claude CLI as the engine found it when the UI connected. */
+/** The Codex CLI as the engine found it when the UI connected. */
 export type ClaudeHealth = {
   installed: boolean;
   version: string | null;
@@ -189,13 +206,13 @@ export type ClaudeHealth = {
 };
 
 /**
- * A Claude call failed in a way translation can't get past on its own. Translation waits `retryIn` s (for a usage
+ * A Codex call failed in a way translation can't get past on its own. Translation waits `retryIn` s (for a usage
  * limit, until it resets), then tries again; the work on this Mac goes on meanwhile.
  */
 export type ClaudeProblem = {
   kind: ClaudeProblemKind;
   message: string;
-  /** Which usage limit: session, weekly, opus, sonnet or overage, when known. */
+  /** Which usage limit: session, weekly or overage, when known. Legacy provider values may still appear. */
   limit?: string | null;
   /** Epoch seconds the usage limit resets, when known. */
   resetsAt?: number | null;
@@ -205,9 +222,11 @@ export type ClaudeProblem = {
 };
 
 export type EngineMessage =
-  /** claude: null when the engine never calls Claude (the demo engine). */
+  /** claude: null when the engine never calls Codex (the demo engine); field retained for wire compatibility. */
   | {
       type: "hello"; backend: string; device: string; demo: boolean; claude?: ClaudeHealth | null;
+      /** Absent on older engines, which use Chatterbox speaker clones. */
+      voiceMode?: VoiceMode; ttsModel?: TtsModel;
       renders: JobItem[]; render: Render | null; settings: EngineSettings;
     }
   /** `url`: the link `inspect` asked about, as sent. */
@@ -217,7 +236,7 @@ export type EngineMessage =
   | ({ type: "speakers_found" } & SpeakersFound)
   | ({ type: "settings" } & EngineSettings)
   | ({ type: "claude_error" } & ClaudeProblem)
-  /** A Claude call went through again after a claude_error. */
+  /** A Codex call went through again after a claude_error. */
   | { type: "claude_ok"; videoId?: string }
   /** `url`: an `inspect` that failed, the link it asked about. */
   | { type: "error"; message: string; retryable: boolean; url?: string };
@@ -240,6 +259,7 @@ export type ClientMessage =
   | { type: "remove"; videoId: string; forget?: boolean }
   | { type: "set_speakers"; videoId: string; speakers: "auto" | number }
   | { type: "set_voice"; videoId: string; speaker: string; usePreset: boolean }
+  | { type: "set_voice_profile"; videoId: string; speaker: string; voiceProfile: VoiceProfile }
   | { type: "renders" }
   /** One binary frame back: the speaker's Hear voice sample (engine.ts SAMPLE_ID). */
   | { type: "voice_sample"; videoId: string; speaker: string }

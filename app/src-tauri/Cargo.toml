@@ -19,3 +19,8 @@ codegen-units = 1
 lto = true
 opt-level = "s"
 strip = true
+
+# Keep compiler plugins loadable on macOS (rust-lang/rust#157750).
+# The shipped executable still uses the release settings above.
+[profile.release.build-override]
+strip = "none"

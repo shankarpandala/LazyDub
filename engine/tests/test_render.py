@@ -18,15 +18,17 @@ import threading
 import time
 import wave
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from maata_engine import dubber, render
 from maata_engine.backends import mock
-from maata_engine.backends.base import COARSE_STEP, Backend, Cancelled, Coverage, LineResult, Transcript, Wording
+from maata_engine.backends.base import COARSE_STEP, Backend, Cancelled, Coverage, LineResult, SceneResult, Transcript, Wording
 from maata_engine.backends.claude_translator import ClaudeTranslator
 from maata_engine.backends.mock import MockClaude, MockDiarizer, MockSceneTranslator, MockTranscriber, MockTTS
+from maata_engine.backends.omnivoice import OmniVoiceError
 from maata_engine.claude_cli import ClaudeCLIError
 from maata_engine.dubber import CALIBRATION_TE, Dubber
 from maata_engine.render import STAGES, RenderJob, RenderSettings, _read_rows
@@ -716,6 +718,51 @@ async def test_voices_are_stored_and_a_resume_rebuilds_them_with_no_synthesis(tm
     assert [e["cached"] for e in trace if e["event"] == "stage" and e["key"] == "voices"] == [False, True]
 
 
+@pytest.mark.parametrize("script,change,recalibrated", [("latin", "legacy", 2), ("telugu", "legacy", 0),
+                                                       ("latin", "partial", 1), ("telugu", "changed", 2)])
+async def test_calibration_text_identity_reuses_references_and_only_repeats_affected_pace_samples(
+        tmp_path, monkeypatch, script, change, recalibrated):
+    tts = MelTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0, tts_script=script))
+    assert await job.run() == "done"
+    path = job.render_dir / "voices.json"
+    original = json.loads(path.read_text())
+    changed = json.loads(path.read_text())
+    if change == "legacy":
+        changed["inputs"].pop("calibrationTts")
+        for entry in changed["speakers"].values():
+            entry.pop("calibrationTts")
+    elif change == "partial":  # a pause after the first speaker: the global hash alone must not bless the second
+        changed["speakers"]["S2"]["calibrationTts"] = None
+        shutil.rmtree(job.render_dir / "voices")  # recalibration recreates its sample even if old samples were removed
+    else:
+        changed["inputs"]["calibrationTts"] = "different-actual-input"
+        for entry in changed["speakers"].values():
+            entry["calibrationTts"] = "different-actual-input"
+    path.write_text(json.dumps(changed))
+    output = Path(job.doc["output"]["path"])
+    output_before = output.read_bytes()
+    keys_before = {sid: v.key for sid, v in job.voices.items()}
+    takes_before, batches_before = tts.takes, list(tts.batches)
+
+    def no_reselection(_sid):
+        pytest.fail("calibration-only changes must restore the existing reference, not select a new one")
+
+    monkeypatch.setattr(job, "_voice_spans", no_reselection)
+    await job._voices()
+    assert tts.takes - takes_before == recalibrated * len(CALIBRATION_TE)
+    assert tts.batches == batches_before and output.read_bytes() == output_before
+    assert {sid: v.key for sid, v in job.voices.items()} == keys_before
+    updated = json.loads(path.read_text())
+    for sid, entry in updated["speakers"].items():
+        assert entry["calibrationTts"] == updated["inputs"]["calibrationTts"]
+        for field in ("hash", "key", "timbre", "clips", "speech", "refSeconds"):
+            assert entry[field] == original["speakers"][sid][field]
+    takes_before = tts.takes
+    await job._voices()
+    assert tts.takes == takes_before  # new provenance survives another resume without repeating calibration
+
+
 async def test_a_voice_of_the_mock_has_a_hear_voice_sample_too(tmp_path):
     """MockTTS has no mel takes, so it isn't calibrated: its sample is the first calibration sentence said by the
     speaker's voice (synthetic, never the source audio), as the demo's Hear voice needs."""
@@ -753,7 +800,7 @@ async def test_a_speaker_with_too_little_clean_speech_gets_a_preset(tmp_path):
     d = tmp_path / VID / "render"
     doc = json.loads((d / "voices.json").read_text())
     assert doc["speakers"]["S2"] == {"how": "preset", "preset": "preset_f", "refSeconds": pytest.approx(2.4),
-                                     "sample": False}
+                                     "sample": False, "calibrationTts": doc["inputs"]["calibrationTts"]}
     assert (job.voices["S2"].status, job.voices["S2"].kind, job.voices["S2"].key) == ("preset", VoiceKind.PRESET, None)
     assert job.voices["S1"].status == "cloned" and tts.built == 1 and tts.takes == len(CALIBRATION_TE)
     assert not (d / "voices" / "S2.npy").exists() and (d / "voices" / "S1.npy").exists()
@@ -940,12 +987,25 @@ async def test_translation_waits_for_voices(tmp_path):
             assert abs(x["target_aksharas"] - max(st.speech_s - 0.15, 0.0) * 6.1) > 1.0 or st.speech_s < 0.5
 
 
-async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, monkeypatch):
+@pytest.mark.parametrize("weights", [(1.0, 1.0, 1.0), (1.0, 2.0, 4.0)])
+async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, monkeypatch, weights):
     monkeypatch.setattr(dubber, "SCENE_MAX_S", 20.0)
+    monkeypatch.setattr(render, "LANE_WEIGHTS", weights)
     job = job_for(tmp_path, backend())
+    asked_after_review: list[int] = []
+    original = job._scene_request
+
+    def request(sc, lines, whole=False):
+        firsts = {lane[0].no for lane in job._translation_lanes(job.scenes)}
+        if sc.no not in firsts:
+            assert job.scenes[sc.no - 2].reviewed  # observed at submission, not only after the whole run
+            asked_after_review.append(sc.no)
+        return original(sc, lines, whole)
+
+    monkeypatch.setattr(job, "_scene_request", request)
     assert await job.run() == "done"
     n = len(job.scenes)
-    firsts = {job.scenes[i * n // render.LANES].no for i in range(render.LANES)}
+    firsts = {lane[0].no for lane in job._translation_lanes(job.scenes)}
     # (The demo repeats its sentences, so some scenes are served whole from the line cache and make no call.)
     asked = {c["message"]["scene"]: c["message"] for c in job.tr.cli.calls if c["call"] == "scene"}
     assert n >= 6 and len(set(asked) - firsts) >= 3 and asked[1]["context_before"] == []
@@ -953,7 +1013,32 @@ async def test_each_scene_but_a_lanes_first_has_the_telugu_before_it(tmp_path, m
         if no not in firsts:
             assert msg["context_before"] and all(x.get("te") for x in msg["context_before"])
     assert all(sc.reviewed and sc.fitted and not sc.held for sc in job.scenes)
+    assert asked_after_review
     assert [st.unit.id for sc in job.scenes for st in sc.lines] == sorted(job.units)  # every line in one scene
+
+
+def test_balanced_translation_lanes_preserve_existing_boundaries():
+    for n in range(65):
+        expected = [(i * n // render.LANES, (i + 1) * n // render.LANES) for i in range(render.LANES)]
+        assert render._lane_bounds(n, (1.0, 1.0, 1.0)) == [(a, b) for a, b in expected if a != b]
+
+
+@pytest.mark.parametrize("weights", [(1.0, 2.0, 4.0), (1.0, 1.5, 2.0), (100.0, 1.0, 1.0), (1.0, 1.0, 100.0)])
+def test_weighted_translation_lanes_cover_each_scene_once_and_stay_contiguous(weights):
+    for n in range(65):
+        bounds = render._lane_bounds(n, weights)
+        assert len(bounds) == min(n, render.LANES)
+        assert all(a < b for a, b in bounds)
+        assert [i for a, b in bounds for i in range(a, b)] == list(range(n))
+    assert render._lane_bounds(27, (1.0, 2.0, 4.0)) == [(0, 3), (3, 11), (11, 27)]
+
+
+@pytest.mark.parametrize("n,weights", [(-1, (1.0, 1.0, 1.0)), (5, (1.0, 1.0)), (5, (0.0, 1.0, 1.0)),
+                                       (5, (-1.0, 1.0, 1.0)), (5, (math.inf, 1.0, 1.0)),
+                                       (5, (math.nan, 1.0, 1.0)), (5, (1e308, 1e308, 1e308))])
+def test_translation_lanes_reject_invalid_weights(n, weights):
+    with pytest.raises(ValueError):
+        render._lane_bounds(n, weights)
 
 
 async def test_a_second_run_makes_no_scene_calls(tmp_path):
@@ -967,6 +1052,27 @@ async def test_a_second_run_makes_no_scene_calls(tmp_path):
     assert {k: (st.tier, st.telugu) for k, st in again.units.items()} == \
            {k: (st.tier, st.telugu) for k, st in first.units.items()}
     assert again.doc["coverage"] == first.doc["coverage"]
+
+
+async def test_translation_priority_follows_the_next_unvoiced_scene_and_its_completion_calls(tmp_path, monkeypatch):
+    monkeypatch.setattr(dubber, "SCENE_MAX_S", 20.0)
+    job = job_for(tmp_path, backend())
+    assert await job.run() == "done"
+    assert len(job.scenes) >= 3
+    for sc in job.scenes:
+        for st in sc.lines:
+            st.voiced = False
+    priority = job._translation_priority
+    assert priority("review", 1) < priority("fit", 1) < priority("scene", 1) < priority("review", 2)
+    distant = priority("review", 3)
+    for sc in job.scenes[:2]:
+        for st in sc.lines:
+            st.voiced = True
+    assert priority("review", 3) < distant
+    assert priority("review", 1) <= priority("review", 3)  # earlier fix-ups can unblock the final plan
+    assert priority("fit", 3) < priority("scene", 4)
+    if hasattr(job.tr, "call_priority"):
+        assert job.tr.call_priority == job._translation_priority
 
 
 class HeldClaude(MockClaude):
@@ -988,7 +1094,7 @@ class HeldClaude(MockClaude):
 async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_hold(tmp_path, monkeypatch):
     monkeypatch.setattr(dubber, "CLAUDE_BACKOFF", 0.05)
     cli = HeldClaude({("brief", None), ("scene", 1), ("review", 2)})
-    b = backend()
+    b = backend(UniqueTranscriber())
     b.translator = translator_with(cli)
     events: list[dict] = []
     job = job_for(tmp_path, b, events=events)
@@ -1002,12 +1108,25 @@ async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_ho
     job._before_call = watched
     reviewing: list[tuple[int, bool]] = []  # (scene, held) at each review
     review = job._review
+    reviewed_twice = asyncio.Event()
 
     async def watched_review(req, lines):
         reviewing.append((req.scene, job.scenes[req.scene - 1].held))
-        return await review(req, lines)
+        result = await review(req, lines)
+        if req.scene == 2 and sum(no == 2 for no, _ in reviewing) == 2:
+            reviewed_twice.set()
+        return result
 
     job._review = watched_review
+    voice_line = job._voice_line
+
+    async def after_retry(st):
+        # Exercise retry-before-voicing deterministically. A nearby short scene otherwise may legitimately voice
+        # during the hold, leaving nothing for the lane to review again (covered by the held-scene test).
+        await asyncio.wait_for(reviewed_twice.wait(), 5.0)
+        return await voice_line(st)
+
+    job._voice_line = after_retry
     assert await job.run() == "done"
     assert (1, True, True) not in seen and (1, False, True) in seen  # released: untranslated, never `held`
     assert (2, True, False) in seen  # its review failed: translated, unreviewed, voiceable during the hold
@@ -1021,7 +1140,7 @@ async def test_a_released_scene_and_a_failed_review_are_asked_again_after_the_ho
     assert asked.count(("scene", 1, True)) == asked.count(("scene", 1, False)) == 1   # released, then asked again
     assert asked.count(("review", 2, True)) == asked.count(("review", 2, False)) == 1  # failed, then reviewed
     assert asked.count(("scene", 2, False)) == 1  # the second time its lines came from the line cache
-    assert len(job.scenes) == 2 and all(sc.reviewed and not sc.held for sc in job.scenes)
+    assert len(job.scenes) >= 2 and all(sc.reviewed and not sc.held for sc in job.scenes)
     assert all(st.line.coverage.cls == "C" for st in job.units.values())
     assert any(e["type"] == "claude_error" and e["kind"] == "not_signed_in" for e in events)
     statuses = [e["status"] for e in events if e["type"] == "render"]
@@ -1266,7 +1385,9 @@ async def test_each_scene_keeps_its_fit_and_the_stage_waits_for_it(tmp_path):
     b.translator = translator_with(cli)
     job = job_for(tmp_path, b)
     assert await job.run() == "done"
-    fitted = {c["message"]["scene"] for c in cli.calls if c["call"] == "fit"}
+    # The translator can also make synchronous `fit` calls to complete cached tiers inside submit(). Only scenes
+    # asking for a side fit after review have a task for the render to own and wait on.
+    fitted = {e["scene"] for e in trace_of(tmp_path) if e["event"] == "scene" and e["fits"]}
     assert fitted and all(sc.fit is not None for sc in job.scenes if sc.no in fitted)
     assert all(sc.fitted for sc in job.scenes)  # translate ends once every fit is back...
     assert any("concise" in st.line.tiers for st in job.units.values())  # ...and folded into its lines
@@ -1463,6 +1584,238 @@ async def test_cancel_during_the_dub_then_resume_voices_only_the_lines_without_r
     assert all(st.take is not None for st in again.units.values())
 
 
+@pytest.mark.parametrize("change", ["cfm", "batch", "version", "backend", "model", "adapter", "device", "dtype", "sample_rate", "script", "legacy"])
+async def test_changed_synthesis_identity_invalidates_take_rows_and_estimator_replay(tmp_path, monkeypatch, change):
+    """A quality/backend change must not report a cache hit or learn durations from the previous synthesis. These
+    rows come from the real render path, including its effective batch policy and per-voice identities."""
+    job = job_for(tmp_path, backend(UniqueTranscriber(), MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    st = next(st for st in job.units.values() if st.take is not None)
+    assert list(job._rows_for(st))
+    assert stored and any(pace is not None for row in stored for _, _, pace in row["made"])
+    tts = job.b.tts
+    if change == "cfm":
+        tts.cfm_steps += 1
+    elif change == "batch":
+        monkeypatch.setattr(render, "TAKES_N", render.TAKES_N + 1)
+        monkeypatch.setattr(render, "TAKES_N_SHORT", render.TAKES_N_SHORT + 1)
+    elif change == "version":
+        monkeypatch.setattr(render, "TAKES_VERSION", render.TAKES_VERSION + 1)
+    elif change == "backend":
+        job.b.name = "another-backend"
+    elif change == "model":
+        monkeypatch.setattr(render, "_model_rev", lambda backend, role: "another-model-revision")
+    elif change == "adapter":
+        tts.model_revision = "selected-model"
+        tts.cache_identity = {"reference": "another-reference", "steps": 32}
+    elif change == "device":
+        job.b.device = "another-device"
+    elif change == "dtype":
+        tts._t3_dtype = "another-dtype"
+    elif change == "sample_rate":
+        tts.sample_rate += 1
+    elif change == "script":
+        job.tts_script = "latin"
+    else:
+        for row in stored:
+            row.pop("synthesis")
+        job._take_rows = {}
+        for row in stored:
+            job._take_rows.setdefault(row["line"], []).append(row)
+    assert not list(job._rows_for(st))
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    job._load_takes(stored, [])
+    assert not job._take_rows and not job._made and learned == []
+
+
+async def test_resuming_after_cfm_change_synthesizes_new_takes_and_then_reuses_them(tmp_path):
+    b = backend(UniqueTranscriber(), MelTTS())
+    settings = RenderSettings(stop_at=12.0)
+    first = job_for(tmp_path, b, settings)
+    assert await first.run() == "done"
+    old_keys = {t["key"] for st in first.units.values() if st.take for t in st.take["takes"]}
+    b.tts = MelTTS()
+    b.tts.cfm_steps += 1
+    changed = job_for(tmp_path, b, settings)
+    assert await changed.run() == "done"
+    new_keys = {t["key"] for st in changed.units.values() if st.take for t in st.take["takes"]}
+    assert b.tts.batches and changed._voiced_now and old_keys.isdisjoint(new_keys)
+    b.tts = MelTTS()
+    b.tts.cfm_steps += 1
+    resumed = job_for(tmp_path, b, settings)
+    assert await resumed.run() == "done"
+    assert not b.tts.batches and not resumed._voiced_now
+    assert {t["key"] for st in resumed.units.values() if st.take for t in st.take["takes"]} == new_keys
+
+
+async def test_restore_rejects_a_row_whose_take_keys_do_not_match_its_synthesis_identity(tmp_path):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    st = next(st for st in job.units.values() if st.take is not None)
+    for row in job._take_rows[job._line_key(st)]:
+        row["takes"][0]["key"] = "old-key-with-current-metadata"
+    assert not list(job._rows_for(st))
+
+
+async def test_corrected_english_map_revoices_unchanged_telugu_using_actual_tts_input(tmp_path):
+    b = backend(UniqueTranscriber(), MelTTS())
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, tts_script="latin"))
+    assert await job.run() == "done"
+    output = Path(job.doc["output"]["path"])
+    original_output = output.read_bytes()
+    st = next(st for st in job.units.values() if st.take is not None)
+    spoken = "ఈ ఫోన్ ఇప్పుడు బాగుంది."
+    st.line = LineResult(st.unit.id, {"full": Wording(spoken, ((2, "phone"),))})  # old, misplaced model index
+    st.tier, st.voiced, st.voicing = "full", False, False
+    job.planner = render.TimelinePlanner(job.planner.s)
+    assert not await job._voice_line(st)
+    old = st.take
+    old_pcm = job._pcm_key(st, st.plan)
+    assert b.tts.batches[-1][0] == "ఈ ఫోన్ phone బాగుంది."
+    st.line = LineResult(st.unit.id, {"full": Wording(spoken, ((1, "phone"),))})  # index derived from the exact token
+    st.tier, st.voiced, st.voicing = "full", False, False
+    assert not list(job._rows_for(st))
+    assert not await job._voice_line(st)
+    assert b.tts.batches[-1][0] == "ఈ phone ఇప్పుడు బాగుంది."
+    assert old["tts"] != st.take["tts"] and old["takes"][0]["key"] != st.take["takes"][0]["key"]
+    assert old_pcm != job._pcm_key(st, st.plan)
+    assert job._read_take(old["takes"][0]["key"]) is not None
+    assert output.read_bytes() == original_output  # nothing deletes or rewrites an existing completed export
+
+
+@pytest.mark.parametrize("kind", ["rephrase", "retranslate"])
+async def test_old_model_fixup_cannot_replace_current_translation_when_restoring_a_take(tmp_path, kind):
+    job = job_for(tmp_path, backend(UniqueTranscriber(), MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    st = max((st for st in job.units.values() if st.take), key=lambda st: st.take_s)
+    job.tr.model = "claude-opus-5-5"
+    line = LineResult(st.unit.id, {"full": Wording("కొత్త మాట")})
+    answer_kind = "review" if kind == "retranslate" else kind
+    key = job._fixup_key(answer_kind, job._line_key(st), st.line.tiers[st.tier].spoken)
+    job._put_fixup(st, key, answer_kind, line)
+    fix = render._Fix(st, line, "full", kind, key, asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert fix.done.result() and next(job._rows_for(st))[0]["wording"] == kind
+    old_row = job._fixup_rows[key]
+    old_take = st.take
+    old_output = job.doc["output"]["path"]
+    old_bytes = Path(old_output).read_bytes()
+    st.line = LineResult(st.unit.id, {"full": Wording("ఇంకొక కొత్త సమాధానం")})  # a newly requested translation
+    model, prompt = job.tr.model, job.tr.prompt_hash
+    for changed in ("model", "prompt", "legacy"):
+        if changed == "model":
+            job.tr.model = "claude-haiku-4-5-20251001"
+        elif changed == "prompt":
+            job.tr.prompt_hash = "another-prompt"
+        else:
+            job._fixup_rows[key] = {k: v for k, v in old_row.items() if k not in ("model", "prompt_hash")}
+        assert job._fixup_line(st, job._fixup_rows[key]) is None
+        assert not list(job._rows_for(st))  # the old fix-up must not override the current translation via its take row
+        job.tr.model, job.tr.prompt_hash, job._fixup_rows[key] = model, prompt, old_row
+    assert all(job._read_take(t["key"]) is not None for t in old_take["takes"])
+    assert Path(old_output).read_bytes() == old_bytes  # cache filtering never deletes or rewrites a completed MP4
+
+
+@pytest.mark.parametrize("samples,usable", [([], False), ([np.nan], False), ([np.inf], False), ([0.0], False),
+                                           ([0.0001, -0.0001], True)])
+def test_read_take_rejects_unusable_cached_pcm_and_preserves_quiet_speech(tmp_path, samples, usable):
+    job = job_for(tmp_path, backend())
+    render._save_npz(job.render_dir / "takes" / "pcm.npz", {
+        "samples": np.asarray(samples, np.float32), "seconds": np.float64(len(samples) / 24000),
+        "pauses": np.empty((0, 2)), "failed": np.str_(""), "spoken": np.str_("test"), "pace": np.float64(1.0),
+    })
+    assert (job._read_take("pcm") is not None) is usable
+
+
+async def test_estimator_replays_each_matching_take_once(tmp_path, monkeypatch):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    job._load_takes(stored + stored, [])  # duplicated append log entries must not skew the pace
+    expected = {tk for row in stored for tk, _, pace in row["made"] if pace is not None}
+    assert len(learned) == len(expected) > 0
+
+
+async def test_old_text_contract_does_not_teach_duration_but_keeps_matching_audio(tmp_path, monkeypatch):
+    job = job_for(tmp_path, backend(tts=MelTTS()), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    stored = take_rows(tmp_path)
+    learned = []
+    monkeypatch.setattr(job.estimator, "observe", lambda *args: learned.append(args))
+    legacy = [{k: v for k, v in row.items() if k != "durationPrompt"} for row in stored]
+    for old in (legacy, [dict(row, durationPrompt="old-map-contract") for row in stored]):
+        job._load_takes(old, [])
+        assert not learned
+        st = next(st for st in job.units.values() if st.take is not None)
+        assert list(job._rows_for(st))  # current text and actual TTS input still match: no forced redub
+        assert all(job._read_take(t["key"]) is not None for row in old for t in row["takes"])
+        assert {tk for row in old for tk, _, _ in row["made"]} <= job._made
+    job._load_takes(legacy + stored, [])  # older log entries must not suppress current proven observations
+    expected = {tk for row in stored for tk, _, pace in row["made"] if pace is not None}
+    assert len(learned) == len(expected) > 0
+
+
+async def test_unusable_synthesis_stops_the_job_without_caching_or_skipping_the_line(tmp_path, monkeypatch):
+    from maata_engine.qa.take import UnusableAudioError
+
+    b = backend(tts=MelTTS())
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0))
+    original = Dubber._said_take
+
+    async def unusable(*args, **kwargs):
+        raise UnusableAudioError("all candidates are silent")
+
+    monkeypatch.setattr(Dubber, "_said_take", unusable)
+    assert await job.run() == "failed"
+    assert "no usable speech" in job.doc["error"]
+    assert not take_rows(tmp_path) and not job.skipped
+    assert not list((job.render_dir / "takes").glob("*.npz"))
+    monkeypatch.setattr(Dubber, "_said_take", original)
+    assert await job.run() == "done"
+    assert take_rows(tmp_path) and not job.skipped
+
+
+@pytest.mark.parametrize("failure, status", [
+    (OmniVoiceError("OmniVoice synthesis exceeded its timeout."), "failed"),
+    (OmniVoiceError("OmniVoice returned empty, nonfinite or silent audio."), "failed"),
+    (Cancelled("OmniVoice synthesis cancelled."), "paused"),
+])
+async def test_isolated_tts_failure_in_voice_loop_is_retryable_not_skipped(tmp_path, monkeypatch, failure, status):
+    """Exercise the production loop, GPU call and stage handler, not a stubbed `_voice_line` or `_said_take`."""
+    tts = MockTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0))
+    synthesize = tts.synthesize
+    attempts = []
+    fail = True
+
+    def interrupted(text, voice, language="te", max_seconds=None):
+        if fail and job._dubbing:  # previews remain usable; the first actual line fails in the worker thread
+            attempts.append(text)
+            if isinstance(failure, Cancelled):
+                job.pause()
+            raise failure
+        return synthesize(text, voice, language, max_seconds)
+
+    monkeypatch.setattr(tts, "synthesize", interrupted)
+    assert await job.run() == status
+    assert len(attempts) == 1 and job.skipped == {} and not take_rows(tmp_path)
+    assert not list((job.render_dir / "takes").glob("*.npz"))
+    stage = job.doc["stages"]["voice_lines"]
+    assert stage["state"] == ("failed" if status == "failed" else "todo")
+    assert stage["attempts"] == (1 if status == "failed" else 0)
+    assert job.doc["error"] == (str(failure) if status == "failed" else None)
+    assert job.doc["output"] is None
+
+    fail = False  # a working worker on resume voices the still-pending line instead of preserving a speech gap
+    assert await job.run() == "done"
+    assert take_rows(tmp_path) and job.skipped == {}
+    assert all(st.take is not None for sc in job._range() for st in sc.lines if job._voiced_here(st))
+
+
 class PausingMockTTS(MockTTS):
     """MockTTS (no mel takes: its voices aren't calibrated, their pace is learned from their lines), pausing `job` from
     inside synthesis number `at`."""
@@ -1649,11 +2002,11 @@ async def test_fixups_shorter_tier_then_one_rephrase_per_scene(tmp_path, monkeyp
         mine = [r for r in rows if r["line"] == job._line_key(st)]
         assert [r["wording"] for r in mine][1:] == ["rephrase"]  # first: the shorter tier, or the take it didn't beat
         assert st.tier == "full" and len(st.line.full.spoken.split()) == 2 and st.take_s < mine[0]["takes"][0]["seconds"]
-        assert ("long" in job.flags.get(st.unit.id, [])) == st.plan.needs_shorter  # flagged while it still runs long
+        assert ("long" in job.flags.get(st.unit.id, [])) == job.final[st.unit.id].needs_shorter
         # lines.jsonl still serves the reviewed line: the rephrase is in fixups.jsonl only
         assert cached.coverage is not None and cached.full.spoken != st.line.full.spoken
     assert three >= 3
-    assert any(st.plan.needs_shorter for st in rephrased)  # kept (shorter), still long: flagged
+    assert any(job.final[st.unit.id].needs_shorter for st in rephrased)  # kept (shorter), still long in the final audio
     asked = [c["message"]["scene"] for c in cli.calls if c["call"] == "rephrase"]
     assert sorted(asked) == sorted(set(asked)) == sorted({job.units[st.unit.id].scene for st in rephrased})
     fixups = _read_rows(tmp_path / VID / "render" / "fixups.jsonl")
@@ -1679,11 +2032,99 @@ async def test_fixups_stay_within_their_share_of_the_lines(tmp_path, monkeypatch
     voiced = sum(1 for st in job.units.values() if st.take is not None)
     assert 3 <= job._resynths <= max(3, render.FIXUP_SHARE * voiced) + 1
     long = {k for k, why in job.flags.items() if "long" in why}  # the lines left long are flagged...
-    assert long and all(job.units[k].plan.needs_shorter and job.units[k].take["wording"] != "rephrase" for k in long)
+    assert long and all(job.final[k].needs_shorter and job.units[k].take["wording"] != "rephrase" for k in long)
     b.tts = MelTTS(rate=1.5)
     again = job_for(tmp_path, b)
     assert await again.run() == "done" and b.tts.batches == []
     assert again.flags == job.flags  # ...and flagged again when they come back from their rows
+    assert again.final == job.final and again.pcm == job.pcm
+    for run in (job, again):
+        assert all(("long" in run.flags.get(uid, [])) == plan.needs_shorter for uid, plan in run.final.items())
+
+
+async def test_queued_rephrases_recheck_the_budget_before_synthesis_but_review_corrections_still_run(tmp_path):
+    tts = MelTTS()
+    job = job_for(tmp_path, backend(UniqueTranscriber(), tts), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    states = [st for st in job.units.values() if st.take][:2]
+    assert len(states) == 2
+    originals = [st.take for st in states]
+    job._budget, job._resynths, job._dubbing = 3.0, 2, True
+    lines = [LineResult(st.unit.id, {"full": Wording(st.line.full.spoken + " కొత్త మాట" * (i + 1))})
+             for i, st in enumerate(states)]
+
+    async def settle(st, line):
+        if job._budget_left():  # both scene tasks see the last free slot before either queued request executes
+            return await job._fixup(st, line, "full", "rephrase", f"queued-{st.unit.id}")
+
+    before = len(tts.batches)
+    pending = [asyncio.create_task(settle(st, line)) for st, line in zip(states, lines)]
+    await asyncio.sleep(0)
+    assert len(job._fixes) == 2
+    while job._fixes:
+        await job._voice_fix(job._fixes.pop(0))
+    assert await asyncio.gather(*pending) == [False, False]  # longer than the originals, or never synthesized
+    assert job._resynths == job._budget == 3
+    synthesized = {text for text, _ in tts.batches[before:]}
+    assert lines[0].full.spoken in synthesized and lines[1].full.spoken not in synthesized
+    assert states[1].take is originals[1]  # a queued request skipped at admission changes no cost or take row
+    fix = render._Fix(states[1], lines[1], "full", "retranslate", "review-correction",
+                      asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert fix.done.result() and states[1].take["wording"] == "retranslate"
+    assert job._resynths == 3 and lines[1].full.spoken in {text for text, _ in tts.batches[before:]}
+
+
+@pytest.mark.parametrize("optional", ["shorter", "rephrase"])
+async def test_silent_optional_takes_keep_original_speech_and_spend_the_fixup_budget(tmp_path, monkeypatch, optional):
+    job, b, tts = rephrase_job(tmp_path, ShortenableClaude(), monkeypatch)
+    monkeypatch.setattr(render, "FIXUP_SHARE", 0.0)  # the three-attempt floor: failed audio must not get free retries
+    if optional == "rephrase":
+        monkeypatch.setattr(job, "_shorter_tier", lambda *args: None)
+    silent, originals, attempts = set(), {}, []
+    say, vocode = job._say, tts.vocode
+
+    def broken_alternative(take, rate=1.0):
+        audio = vocode(take, rate)
+        return np.zeros_like(audio) if take.text in silent else audio
+
+    async def watched(st, words, voice, key, seconds, cost, n=1):
+        if st.unit.id in originals:
+            # Each original is usable. Only optional synthesis emits actual silence, exercising the waveform QA,
+            # all existing candidates and its single fresh retry before the render decides to retain the original.
+            assert (st.take is None) == (optional == "shorter")
+            silent.update(job._tts_text(w) for w in words)
+            attempts.append((st.unit.id, [job._take_key(job._tts_text(w), job._voice_row(key), n) for w in words], n))
+        said = await say(st, words, voice, key, seconds, cost, n)
+        originals.setdefault(st.unit.id, (said, st.line.coverage, st.tier))
+        return said
+
+    monkeypatch.setattr(tts, "vocode", broken_alternative)
+    monkeypatch.setattr(job, "_say", watched)
+    assert await job.run() == "done"
+    assert len(attempts) == job._resynths == 3 and not job._budget_left()
+    assert job.skipped == {} and all(st.take is not None for st in job.units.values())
+    for uid, rejected_keys, n in attempts:
+        st = job.units[uid]
+        said, coverage, tier = originals[uid]
+        assert st.take_s == said.total and [t["spoken"] for t in st.take["takes"]] == [w.spoken for w in said.wordings]
+        assert st.tier == tier and st.take["wording"] not in render.FIXUP_WORDINGS
+        # A later voiced-wording review may update st.line.coverage. Rejecting the alternative itself preserves the
+        # original row's class (including an unclassed tier), rather than borrowing the rejected wording's class.
+        expected_coverage = render.coverage_json(coverage) if render.voiced_class(coverage, tier) in render.CLASSES else None
+        assert st.take["coverage"] == expected_coverage
+        assert st.plan.needs_shorter and "long" in job.flags[uid]
+        assert st.take["fixups"] == 1 and st.take["cost"]["retakes"] == 1
+        assert st.take["cost"]["takes"] >= n + 1
+        assert st.take["cost"]["take_failures"].count("audio_silent") == n + 1
+        assert not any((job.render_dir / "takes" / f"{key}.npz").exists() for key in rejected_keys)
+    assert all(sum(text == rejected for text, _ in tts.batches) == 2 for rejected in silent)
+    # Restored originals retain the consumed budget and their long/coverage flags; rejected alternatives are not
+    # synthesized again merely because no audio file was saved for them.
+    b.tts = resumed_tts = MelTTS(rate=1.0)
+    again = job_for(tmp_path, b)
+    assert await again.run() == "done"
+    assert resumed_tts.batches == [] and again._resynths == 3 and again.flags == job.flags
 
 
 class SlowPauseOnBatch(PauseOnBatch):
@@ -1827,11 +2268,11 @@ async def test_every_voiced_wording_is_reviewed(tmp_path, monkeypatch):
     reviewed = [(x["id"], x["te"]) for c in cli.calls if c["call"] == "review" for x in c["message"]["lines"]]
     rows = take_rows(tmp_path)
     fixed = [r for r in rows if r["wording"] in render.FIXUP_WORDINGS]
-    for r in fixed:  # each fix-up wording was reviewed on the wording voiced, but a re-translation never again
+    for r in fixed:  # both rephrases and accepted corrective candidates receive semantic review
         te = r["takes"][0]["spoken"]
-        assert ((r["unit"], te) in reviewed) == (r["wording"] == "rephrase")
+        assert (r["unit"], te) in reviewed
     retranslated = [st for st in voiced if st.take["wording"] == "retranslate"]
-    assert retranslated and all(st.line.coverage.by == "validators" for st in retranslated)
+    assert retranslated and all(st.line.coverage.by == "review" for st in retranslated)
     assert all(st.line.coverage.cls == "C" and st.line.coverage.first == "P" for st in retranslated)
     shorter = [st.take for st in voiced if st.take["wording"] == "very_concise"]  # a tier the scene review didn't class
     assert shorter and all((r["unit"], r["takes"][0]["spoken"]) in reviewed for r in shorter)
@@ -1854,8 +2295,10 @@ class VoicedReviewP(ShortenableClaude):
             for x, asked in zip(reply.data["lines"], msg["lines"]):
                 x["full"]["spoken"] = asked["failing"] + " కల కల"
         if call == "review" and self.job.scenes[msg["scene"] - 1].reviewed:
+            said = {x["id"]: x["te"] for x in msg["lines"]}
             for x in reply.data["lines"]:
-                x.update({"class": "P", "missing": ["today"]})
+                if not said[x["id"]].endswith("ఫెయిల్"):
+                    x.update({"class": "P", "missing": ["today"]})
         if call == "retranslate":
             for x in reply.data["lines"]:
                 for tier in ("full", "concise", "very_concise"):
@@ -1925,7 +2368,7 @@ async def test_a_scene_whose_fix_ups_a_pause_cut_short_is_settled_again_but_a_re
     assert not set(asked) & rephrases
     restored = [st for st in job.units.values() if st.unit.id in job._restored and st.take["wording"] == "rephrase"]
     assert restored and any(st.plan.needs_shorter for st in restored)  # still long: flagged, not rephrased again
-    assert all("long" in job.flags[st.unit.id] for st in restored if st.plan.needs_shorter)
+    assert all("long" in job.flags[st.unit.id] for st in restored if job.final[st.unit.id].needs_shorter)
 
 
 class SlowFitClaude(TerseClaude):
@@ -2090,7 +2533,9 @@ async def test_the_fix_up_budget_counts_the_takes_fix_ups_make_and_a_rephrase_st
     that ran long, never for another occurrence of it."""
     monkeypatch.setattr(render, "FIXUP_SHARE", 0.3)
     tts = MelTTS(rate=1.0)  # far slower than its estimate: lines run long
-    b = backend(tts=tts)
+    repeated = UniqueTranscriber()
+    repeated.ADJ, repeated.NOUN, repeated.VERB = ("quiet",) * 8, ("river",) * 8, ("watched",) * 8
+    b = backend(repeated, tts)  # repeat within short scenes too, so cached optional takes occur before the budget ends
     b.translator = translator_with(LongDemoClaude())
     job = job_for(tmp_path, b)
     fix_ups = []  # (unit, it made a take): every `_say` of a line after its first is a fix-up (a shorter tier, a rephrase)
@@ -2188,6 +2633,188 @@ async def test_the_wording_voiced_is_the_one_reviewed_unless_it_left_the_band_an
     assert st.tier == "full"
 
 
+def approved_full_job(tmp_path, *, approved: bool):
+    """One original sentence, with a complete full tier and a short tier missing the count, deadline and negation."""
+    tts = MelTTS(rate=2.0)
+    job = job_for(tmp_path, backend(tts=tts))
+    job.render_dir.mkdir(parents=True, exist_ok=True)
+    job.audio = np.zeros(12 * 16_000, np.float32)
+    job.tr = MockSceneTranslator(tmp_path, VID, render.brief_v0(render.VideoMeta("Original test", "Maata tests")))
+    unit = render.SourceUnit(0, "S1", 1.0, 5.0,
+                             "Bring three copies by Friday, but do not send the original.")
+    full = Wording("శుక్రవారంలోగా మూడు కాపీలు తీసుకురండి, కానీ అసలు పత్రాన్ని పంపకండి.")
+    concise = Wording("కాపీలు తీసుకురండి.")
+    c = Coverage("C", tier="full", first="P") if approved else Coverage("P", tier="concise")
+    st = render.UnitState(unit, 7.0, speech_s=4.0, scene=1,
+                          line=LineResult(0, {"full": full, "concise": concise}, coverage=c),
+                          tier="full" if approved else "concise")
+    job._index([st])
+    job._budget = 3.0
+    return job, st, tts
+
+
+async def test_approved_full_overrun_keeps_reviewed_meaning_and_blocks_optional_rephrases(tmp_path, monkeypatch):
+    job, st, tts = approved_full_job(tmp_path, approved=True)
+    # The reviewed full was predicted to fit. Actual synthesis is deliberately much slower, with a tempting
+    # shorter tier present: timing must show the overrun instead of silently dropping the facts again.
+    assert job._absorbs(st, 4.8)
+    monkeypatch.setattr(job.estimator, "estimate", lambda text, key: 4.8 if text == st.line.full.spoken else 4.0)
+    assert not await job._voice_line(st)
+    assert st.plan.needs_shorter and st.take_s > 7.0
+    assert tts.batches == [(st.line.full.spoken, render._takes_n(st))]
+    assert st.tier == st.take["wording"] == "full" and st.take["fixups"] == 0
+    assert st.line.coverage == Coverage("C", tier="full", first="P")
+    assert set(st.line.tiers) == {"full", "concise"}
+
+    job._dubbing = True
+    before = st.take
+    shorter = LineResult(0, {"full": st.line.tiers["concise"]})
+    # A rephrase admitted before approval must be rejected at execution too, without charging unused work.
+    fix = render._Fix(st, shorter, "full", "rephrase", "queued-before-review",
+                      asyncio.get_running_loop().create_future())
+    await job._voice_fix(fix)
+    assert not fix.done.result()
+    assert not await job._fixup(st, shorter, "full", "rephrase", "after-review")
+    assert job._fixes == [] and st.take is before and job._resynths == 0
+    await job._settle(render.Scene(1, [st], 0, reviewed=True))
+    assert job.tr.cli.calls == [] and len(tts.batches) == 1
+    assert job.flags == {0: ["long"]} and st.line.coverage.cls == "C"
+
+
+@pytest.mark.parametrize("old_wording", ["concise", "rephrase", "retranslate"])
+async def test_paused_short_take_cannot_override_approved_full_and_full_pcm_survives_resume(
+        tmp_path, monkeypatch, old_wording):
+    old, before, old_tts = approved_full_job(tmp_path, approved=False)
+    monkeypatch.setattr(old.estimator, "estimate", lambda text, key: 4.0 if text == before.line.tiers["concise"].spoken
+                        else 4.8)
+    assert not await old._voice_line(before)
+    assert before.take["wording"] == "concise" and old_tts.batches == [(before.telugu, render._takes_n(before))]
+    if old_wording in render.FIXUP_WORDINGS:
+        fixed = LineResult(0, {"full": before.line.tiers["concise"]})
+        old._put_fixup(before, "old-short-fix", old_wording, fixed)
+        old._put_row(before, {**before.take, "wording": old_wording, "tier": "full", "fixup": "old-short-fix"})
+        assert next(old._rows_for(before))[0]["wording"] == old_wording  # a valid old fixup, not a torn-row fixture
+    rejected_row = before.take
+    old.pause()
+
+    current, st, tts = approved_full_job(tmp_path, approved=True)
+    # Approval persists in the production line cache, while the interrupted render still has its old short take.
+    current.tr._store(current._line_spec(st, ("full", "concise")), st.line)
+    fixups = _read_rows(current.render_dir / "fixups.jsonl")
+    current._load_takes(take_rows(tmp_path), fixups)
+    assert await current._restorable(st) is None
+    assert not await current._voice_line(st)
+    assert st.tier == "full" and st.take["tts"] != rejected_row["tts"]
+    assert tts.batches == [(st.line.full.spoken, render._takes_n(st))]
+    final = current._plan(st, render._said_of(st.take), render.TimelinePlanner(current.planner.s))
+    pcm_key = current._pcm_key(st, final)
+    await current._final_pcm(st, final, pcm_key)
+    pcm = (current.render_dir / "pcm" / f"{pcm_key}.npy").read_bytes()
+    # Even a later old short row cannot take precedence over the approved full row on another resume.
+    render._append_row(current.render_dir / "takes.jsonl", rejected_row)
+    current.pause()
+
+    again, restored, tts2 = approved_full_job(tmp_path, approved=False)
+    restored.line = again.tr.cached(again._line_spec(restored, ("full", "concise")))
+    assert render.approved_full(restored.line)
+    again._load_takes(take_rows(tmp_path), fixups)
+    assert await again._voice_line(restored)
+    assert restored.tier == "full" and restored.take == st.take and tts2.batches == []
+    plan = again._plan(restored, render._said_of(restored.take), render.TimelinePlanner(again.planner.s))
+    assert plan == final and again._pcm_key(restored, plan) == pcm_key
+    await again._final_pcm(restored, plan, pcm_key)
+    assert tts2.vocoded == [] and again.flags == current.flags == {0: ["long"]}
+    assert (again.render_dir / "pcm" / f"{pcm_key}.npy").read_bytes() == pcm
+    assert restored.line.coverage == Coverage("C", tier="full", first="P")
+
+
+@pytest.mark.parametrize("provenance", [None, "ccfdc4088a39", "b17b25dc4e91", "current"])
+@pytest.mark.parametrize("approval_policy", [None, "legacy-length-check", "current"])
+@pytest.mark.parametrize("current_class", [None, "other_tier"])
+async def test_restored_audio_does_not_resurrect_old_policy_coverage(tmp_path, provenance, approval_policy, current_class):
+    """No synthesis: a failed initial review or review of another tier cannot inherit an old audio row's C."""
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    coverage = Coverage("C", tier="concise") if current_class == "other_tier" else None
+    st.line = replace(st.line, coverage=coverage)
+    row = {"wording": "full", "coverage": render.coverage_json(Coverage("C", tier="full")), "fixups": 0,
+           "takes": [{"key": "same-audio", "seconds": 4.0, "pauses": [], "pace": 4.0, "failed": None}],
+           "durationPrompt": render.PROMPT_HASH if provenance == "current" else provenance,
+           "approvalPolicy": job._approval_policy() if approval_policy == "current" else approval_policy}
+    job._restore(st, row, st.line, "full", [st.line.full])
+    assert st.take is row and st.tier == "full" and st.take_s == 4.0  # the exact audio row stays reusable
+    current = provenance == "current" and approval_policy == "current"
+    if current:
+        assert st.line.coverage == Coverage("C", tier="full")
+    else:
+        assert st.line.coverage == coverage
+        assert render.voiced_class(st.line.coverage, st.tier) in ("unreviewed", "other_tier")
+    assert not await job._review_voiced(render.Scene(1, [st], 0, reviewed=True))
+    assert [c["call"] for c in job.tr.cli.calls] == ([] if current else ["review"])
+    assert st.line.coverage == Coverage("C", tier="full")
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+async def test_semantically_approved_correction_never_certifies_unchanged_old_audio(tmp_path, monkeypatch, accepted):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    original = st.line
+    candidate = LineResult(0, {"full": Wording("కొత్త పూర్తి సమాధానం.")},
+                           coverage=Coverage("C", tier="full", first="P"))
+    calls = []
+
+    async def voice_fix(state, line, tier, kind, key):
+        calls.append((state, line, tier, kind, key))
+        if accepted:
+            state.line, state.tier = line, tier  # the production _voice_fix keeps this only after a usable take
+        return accepted
+
+    monkeypatch.setattr(job, "_fixup", voice_fix)
+    await job._reviewed(st, candidate, "reviewed-correction")
+    assert len(calls) == 1 and calls[0][1:] == (candidate, "full", "retranslate", "reviewed-correction")
+    if accepted:
+        assert st.line is candidate and st.line.coverage.cls == "C"
+    else:
+        assert st.line.tiers == original.tiers and st.line.coverage == Coverage("P", tier="concise")
+
+
+@pytest.mark.parametrize("error", [None, "not_signed_in"])
+async def test_unresolved_voiced_correction_does_not_persist_a_completed_review(tmp_path, monkeypatch, error):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    assert not await job._voice_line(st)
+    st.line = replace(st.line, coverage=None)
+
+    async def pending_review(req, lines, chosen, **kwargs):
+        return SceneResult(1, "review", lines={0: replace(st.line, coverage=Coverage("P", tier=st.tier))},
+                                  error=ClaudeCLIError(error, "original test") if error else None,
+                                  review_pending=(0,))
+
+    monkeypatch.setattr(job.tr, "review", pending_review)
+    assert await job._review_voiced(render.Scene(1, [st], 0, reviewed=True))
+    assert st.line.coverage.cls == "P"  # known diagnostic, never silently promoted
+    assert not any(row.get("kind") == "review" for row in job._fixup_rows.values())
+    assert not (job.render_dir / "fixups.jsonl").exists()  # resume can request the unfinished review again
+
+
+def test_old_fixup_approval_reuses_wording_without_coverage_or_latin_maps(tmp_path):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    scene = render.Scene(1, [st], 0, reviewed=True)
+    wording = Wording("ఈ ఫోన్ బాగుంది.", ((1, "phone"),))
+    fixed = LineResult(0, {"full": wording}, coverage=Coverage("C", tier="full", by="validators", first="P"))
+    key = job._fixup_key("review", job._line_key(st), st.line.full.spoken)
+    job._put_fixup(st, key, "review", fixed)
+    row = job._fixup_rows[key]
+    assert job._fixup_line(st, row).coverage == fixed.coverage
+    before = job._settled_key(scene)
+    job.tr.approval_policy = "next-semantic-policy"
+    assert job._settled_key(scene) != before
+    assert job._fixup_key("review", job._line_key(st), st.line.full.spoken) != key
+    for policy in (None, "legacy-length-check", row["approval_policy"]):
+        restored = job._fixup_line(st, {**row, "approval_policy": policy})
+        assert restored is not None and restored.full.spoken == wording.spoken
+        assert restored.full.english == () and restored.coverage is None
+    # Filtering provenance leaves the stored wording/approval intact for audit, and never touches an output.
+    assert row["coverage"]["by"] == "validators"
+
+
 async def test_a_line_restored_from_its_take_row_asks_for_no_fit(tmp_path, monkeypatch):
     """On a resume the line cache serves every scene, and a pick made at a pace the takes have since moved could want a
     tier the line lacks: a line with a take row that still matches is voiced as that row says, so it asks for none."""
@@ -2227,7 +2854,7 @@ def check_manifest(m: dict, render_dir) -> None:
     assert m.keys() == {"version", "videoId", "title", "channel", "duration", "stopAt", "complete", "sampleRate",
                         "settings", "speakers", "lines", "skipped", "stats"}
     assert m["version"] == 2 and m["sampleRate"] == 24000 and m["complete"] is True
-    assert m["settings"].keys() == {"style", "speedCap", "ttsScript", "speakers", "presets"}
+    assert m["settings"].keys() == {"style", "speedCap", "ttsScript", "speakers", "presets", "voiceProfiles"}
     for x in m["lines"]:
         assert x.keys() == MANIFEST_LINE.keys()  # no end, budget, units, freeze or edits
         for f, t in MANIFEST_LINE.items():
@@ -2761,3 +3388,215 @@ async def test_with_no_separator_the_estimate_the_time_left_and_the_eta_count_no
         job = job_for(tmp_path / name, b)
         job.doc["duration"] = 600.0
         assert job._eta("separate", time.monotonic()) == pytest.approx(want)
+
+
+class NativeTTS(MelTTS):
+    """Native narrator stand-in: source voice building would be an implementation bug."""
+    native_voice = True
+    model_revision = "native-test-model"
+    cache_identity = {"model": model_revision, "reference": "selected-B", "steps": 32}
+
+    def preset_voice(self, name):
+        assert name in ("male", "female")
+        return {"profile": name, "f0": 120.0 if name == "male" else 220.0}
+
+    def profile_cache_identity(self, profile):
+        return {**self.cache_identity, "profile": profile}
+
+    def prepare_voice(self, *args):
+        pytest.fail("Native mode must not condition on English source audio")
+
+    def prepare_voice_parts(self, *args):
+        pytest.fail("Native mode must not condition on English source audio")
+
+
+async def test_native_narrator_calibrates_once_and_restores_without_source_clone(tmp_path):
+    tts = NativeTTS()
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, presets=("S1",),
+                                           voice_profiles=(("S1", "male"), ("S2", "male"))))
+    assert await job.run() == "done"
+    assert tts.built == 0 and tts.takes == len(CALIBRATION_TE)
+    assert len({job._key(sid) for sid in job.voices}) == 1
+    assert all(v.kind is VoiceKind.NATIVE and v.status == "native" and not v.use_preset for v in job.voices.values())
+    manifest = json.loads((job.render_dir / "manifest.json").read_text())
+    assert {s["voice"] for s in manifest["speakers"]} == {"native"}
+    assert all(s["referenceSeconds"] == 0 and s["sample"] for s in manifest["speakers"])
+    stored = json.loads((job.render_dir / "voices.json").read_text())
+    assert stored["inputs"]["model"] == tts.model_revision
+    assert stored["inputs"]["synthesis"] == tts.cache_identity
+    assert all(render._voice_kind(row) == "native" for row in take_rows(tmp_path))
+    before = {p.name: p.read_bytes() for p in (job.render_dir / "voices").glob("*.npy")}
+    b.tts = again_tts = NativeTTS()
+    again = job_for(tmp_path, b, job.settings)
+    assert await again.run() == "done"
+    assert again_tts.built == again_tts.takes == 0 and not again_tts.batches
+    assert json.loads((job.render_dir / "voices.json").read_text()) == stored
+    assert {p.name: p.read_bytes() for p in (job.render_dir / "voices").glob("*.npy")} == before
+
+
+async def test_native_reference_change_recalibrates_and_misses_old_take_cache(tmp_path):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "female"), ("S2", "female"))))
+    assert await job.run() == "done"
+    old_keys = {job._key(sid) for sid in job.voices}
+    old_rows = take_rows(tmp_path)
+    tts.cache_identity = {**tts.cache_identity, "reference": "changed-reference"}
+    await job._voices()
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert not old_keys.intersection(job._key(sid) for sid in job.voices)
+    assert all(not list(job._rows_for(st)) for st in job.units.values())
+    assert old_rows  # old audio remains on disk; it is not relabelled as the new voice
+
+
+def test_voice_profile_settings_round_trip_and_validate_overrides():
+    settings = RenderSettings(voice_profiles=(("S2", "female"), ("S1", "male")))
+    assert settings.to_json()["voiceProfiles"] == {"S1": "male", "S2": "female"}
+    assert RenderSettings.from_json(settings.to_json()) == settings
+    assert RenderSettings.from_json({"style": "formal"}).voice_profiles == ()
+    with pytest.raises(ValueError, match="Voice profiles"):
+        RenderSettings(voice_profiles=(("S1", "auto"),))  # auto removes an override; it is not a resolved profile
+
+
+async def test_unresolved_native_profiles_persist_and_require_manual_choice_before_any_speech(tmp_path):
+    tts = NativeTTS()
+    events = []
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0), events)
+    assert await job.run() == "failed"  # the demo tones are not reliable source speech
+    assert "Choose Male or Female" in job.doc["error"] and "speaker panel" in job.doc["error"]
+    assert tts.takes == 0 and not tts.batches and not take_rows(tmp_path)
+    stored = json.loads((job.render_dir / "voices.json").read_text())["speakers"]
+    assert set(stored) == {"S1", "S2"}
+    assert all(e["voiceProfile"] == "auto" and e["resolvedVoiceProfile"] is None
+               and e["voiceProfileSource"] == "unresolved" and e["voiceProfileEvidence"] for e in stored.values())
+    assert any(e["type"] == "voice_ready" for e in events)
+    job.settings = replace(job.settings, voice_profiles=(("S1", "male"), ("S2", "female")))
+    assert await job.run() == "done" and not job.skipped
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert {job._key(sid).voice for sid in job.voices} == {"native:male", "native:female"}
+
+
+async def test_native_profile_mapping_restores_and_only_changed_profile_misses_takes(tmp_path, monkeypatch):
+    calls = []
+
+    def source_profile(clips):
+        profile = "male" if not calls else "female"
+        calls.append(profile)
+        return {"policy": render.VOICE_PROFILE_POLICY, "profile": profile, "pitchHz": 120 if profile == "male" else 220,
+                "voicedSeconds": 3.0, "voicedFraction": 0.7, "sampleSeconds": 12.0}
+
+    monkeypatch.setattr(render, "infer_voice_profile", source_profile)
+    tts = NativeTTS()
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b, RenderSettings(stop_at=30.0))
+    assert await job.run() == "done" and calls == ["male", "female"]
+    old = {sid: job._key(sid) for sid in job.voices}
+    old_rows = take_rows(tmp_path)
+    old_files = {t["key"]: (job.render_dir / "takes" / (t["key"] + ".npz")).read_bytes()
+                 for row in old_rows for t in row["takes"]}
+    stored = json.loads((job.render_dir / "voices.json").read_text())
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert stored["speakers"]["S1"]["voiceProfileSource"] == "acoustic"
+    assert stored["speakers"]["S2"]["resolvedVoiceProfile"] == "female"
+    monkeypatch.setattr(render, "infer_voice_profile", lambda _: pytest.fail("Matching persisted evidence must restore"))
+    again = job_for(tmp_path, b, job.settings)
+    assert await again.run() == "done" and tts.takes == 2 * len(CALIBRATION_TE)
+    assert {sid: again._key(sid) for sid in again.voices} == old
+    assert again.pcm == job.pcm
+
+    again.settings = replace(again.settings, voice_profiles=(("S1", "female"),))
+    await again._voices()  # no redub: inspect the exact production restore gates after the explicit choice
+    assert again._key("S1") != old["S1"] and again._key("S2") == old["S2"]
+    assert again._key("S1") == again._key("S2")
+    assert tts.takes == 2 * len(CALIBRATION_TE)  # S2's matching female calibration is shared, not regenerated
+    rows_by_speaker = {sid: [st for st in again.units.values() if st.unit.speaker == sid and st.take] for sid in old}
+    assert all(rows_by_speaker.values())
+    assert all(not list(again._rows_for(st)) for st in rows_by_speaker["S1"])
+    assert all(list(again._rows_for(st)) for st in rows_by_speaker["S2"])
+    after = json.loads((job.render_dir / "voices.json").read_text())
+    assert after["speakers"]["S1"]["voiceProfileSource"] == "manual"
+    assert after["speakers"]["S2"] == stored["speakers"]["S2"]
+    assert all((job.render_dir / "takes" / (key + ".npz")).read_bytes() == value for key, value in old_files.items())
+
+
+async def test_legacy_automatic_voice_calibration_cannot_approve_profile_or_restore_audio(tmp_path, monkeypatch):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "male"), ("S2", "male"))))
+    assert await job.run() == "done"
+    path = job.render_dir / "voices.json"
+    stored = json.loads(path.read_text())
+    for e in stored["speakers"].values():
+        for name in ("voiceProfile", "resolvedVoiceProfile", "voiceProfileSource", "voiceProfileEvidence"):
+            e.pop(name, None)
+        e["key"]["voice"] = "native"
+        e["key"]["reference"] = "native:legacy-automatic"
+    path.write_text(json.dumps(stored))
+    legacy_rows = take_rows(tmp_path)
+    for row in legacy_rows:
+        row["voice"][0], row["voice"][3] = "native", "native:legacy-automatic"
+    (job.render_dir / "takes.jsonl").write_text("".join(json.dumps(row) + "\n" for row in legacy_rows))
+    previous = tts.takes
+    await job._voices()
+    assert tts.takes == previous + len(CALIBRATION_TE)  # same model/base identity is insufficient for profile reuse
+    assert all(e["key"]["voice"] == "native:male" for e in json.loads(path.read_text())["speakers"].values())
+    assert all(not list(job._rows_for(st)) for st in job.units.values() if st.take)
+    assert all((job.render_dir / "takes" / (t["key"] + ".npz")).is_file() for row in legacy_rows for t in row["takes"])
+
+
+async def test_swapping_native_profiles_keeps_each_preview_with_its_original_profile(tmp_path):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "male"), ("S2", "female"))))
+    assert await job.run() == "done"
+    # Distinguishable existing previews expose donor-file overwrite ordering without synthesizing new audio.
+    male, female = np.full(100, 0.1, np.float16), np.full(100, -0.2, np.float16)
+    np.save(job.render_dir / "voices/S1.npy", male)
+    np.save(job.render_dir / "voices/S2.npy", female)
+    keys = {sid: job._key(sid) for sid in job.voices}
+    before = tts.takes
+    job.settings = replace(job.settings, voice_profiles=(("S1", "female"), ("S2", "male")))
+    await job._voices()
+    np.testing.assert_array_equal(np.load(job.render_dir / "voices/S1.npy"), female)
+    np.testing.assert_array_equal(np.load(job.render_dir / "voices/S2.npy"), male)
+    assert job._key("S1") == keys["S2"] and job._key("S2") == keys["S1"]
+    assert tts.takes == before
+
+
+def test_pause_and_task_cancellation_signal_isolated_tts(tmp_path):
+    tts = NativeTTS()
+    cancelled = []
+    tts.cancel = lambda: cancelled.append(True)
+    job = job_for(tmp_path, backend(tts=tts))
+    job.pause()
+    job._on_cancel()
+    assert job.stopping and len(cancelled) == 2
+
+
+async def test_pausing_while_waiting_for_gpu_does_not_start_model_work(tmp_path):
+    job = job_for(tmp_path, backend())
+    ran = []
+    await job.gpu.acquire(1)
+    task = asyncio.create_task(job._on_gpu(lambda: ran.append(True)))
+    async def admitted_to_queue():
+        while not job.gpu.waiting:
+            await asyncio.sleep(0)
+    await asyncio.wait_for(admitted_to_queue(), 2)
+    job.pause()
+    job.gpu.release()
+    with pytest.raises(render._Paused):
+        await task
+    assert ran == [] and not job.gpu.owned
+
+
+async def test_missing_native_runtime_fails_before_preprocessing_with_setup_message(tmp_path):
+    tts = NativeTTS()
+    tts.missing = lambda: ["isolated Python runtime"]
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b)
+    assert await job.run() == "failed"
+    assert "setup-omnivoice.sh" in job.doc["error"]
+    assert "isolated Python runtime" in job.doc["error"]
+    assert b.transcriber.calls == b.diarizer.calls == tts.built == tts.takes == 0
+    assert not (job.render_dir / "audio16k.f32").exists()

@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "review_scope": "Read-only audit of one original 60-second audio smoke; no model calls or listening by this reviewer.",
+  "evidence_root": "/var/folders/nf/rsmk5ph90qg95gy9fnr8lss40000gn/T/maata-map-audio-aur9ayz0",
+  "privacy": "Aggregate measurements and unit identifiers only; no transcript, translations, titles, credentials, or media.",
+  "export": {
+    "layout_ok": true,
+    "loudness_ok": true,
+    "av_ok": true,
+    "watermark_ok": true,
+    "loudness_I": -16.0,
+    "true_peak_dbtp": -2.01,
+    "av_offset_ms": 0.09
+  },
+  "meaning": {
+    "authored_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "source_artifact_ids": [
+      9,
+      10
+    ],
+    "reviewed_E_ids": [
+      10
+    ],
+    "final_C_by_review": 10,
+    "final_C_by_validators": 1,
+    "initial_and_replacement_tail_maps_empty": true,
+    "finding": "The only original E is a known non-authored ASR-tail pronoun fragment. Corrective wording remains a dative pronoun with a different politeness form and has only deterministic C, not a second semantic review. This does not demonstrate an anchored-map error or fully reviewed final semantic completeness."
+  },
+  "timing": {
+    "guard_limit_silent_s_per_min": 3.0,
+    "observed_silent_s_per_min": 5.0801,
+    "source_s": 37.086,
+    "uncovered_source_s": 3.14,
+    "authored_only_silent_s_per_min": 5.1327,
+    "authored_source_s": 36.706,
+    "tail_uncovered_source_s": 0.0,
+    "uncovered_s_by_authored_id": {
+      "0": 0.0,
+      "1": 0.6,
+      "2": 0.0,
+      "3": 0.22,
+      "4": 0.16,
+      "5": 0.32,
+      "6": 1.58,
+      "7": 0.26,
+      "8": 0.0
+    },
+    "dominant_unit": {
+      "id": 6,
+      "selected_tier": "fuller",
+      "source_speech_s": 4.409,
+      "take_s": 3.2,
+      "end_error_s": -1.58,
+      "share_of_uncovered_source_s": 0.5032
+    },
+    "finding": "Silence guard failure is authored-section underfill, not ASR-tail contamination. Existing correction handles overlength after synthesis; the planner does not slow below natural rate. The final fuller choice can therefore remain too short despite valid meaning."
+  },
+  "follow_up": {
+    "change_production_now": false,
+    "candidate_comparison": [
+      "Bounded fuller rephrase using actual measured duration, preserving all facts and adding no filler facts.",
+      "Modest validated slowdown compared with the same original audio."
+    ],
+    "required_evidence": [
+      "Original audio and native listening comparison for natural pace/prosody, intelligibility, and end alignment.",
+      "Bounded latency and retry cost; semantic review of chosen wording and actual TTS form.",
+      "Keep honest authored/tail quality slices and no all-guards-passed claim."
+    ]
+  },
+  "diagnostics": {
+    "run_starts": 1,
+    "run_ends": 1,
+    "stage_starts": 12,
+    "stage_ends": 12,
+    "all_smoke_events_same_run_id": true,
+    "run_wall_s": 96.786,
+    "privacy_projection": "No source/translation/title/error-message text found in snapshot projection.",
+    "actionable_findings": [
+      {
+        "code": "legacy_cache_fraction_denominator",
+        "file": "engine/src/maata_engine/diagnostics.py",
+        "finding": "Legacy Claude input excludes cached/read and creation tokens; cached/input can exceed1. Actual historical samples include input2/read2264 and input2/read1070. Use provider-aware total or null unknown legacy fraction.",
+        "status": "fixed_by_parent_and_independently_verified_on_existing_traces"
+      },
+      {
+        "code": "coverage_provenance_visibility",
+        "file": "engine/src/maata_engine/diagnostics.py",
+        "finding": "Finalized class count C11 collapses10semantic-reviewC plus1validators-only replacement afterE. Add provenance/first-verdict counts so monitor does not imply all final lines were semantically reviewed.",
+        "status": "fixed_by_parent_and_independently_verified_on_existing_traces"
+      }
+    ],
+    "verification": {
+      "current_smoke_provenance": {
+        "review": 10,
+        "validators": 1
+      },
+      "legacy_cache_fractions_valid": true
+    }
+  },
+  "limits": [
+    "Single original short fixture; not general quality acceptance.",
+    "No independent listening or native Telugu rating performed.",
+    "No before/after inference-speed claim.",
+    "An automated semantic C is evidence of a check, not proof of translation or audio quality."
+  ]
+}

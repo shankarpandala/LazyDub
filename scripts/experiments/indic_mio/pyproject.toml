@@ -1,0 +1,23 @@
+[project]
+name = "maata-indic-mio-evaluation"
+version = "0.0.1"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "miocodec @ git+https://github.com/Aratako/MioCodec.git@77473544375d57e96cbdfd5d7d257e8f280fa8e3",
+  "torch==2.8.0",
+  "torchaudio==2.8.0",
+  "transformers==5.2.0",
+]
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
+
+[tool.uv.sources]
+torch = { index = "pypi-mac" }
+torchaudio = { index = "pypi-mac" }
+
+[[tool.uv.index]]
+name = "pypi-mac"
+url = "https://pypi.org/simple"
+explicit = true

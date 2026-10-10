@@ -1,0 +1,42 @@
+{
+  "recorded_utc": "2026-10-10T09:33:36.889897+00:00",
+  "app_started_through_CUA": true,
+  "visible_backend": "Apple Silicon \u00b7 OmniVoice",
+  "launch_initial_ui": {
+    "done": 8,
+    "paused": 1
+  },
+  "agent_ui_input_actions": 0,
+  "observed_client_removal": {
+    "video_id": "4Vz6L8B73i4",
+    "log_local_time": "2026-10-10 15:00:52,480",
+    "log_message": "render 4Vz6L8B73i4 removed",
+    "actor": "Unknown client; no agent click or removal command was sent",
+    "remaining": "briefs.jsonl, units.jsonl, lines.jsonl",
+    "restoration_attempted": false
+  },
+  "current_jobs": {
+    "xi-zHJL5bnI": "done",
+    "3iRUwVzRDZQ": "done",
+    "9TsjAaFZG20": "done",
+    "8qCc_hMCB0w": "running",
+    "9GSDvO0LFFE": "done",
+    "5XTJRU9na3Y": "done",
+    "yWBP-gDUXiQ": "done",
+    "Is8XU3J5ZZE": "done",
+    "0eFln_mdXGY": "done"
+  },
+  "comparison": {
+    "completed_cache_files_checked": 3832,
+    "export_files_checked": 39,
+    "removed_job_retained_text_files_checked": 3,
+    "removed_job_missing_entries": 1090
+  },
+  "remaining_file_differences": [],
+  "all_completed_cache_and_export_hashes_preserved": true,
+  "cancelled_job_auto_resumed": false,
+  "limits": [
+    "Cancelled render/media were removed by a client command after initial startup; do not claim every original cache entry survived that removal.",
+    "This is persistence and startup validation, not full-video audio quality acceptance."
+  ]
+}

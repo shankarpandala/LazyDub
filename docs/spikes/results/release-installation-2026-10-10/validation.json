@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-10",
+  "machine": "Apple M5 Pro 24 GB",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "runtime_id": "0ffd3d88a52f05bb8eb82f76b75e95ed9f0ca85231c0b965ac98baeae99616e3",
+  "payload_files": 63,
+  "artifact": {
+    "file": "Maata-0.1.0-macos-arm64.dmg",
+    "bytes": 3817754,
+    "sha256": "e7fe0ae7265603fd62841e22269d76215f600502a299263bfd686d7fd6811bcb",
+    "architecture": "arm64",
+    "codesign_strict_verification": "passed",
+    "signing": "ad-hoc; not Developer ID or notarized",
+    "hdiutil_verify": "passed",
+    "mounted_payload_check": "passed",
+    "mounted_setup_command": "passed"
+  },
+  "validation": {
+    "python_packaging_and_model_tests": 45,
+    "rust_runtime_tests": 4,
+    "ui_tests": 83,
+    "svelte_errors": 0,
+    "svelte_warnings": 0,
+    "installed_runtime_imports_from_application_support": true,
+    "installed_model_manifest_from_application_support": true,
+    "offline_provisioning": "passed; dependency/model subprocess network denied; existing cached packages and models",
+    "installed_app_native_library": "passed; /Applications copy with 9 done jobs and Apple Silicon / OmniVoice",
+    "installed_app_native_settings": "apple on mps; Codex gpt-6-luna",
+    "actual_active_engine_setup_refusal": "passed"
+  },
+  "preservation": {
+    "job_count": 9,
+    "job_json_sha256_unchanged": true,
+    "all_jobs_done": true,
+    "mp4_count": 40,
+    "mp4_size_and_mtime_unchanged": true,
+    "mp4_content_hashes_rerun": false,
+    "jobs_started_or_redubbed": 0
+  },
+  "limits": [
+    "Clean-machine online bootstrap not exercised",
+    "No fresh dubbing/listening test in packaging pass; original profile acceptance remains scoped to six samples",
+    "Earlier whole-video underfill remains unresolved",
+    "Ad-hoc preview requires user macOS security approval where prompted"
+  ]
+}

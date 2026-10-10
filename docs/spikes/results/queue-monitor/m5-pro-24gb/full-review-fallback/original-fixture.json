@@ -1,0 +1,199 @@
+{
+  "scope": "Original regression design for reviewing an existing full fallback before generating a new translation; not executed against a model",
+  "cases": [
+    {
+      "id": "omitted_object_and_time",
+      "source": "The volunteers sort donated books every Sunday.",
+      "selected_tier": "very_concise",
+      "selected": "వాలంటీర్లు క్రమపెడతారు.",
+      "full": "వాలంటీర్లు ప్రతి ఆదివారం దానం చేసిన పుస్తకాలను క్రమపెడతారు.",
+      "selected_verdict": "P",
+      "fallback_verdict": "C",
+      "expect": [
+        "Keep full without a retranslation call",
+        "Never reselect the known incomplete short wording",
+        "Retain donated books and every Sunday"
+      ]
+    },
+    {
+      "id": "uncertainty_is_not_negation",
+      "source": "She rarely cancels the morning lesson.",
+      "selected_tier": "concise",
+      "selected": "ఆమె పొద్దున్న పాఠాన్ని రద్దు చేయదు.",
+      "full": "ఆమె పొద్దున్న పాఠాన్ని రద్దు చేయడం అరుదు.",
+      "selected_verdict": "E",
+      "fallback_verdict": "C",
+      "expect": [
+        "Keep the qualified full wording",
+        "Do not turn rarely into never to fit duration"
+      ]
+    },
+    {
+      "id": "both_candidates_wrong",
+      "source": "The red bag has nine books and the blue bag has twelve.",
+      "selected_tier": "concise",
+      "selected": "రెండు సంచుల్లో పుస్తకాలు ఉన్నాయి.",
+      "full": "ఎర్ర సంచిలో పన్నెండు పుస్తకాలు, నీలి సంచిలో తొమ్మిది ఉన్నాయి.",
+      "selected_verdict": "P",
+      "fallback_verdict": "E",
+      "expect": [
+        "Do not approve the full fallback",
+        "Run the existing bounded corrective path",
+        "Do not label length alone as complete meaning"
+      ]
+    },
+    {
+      "id": "no_distinct_fallback",
+      "source": "The spare key is not inside the drawer.",
+      "selected_tier": "full",
+      "selected": "ఇంకో తాళం డ్రాయర్లో ఉంది.",
+      "full": "ఇంకో తాళం డ్రాయర్లో ఉంది.",
+      "selected_verdict": "E",
+      "expect": [
+        "Do not review the same wording twice as a fallback",
+        "Use the existing bounded correction"
+      ]
+    },
+    {
+      "id": "natural_paraphrase",
+      "source": "He quietly keeps a tally of the returned keys.",
+      "selected_tier": "concise",
+      "selected": "తిరిగి ఇచ్చిన తాళాల లెక్కను మౌనంగా రాసుకుంటాడు.",
+      "full": "తిరిగి ఇచ్చిన తాళాల లెక్కను అతను మౌనంగా రాసుకుంటాడు.",
+      "selected_verdict": "C",
+      "expect": [
+        "Accept natural Telugu paraphrase and implicit subject",
+        "No corrective call or fallback lock"
+      ]
+    },
+    {
+      "id": "missing_fallback_verdict",
+      "source": "Only Ravi can open the blue box.",
+      "selected_tier": "concise",
+      "selected": "రవి నీలి పెట్టె తెరవొచ్చు.",
+      "full": "రవి మాత్రమే నీలి పెట్టె తెరవగలడు.",
+      "selected_verdict": "P",
+      "fallback_verdict": null,
+      "expect": [
+        "Do not infer approval from a missing verdict",
+        "Retain existing bounded correction behavior"
+      ]
+    },
+    {
+      "id": "cache_and_duration_do_not_resurrect_omission",
+      "source": "The library closes at six, except on Fridays.",
+      "selected_tier": "very_concise",
+      "selected": "లైబ్రరీ ఆరింటికి మూసేస్తారు.",
+      "full": "శుక్రవారం తప్ప, లైబ్రరీని ఆరింటికి మూసేస్తారు.",
+      "selected_verdict": "P",
+      "fallback_verdict": "C",
+      "expect": [
+        "Persist explicit approved-fallback evidence",
+        "Cache reload, a late fit and a queued short take cannot restore the rejected omission",
+        "A duration overrun stays visible; retain the normal speed cap and planner"
+      ]
+    },
+    {
+      "id": "uncertain_fallback_is_not_complete",
+      "source": "The replacement may cost another fifty rupees.",
+      "selected_tier": "concise",
+      "selected": "మార్చడానికి యాభై రూపాయలు అవుతుంది.",
+      "full": "మార్చడానికి ఇంకో యాభై రూపాయలు అవుతుంది.",
+      "selected_verdict": "E",
+      "fallback_verdict": "m",
+      "expect": [
+        "For this bounded candidate require fallback C, not m",
+        "Do not approve a fallback that removes uncertainty"
+      ],
+      "injected_verdict_note": "The m verdict is synthetic adversarial reviewer output; semantic ground truth for this full wording is E because it removes uncertainty."
+    },
+    {
+      "id": "mapped_conditional",
+      "source": "Open WhatsApp only after the backup finishes.",
+      "selected_tier": "concise",
+      "selected": "వాట్సాప్ ఓపెన్ చేయండి.",
+      "full": "బ్యాకప్ పూర్తయ్యాకే వాట్సాప్ ఓపెన్ చేయండి.",
+      "selected_english": [
+        [
+          0,
+          "WhatsApp"
+        ],
+        [
+          1,
+          "open"
+        ]
+      ],
+      "full_english": [
+        [
+          0,
+          "backup"
+        ],
+        [
+          2,
+          "WhatsApp"
+        ],
+        [
+          3,
+          "open"
+        ]
+      ],
+      "selected_verdict": "P",
+      "fallback_verdict": "C",
+      "expect": [
+        "Review both actual Latin TTS forms",
+        "Preserve only after backup condition",
+        "Authorize exact full mapped wording only on explicit C"
+      ]
+    },
+    {
+      "id": "tight_mapped_both_condition",
+      "source": "Restart the router only after both uploads finish.",
+      "selected_tier": "concise",
+      "selected": "అప్లోడ్ పూర్తయ్యాక రౌటర్ని రీస్టార్ట్ చేయండి.",
+      "full": "రెండు అప్లోడ్లు పూర్తయ్యాకే రౌటర్ని రీస్టార్ట్ చేయండి.",
+      "selected_english": [
+        [
+          3,
+          "restart"
+        ]
+      ],
+      "full_english": [
+        [
+          4,
+          "restart"
+        ]
+      ],
+      "selected_verdict": "P",
+      "fallback_verdict": "C",
+      "expect": [
+        "Preserve both completed uploads and only-after condition",
+        "Use real calibrated planner gate in the later bounded original audio smoke"
+      ]
+    }
+  ],
+  "measurement_plan": {
+    "baseline": "Current selected-only review followed by correction",
+    "candidate": "Same-call review of selected and distinct existing full; return only optional fallback verdict, not rewritten text",
+    "fixed": [
+      "gpt-6-luna",
+      "low effort",
+      "no fallback model",
+      "identical brief and context",
+      "fresh local caches",
+      "same original source and selected initial tiers"
+    ],
+    "metrics": [
+      "selected meaning and actual Latin TTS meaning",
+      "review plus correction wall time",
+      "calls and output tokens",
+      "known P/E re-selection count",
+      "full fallback duration overrun and actual audio duration when later authorized"
+    ],
+    "limits": [
+      "No live calls made for this design",
+      "Pure regressions first",
+      "At least five paired configurations before a timing claim",
+      "No next-job default until meaning and bounded timing/voicing behavior are verified"
+    ]
+  }
+}

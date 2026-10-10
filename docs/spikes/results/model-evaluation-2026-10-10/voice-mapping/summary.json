@@ -1,0 +1,176 @@
+{
+  "scope": "Six authored Telugu profile samples, one take per phrase/profile, no user media",
+  "sample_count": 6,
+  "profiles": [
+    "male",
+    "female"
+  ],
+  "seed": 20261010,
+  "steps": 32,
+  "protocol": 2,
+  "instructions": {
+    "male": "male",
+    "female": "female"
+  },
+  "conditioning": "No reference, forced duration, accent or pitch instruction.",
+  "waveform_checks": {
+    "finite_nonempty_nonsilent": true,
+    "watermark_scores": [
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "worker_released": true
+  },
+  "asr": [
+    {
+      "profile": "male",
+      "id": "conversation",
+      "duration_seconds": 2.92,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 132.2,
+        "voicedSeconds": 0.58,
+        "voicedFraction": 0.309,
+        "sampleSeconds": 2.92
+      },
+      "cer": 0.16666666666666666
+    },
+    {
+      "profile": "male",
+      "id": "names_numbers",
+      "duration_seconds": 4.04,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 142.5,
+        "voicedSeconds": 1.64,
+        "voicedFraction": 0.506,
+        "sampleSeconds": 4.04
+      },
+      "cer": 0.09259259259259259
+    },
+    {
+      "profile": "male",
+      "id": "expressive",
+      "duration_seconds": 3.28,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 129.4,
+        "voicedSeconds": 1.1,
+        "voicedFraction": 0.474,
+        "sampleSeconds": 3.28
+      },
+      "cer": 0.16279069767441862
+    },
+    {
+      "profile": "female",
+      "id": "conversation",
+      "duration_seconds": 2.92,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 259.0,
+        "voicedSeconds": 0.88,
+        "voicedFraction": 0.463,
+        "sampleSeconds": 2.92
+      },
+      "cer": 0.1111111111111111
+    },
+    {
+      "profile": "female",
+      "id": "names_numbers",
+      "duration_seconds": 4.04,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 269.0,
+        "voicedSeconds": 1.32,
+        "voicedFraction": 0.455,
+        "sampleSeconds": 4.04
+      },
+      "cer": 0.16666666666666666
+    },
+    {
+      "profile": "female",
+      "id": "expressive",
+      "duration_seconds": 3.28,
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 261.8,
+        "voicedSeconds": 1.22,
+        "voicedFraction": 0.526,
+        "sampleSeconds": 3.28
+      },
+      "cer": 0.13953488372093023
+    }
+  ],
+  "pitch_diagnostic": {
+    "male": {
+      "combined": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 138.5,
+        "voicedSeconds": 3.32,
+        "voicedFraction": 0.446,
+        "sampleSeconds": 10.24
+      },
+      "per_sentence_median_hz": [
+        132.2,
+        142.5,
+        129.4
+      ]
+    },
+    "female": {
+      "combined": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 262.8,
+        "voicedSeconds": 3.42,
+        "voicedFraction": 0.48,
+        "sampleSeconds": 10.24
+      },
+      "per_sentence_median_hz": [
+        259.0,
+        269.0,
+        261.8
+      ]
+    }
+  },
+  "pitch_diagnostic_limit": "Vocal pitch diagnostic only; the source classifier is not validated as a generated-voice gender or naturalness judge.",
+  "manual_text_asr_audit": {
+    "possible_omission": {
+      "profile": "female",
+      "phrase": "names_numbers",
+      "word": "ఫైళ్లు",
+      "meaning": "files",
+      "finding": "Expected files noun absent in ASR; other major name/time/channel/count/action elements retained. Requires listening; not a confirmed audible omission.",
+      "listener_followup": "User confirms all words audible; ASR omission was not confirmed by listening."
+    },
+    "other_samples": "Greeting/question/well clause and expressive major content recognizable despite ASR spelling substitutions.",
+    "independent_review": "Second agent independently read all six authored ASR forms; no additional model calls."
+  },
+  "tests": {
+    "passed": 47,
+    "seconds": 2.07
+  },
+  "limitations": [
+    "Gender instructions are trained upstream on English/Chinese; Telugu generalization is screened only.",
+    "User accepted perceived voice match and word audibility for these six samples; stable identity and long-video quality remain unproven.",
+    "No reference conditioning, forced duration, pitch shift or speech-rate control; fixed seed 20261010 each call.",
+    "Three different sentences per profile are not repeated throughput measurements.",
+    "ASR roundtrip is diagnostic and cannot prove pronunciation, gender or meaning completeness."
+  ],
+  "sources": [
+    "https://github.com/k2-fsa/OmniVoice/blob/08be0b4ccbac3e13e374e86fbfead4b4cac343e2/docs/voice-design.md"
+  ],
+  "media_location": "~/Library/Caches/Maata/model-evaluation-2026-10-10/audition/voice-profiles/",
+  "audio_acceptance": "User listened to all six samples and replied: Both match and all words are audible. This accepts the bounded sample voices/word audibility, not all future utterances or long-video quality.",
+  "pitch_diagnostic_version_note": "The embedded pitch_diagnostic preserves the earlier helper thresholds (voicedFraction>=0.6, voicedSeconds>=1.5). Current helper CPU-only recomputation with source hash and thresholds is current-pitch-diagnostics.json. Raw results and human-listening acceptance are unchanged."
+}

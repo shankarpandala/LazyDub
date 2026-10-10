@@ -153,13 +153,15 @@ class SceneResult:
     calls: int = 0                         # CLI calls made for this request
     seconds: float = 0.0
     error: Exception | None = None         # review: a failure the user must fix, which left lines unreviewed
+    review_pending: tuple[int, ...] = ()   # original verdict may be known, but failed/missing review must retry
 
 
 @dataclass(frozen=True, slots=True)
 class Coverage:
     """A line's coverage class (§4.6; research gap-4 E5): C complete, m a minor drop, P a phrase or clause missing, E a
-    meaning error. `by` says who classed it: "review" (Claude, on the wording `tier`) or "validators" (a re-translation,
-    classed by the deterministic checks alone, which keeps the review's class of the wording it replaced as `first`)."""
+    meaning error. `by` says who classed it: "review" (the semantic reviewer, on wording `tier`) or "validators" (a
+    deterministic rejection, never semantic approval). `first` keeps the rejected wording's review class when a correction
+    replaces it, or when the same review explicitly approves an eligible existing full wording instead."""
 
     cls: str
     missing: tuple[str, ...] = ()          # English words whose meaning the Telugu lacks

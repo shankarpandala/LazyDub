@@ -84,6 +84,35 @@ def test_the_pinned_config_builds_the_full_model_config_and_its_bands_match_the_
     assert len(layout) == REAL_TENSORS and sum(int(np.prod(s)) for s in layout.values()) == REAL_VALUES
 
 
+@pytest.mark.parametrize("batch,frames", [(1, 7), (2, 13)])
+@pytest.mark.parametrize("dtype", [mx.float32, mx.bfloat16])
+def test_batched_band_scatter_matches_the_original_bin_scatter_exactly(batch, frames, dtype):
+    """Real overlapping bands, both channels and precisions: the faster merge must change no mask samples."""
+    from types import SimpleNamespace
+
+    c = mr.MelRoFormerConfig.kim_vocal_2()
+    filterbank = mr.MelFilterbank(c)
+    rng = np.random.default_rng(84)
+    masks = [mx.array(rng.standard_normal((batch, frames, bd)).astype(np.float32)).astype(dtype)
+             for bd in filterbank.band_dims]
+    old = mx.zeros((batch, c.freq_bins * 2, frames, 2), dtype=mx.float32)
+    expected = np.zeros(old.shape, np.float32)
+    for indices, mask in zip(filterbank.freq_indices, masks):
+        ids = np.array(indices)
+        assert len(np.unique(ids)) == len(ids)  # required for one band's vector scatter to preserve the sum order
+        values = mask.reshape(batch, frames, len(indices), 2).transpose(0, 2, 1, 3)
+        for j, idx in enumerate(indices):  # the original implementation, kept as the equivalence oracle
+            old = old.at[:, idx, :, :].add(values[:, j, :, :])
+        expected[:, ids] += np.array(values.astype(mx.float32))
+    counts = np.asarray(filterbank.num_bands_per_freq).reshape(1, -1, 1, 1)
+    assert np.max(counts) > 1  # overlapping bands really exercised
+    old = old / mx.array(counts)
+    got = mr.BandSplit.merge(SimpleNamespace(filterbank=filterbank), masks, c.freq_bins * 2)
+    np.testing.assert_array_equal(np.array(got), np.array(old))
+    np.testing.assert_allclose(np.array(got), expected / counts, rtol=1e-7, atol=1e-7)
+    assert got.dtype == mx.float32
+
+
 def test_a_tiny_model_separates_a_batch_with_its_shapes_in_bf16_and_returns_float32():
     c = mr.MelRoFormerConfig(**TINY)
     model = mr.MelRoFormer(c)

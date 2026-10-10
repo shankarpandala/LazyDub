@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-10",
+  "scope": "semantic correction acceptance, cache provenance and render integration; no real audio inference in tests",
+  "command": "engine/.venv/bin/python -m pytest -q engine/tests",
+  "passed": 1357,
+  "seconds": 442.46,
+  "result": "passed",
+  "machine": "M5 Pro 24GB",
+  "sources": {
+    "engine/src/maata_engine/backends/base.py": "3ad7f1ea7ec51381b8d2ac2aa4ffb05b04bc3825660768fe068ac400c8ac7e40",
+    "engine/src/maata_engine/backends/claude_translator.py": "8c5d73c75f260d69c60d9da6cf5a518744b4714d70ff80fb99a0abf266f50e06",
+    "engine/src/maata_engine/qa/coverage.py": "4684146685d4077d82d0b69f9098aa453956174baaf6b8b0a55eda52a6573d1a",
+    "engine/src/maata_engine/render.py": "ecb7512504553388159433be5d9dcc68b16af8be4a65d1af63e7150d9d55a13f"
+  },
+  "limitations": [
+    "Does not certify Telugu pronunciation, native listening, speech synchronization or whole-export watermark",
+    "An earlier run was interrupted during implementation and was not counted as success",
+    "Production jobs, model defaults and completed outputs were not changed"
+  ]
+}

@@ -47,6 +47,7 @@ class SourceUnit:
 class VoiceKind(str, Enum):
     CLONED = "cloned"
     PRESET = "preset"
+    NATIVE = "native"  # consistent Telugu narrator; does not claim the source speaker's identity
 
 
 @dataclass(slots=True)

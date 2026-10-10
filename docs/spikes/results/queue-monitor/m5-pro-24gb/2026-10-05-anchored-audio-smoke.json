@@ -1,0 +1,363 @@
+{
+  "scope": "Fresh original 60-second two-speaker speech/music smoke on Apple M5 Pro 24GB; not a paired speed comparison or native-listener evaluation.",
+  "pipeline": {
+    "machine": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "machine": "arm64",
+      "python": "3.12.11",
+      "chip": "Apple M5 Pro",
+      "ram_bytes": "25769803776"
+    },
+    "backend": "apple",
+    "device": "mps",
+    "file": "test.mp4",
+    "translator": "ClaudeTranslator",
+    "translation_model": "gpt-6-luna",
+    "translation_provider": "codex",
+    "tts_script": "latin",
+    "audio_seconds": 60.0,
+    "model_load_seconds": 3.31,
+    "pipeline_seconds": 96.79,
+    "throughput_x_realtime": 0.62,
+    "calibration_seconds": 8.14,
+    "speakers": 2,
+    "units": 11,
+    "skipped": 0,
+    "speedup_max": 1.068,
+    "latin_ratio": 0.031,
+    "render": {
+      "stages": {
+        "fetch": {
+          "seconds": 0.07,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "speakers": {
+          "seconds": 2.06,
+          "gpu_s": 2.06,
+          "cached": false
+        },
+        "transcript": {
+          "seconds": 4.27,
+          "gpu_s": 4.27,
+          "cached": false
+        },
+        "units": {
+          "seconds": 0.0,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "brief": {
+          "seconds": 10.92,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "voices": {
+          "seconds": 17.88,
+          "gpu_s": 17.87,
+          "cached": false
+        },
+        "video": {
+          "seconds": 0.1,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "separate": {
+          "seconds": 5.65,
+          "gpu_s": 5.37,
+          "cached": false,
+          "blocks": 1
+        },
+        "translate": {
+          "seconds": 42.43,
+          "gpu_s": 0.0,
+          "cached": false
+        },
+        "voice_lines": {
+          "seconds": 71.0,
+          "gpu_s": 26.74,
+          "cached": false
+        },
+        "finish": {
+          "seconds": 71.55,
+          "gpu_s": 0.55,
+          "cached": false
+        },
+        "export": {
+          "seconds": 0.95,
+          "gpu_s": 0.0,
+          "cached": false
+        }
+      },
+      "gpu_s": 56.86,
+      "gpu_s_per_video_s": 0.9477,
+      "peak_rss_bytes": 5748391936,
+      "mlx_peak_bytes": 2592641390,
+      "claude": {
+        "brief": {
+          "calls": 1,
+          "input_tokens": 4907,
+          "cache_read_tokens": 2816,
+          "output_tokens": 415
+        },
+        "scene": {
+          "calls": 2,
+          "input_tokens": 20083,
+          "cache_read_tokens": 2816,
+          "output_tokens": 1457
+        },
+        "review": {
+          "calls": 4,
+          "input_tokens": 18681,
+          "cache_read_tokens": 5632,
+          "output_tokens": 297
+        },
+        "retranslate": {
+          "calls": 1,
+          "input_tokens": 10141,
+          "cache_read_tokens": 0,
+          "output_tokens": 100
+        },
+        "fit": {
+          "calls": 2,
+          "input_tokens": 19640,
+          "cache_read_tokens": 8960,
+          "output_tokens": 659
+        },
+        "rephrase": {
+          "calls": 1,
+          "input_tokens": 9792,
+          "cache_read_tokens": 2816,
+          "output_tokens": 151
+        }
+      }
+    },
+    "dub": {
+      "lines": 11,
+      "coverage": {
+        "C": 1.0,
+        "m": 0.0,
+        "P": 0.0,
+        "E": 0.0,
+        "other_tier": 0.0,
+        "unreviewed": 0.0
+      },
+      "coverage_reviewed": {
+        "C": 0.909,
+        "m": 0.0,
+        "P": 0.0,
+        "E": 0.091,
+        "other_tier": 0.0,
+        "unreviewed": 0.0
+      },
+      "retranslations_kept": 1,
+      "speech_fill": 1.011,
+      "speech_fill_median": 1.009,
+      "required_rate_in_band_share": 0.727
+    },
+    "timing": {
+      "lines": 11,
+      "skipped": 0,
+      "lag_p95": 0.1605,
+      "rate_p90": 1.0,
+      "rate_step_p90": 0.0136,
+      "freeze_s_per_10min": 0.0,
+      "said": {
+        "whole": 11,
+        "pieces": 0,
+        "joined": 0,
+        "anchored": 0
+      },
+      "speech_lines": 11,
+      "end_error_p10": -0.6,
+      "end_error_p50": -0.14,
+      "end_error_p90": 0.52,
+      "end_early_1s_share": 0.0909,
+      "long_lines": 0,
+      "long_end_error_p50": null,
+      "overlap_speech_mean": 0.712,
+      "silent_s_per_min": 5.0801,
+      "anchors": 0,
+      "anchor_err_p50": null,
+      "anchor_err_p95": null,
+      "guards": {
+        "lag_p95": {
+          "value": 0.1605,
+          "limit": 0.3,
+          "ok": true
+        },
+        "rate_p90": {
+          "value": 1.0,
+          "limit": 1.1,
+          "ok": true
+        },
+        "freeze_s_per_10min": {
+          "value": 0.0,
+          "limit": 1.0,
+          "ok": true
+        },
+        "rate_step_p90": {
+          "value": 0.0136,
+          "limit": null,
+          "ok": null
+        },
+        "silent_s_per_min": {
+          "value": 5.0801,
+          "limit": 3.0,
+          "ok": false
+        },
+        "end_error_p50": {
+          "value": -0.14,
+          "limit": 0.3,
+          "ok": true
+        },
+        "end_early_1s_share": {
+          "value": 0.0909,
+          "limit": null,
+          "ok": null
+        },
+        "long_end_error_p50": {
+          "value": null,
+          "limit": null,
+          "ok": null
+        }
+      }
+    },
+    "planner": {
+      "lines": 11,
+      "minutes": 0.9657,
+      "lag_p50": 0.0,
+      "lag_p95": 0.1604,
+      "lag_max": 0.3209,
+      "lag_min": -0.1854,
+      "lag_max_unflagged": 0.3209,
+      "late_share": 0.0,
+      "rate_mean": 1.0062,
+      "rate_p50": 1.0,
+      "rate_p90": 1.0,
+      "rate_max": 1.0683,
+      "at_cap_share": 0.0,
+      "rate_step_p90": 0.0137,
+      "rate_step_ok_share": 1.0,
+      "video_slowdowns": 0,
+      "freezes": 0,
+      "freeze_s": 0,
+      "freezes_per_min": 0.0,
+      "freeze_s_per_min": 0.0,
+      "freeze_s_per_10min": 0.0,
+      "freeze_line_share": 0.0,
+      "overdraft_s": 0.0,
+      "overdraft_lines": 0,
+      "overdraft_carried_s": 0.0,
+      "needs_shorter": 1,
+      "iou_mean": 0.7664,
+      "pieced_lines": 0,
+      "joined_lines": 0,
+      "anchored_lines": 0,
+      "speech_lines": 11,
+      "end_error_p10": -0.6,
+      "end_error_p50": -0.14,
+      "end_error_p90": 0.52,
+      "end_early_1s_share": 0.0909,
+      "long_lines": 0,
+      "long_end_error_p50": null,
+      "overlap_speech_mean": 0.712,
+      "silent_s_per_min": 5.0801,
+      "anchors": 0,
+      "anchor_err_p50": null,
+      "anchor_err_p95": null
+    },
+    "export": {
+      "path": "/var/folders/nf/rsmk5ph90qg95gy9fnr8lss40000gn/T/maata-map-audio-aur9ayz0/out/test (Telugu).mp4",
+      "bytes": 1550025,
+      "seconds": 0.95,
+      "video_seconds": 60.0,
+      "loudness": {
+        "I": -16.0,
+        "TP": -2.01,
+        "LRA": 7.94
+      },
+      "warning": null,
+      "video": {
+        "file": "/private/tmp/maata-quality-CWNtmF/test.mp4",
+        "owned": false,
+        "codec": "h264",
+        "width": 320,
+        "height": 180,
+        "fps": 10.0,
+        "start": 0.0
+      }
+    }
+  },
+  "export_checks": {
+    "streams": [
+      {
+        "index": 0,
+        "type": "video",
+        "codec": "h264",
+        "language": "und",
+        "title": "VideoHandler",
+        "default": true,
+        "width": 320,
+        "height": 180
+      },
+      {
+        "index": 1,
+        "type": "audio",
+        "codec": "aac",
+        "language": "tel",
+        "title": "SoundHandler",
+        "default": true,
+        "sample_rate": 44100,
+        "channels": 2
+      },
+      {
+        "index": 2,
+        "type": "subtitle",
+        "codec": "mov_text",
+        "language": "tel",
+        "title": "Telugu",
+        "default": false
+      },
+      {
+        "index": 3,
+        "type": "subtitle",
+        "codec": "mov_text",
+        "language": "eng",
+        "title": "English",
+        "default": false
+      }
+    ],
+    "boxes": [
+      "ftyp",
+      "moov",
+      "free",
+      "mdat"
+    ],
+    "video_copied": true,
+    "layout_ok": true,
+    "loudness": {
+      "I": -16.0,
+      "TP": -2.01,
+      "LRA": 7.94
+    },
+    "loudness_ok": true,
+    "flash_s": 10.0,
+    "beep_onset_s": 10.000090702947846,
+    "av_offset_ms": 0.09,
+    "av_ok": true,
+    "watermark": {
+      "telugu_lines": 0.972,
+      "source_control": 0.005
+    },
+    "lines": 11,
+    "skipped": 0,
+    "watermark_ok": true
+  },
+  "limits": [
+    "All 11 units voiced, no skips. Export checks pass, but this does not mean every quality guard passes.",
+    "Uncovered source speech is 5.08 seconds/minute, above the 3-second guide. Early speech endings remain acceptance work.",
+    "One ASR tail artifact received E in the initial meaning review; its correction has heuristic C, not an independent fresh semantic review.",
+    "Native Telugu naturalness/pronunciation and representative long-video throughput are not established by this smoke."
+  ]
+}

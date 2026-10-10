@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "scope": "Read-only diagnosis of the rejected conditioned production-adapter sample; no further synthesis or models run.",
+  "evidence_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/results.json",
+  "raw_vs_marked": [
+    {
+      "id": "conversation",
+      "raw_samples": 42960,
+      "marked_samples": 42960,
+      "sample_rate": 24000,
+      "seconds": 1.79,
+      "planner_rate": 1.0
+    },
+    {
+      "id": "names_numbers",
+      "raw_samples": 99120,
+      "marked_samples": 99120,
+      "sample_rate": 24000,
+      "seconds": 4.13,
+      "planner_rate": 1.0
+    },
+    {
+      "id": "expressive",
+      "raw_samples": 78000,
+      "marked_samples": 78000,
+      "sample_rate": 24000,
+      "seconds": 3.25,
+      "planner_rate": 1.0
+    }
+  ],
+  "cached_reference": {
+    "audio_tokens_shape": [
+      8,
+      73
+    ],
+    "reference_text_matches_original_conversation": true,
+    "codec_hop": 960,
+    "codec_frame_rate": 25,
+    "prompt_preprocessing": false
+  },
+  "pure_upstream_estimator_comparison": [
+    {
+      "id": "conversation",
+      "conditioned_tokens": 73,
+      "automatic_tokens": 68,
+      "conditioned_target_seconds": 2.92,
+      "automatic_target_seconds": 2.72
+    },
+    {
+      "id": "names_numbers",
+      "conditioned_tokens": 102,
+      "automatic_tokens": 96,
+      "conditioned_target_seconds": 4.08,
+      "automatic_target_seconds": 3.84
+    },
+    {
+      "id": "expressive",
+      "conditioned_tokens": 82,
+      "automatic_tokens": 77,
+      "conditioned_target_seconds": 3.28,
+      "automatic_target_seconds": 3.08
+    }
+  ],
+  "automatic_seed_policy": {
+    "source": "scripts/experiments/omnivoice_smoke.py:202",
+    "conversation": 20261010,
+    "names_numbers": 20261011,
+    "expressive": 20261012,
+    "matched_across_A_and_B_per_sentence": true,
+    "single_fixed_seed_for_all_lines": false,
+    "normalized_names_seed_unchanged": 20261011,
+    "voice_consistency_evidence": "Not measured or independently listened to; user preferred B but automatic mode has no persistent speaker identity conditioning."
+  },
+  "conditioned_seed_policy": "Production worker did not reset RNG per request. This differs from original fixed-seed auto auditions.",
+  "conclusions": [
+    "No time compression, cap cropping, watermark length change or export truncation explains short conversation; saved raw already1.79s.",
+    "Reference-based estimator requested73tokens, not fewer than automatic68; duration underestimation relative to automatic is not evidenced.",
+    "Upstream removes silence after decoding at -50dB, retains100ms edge silence/500ms middle silence, then applies100ms fade+padding. Our raw is postprocessed, so decoder PCM and removed spans are unavailable.",
+    "ASR omission of final clause plus short waveform justifies human audition; does not alone prove audible omission."
+  ],
+  "bounded_next_plan": "If authorized, run the exact production worker in automatic/no-reference mode on the same3normalizedoriginal phrases and original per-line seeds. Preserve rejected conditioned result; record estimated codecframes and pre/postprocess waveform lengths. Perform no duration forcing or arbitrary slowdown. Confirm human voice/meaning acceptance; no automatic speaker-consistency claim.",
+  "production_mutations": false,
+  "additional_generation_calls": 0
+}

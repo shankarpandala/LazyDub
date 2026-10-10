@@ -1,30 +1,80 @@
 """The coverage review's deterministic side (docs/research/dubbing-2026-09/ARCHITECTURE.md §4.6; research gap-4 E5).
 
 Claude classes every line of a scene on the wording chosen for it (the review call, with its own system prompt and schema
-in text/scene_prompt.py): C complete, m a minor drop (an intensifier, a hedge, a filler, a backchannel), P a content
+in text/scene_prompt.py): C complete, m a minor drop (a filler, non-factual emphasis, a backchannel), P a content
 phrase or clause missing, E a meaning error. A P or E line gets one re-translation from its English, with the missing
-words named; Claude never reviews that one again. The checks here class it instead, and the better of the two wordings
-by class is kept, the reviewed one on a tie. Pure: no model, no I/O.
+words named. Its exact candidate wording receives one fresh semantic review; deterministic checks can reject it,
+never approve it. The better of the two wordings by class is kept, the original on a tie. Pure: no model, no I/O.
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 
-from ..backends.base import Coverage, Wording
-from ..text.akshara import count_units
+from ..backends.base import Coverage, LineResult, Wording
 from .validators import meaning_flags
 
 CLASSES = ("C", "m", "P", "E")  # best first
+APPROVAL_POLICY = "semantic-correction-v1"
 REDO = frozenset("PE")           # classes that get a re-translation
 ERRORS = ("negation", "number", "name", "question", "addition", "other")
+
+# This is a conservative exclusion from the existing-full shortcut, not a meaning classifier. A model review has
+# accepted a full wording that dropped "may"; finding a Telugu qualifier somewhere cannot establish its scope.
+# Ambiguous English uses ("in May", "about the router") deliberately forgo the shortcut and keep the normal redo.
+_FULL_FALLBACK_RISK = re.compile(
+    r"\b(?:may|might|could|can|should|would|perhaps|maybe|probably|possibly|likely|unlikely|apparently|reportedly|"
+    r"seem(?:s|ed|ing)?|appear(?:s|ed|ing)?|approximately|roughly|estimated|about|rare(?:ly)?|usually|sometimes|"
+    r"often|almost|nearly)\b", re.I)
+
+
+def source_allows_full_fallback(en: str) -> bool:
+    """Whether this source avoids the explicit qualifications excluded from the full-wording shortcut.
+
+    False keeps the ordinary review/correction path even if the full Telugu seems to retain the qualifier. True
+    does not approve meaning: exact full C, selected P/E and live timing eligibility are still required.
+    """
+    return _FULL_FALLBACK_RISK.search(en) is None
+
+
+def approved_full(line: LineResult) -> bool:
+    """A full wording explicitly passed semantic review after the selected wording failed.
+
+    It may be an existing fallback or a freshly reviewed correction. A heuristic correction, ordinary full review, minor drop,
+    or absent full wording cannot pin a line. `first` remains the rejected wording's diagnostic class.
+    """
+    c = line.coverage
+    return ("full" in line.tiers and c is not None and c.cls == "C" and c.by == "review"
+            and c.tier == "full" and c.first in REDO)
+
+
+def check_review_fallbacks(data: object, ids: Sequence[int]) -> set[int]:
+    """Only unambiguous, internally consistent C verdicts for offered fallback ids authorize reuse.
+
+    A missing/malformed/non-C fallback never invalidates the primary verdict or promotes a wording by inference.
+    """
+    rows = data.get("lines", []) if isinstance(data, dict) else []
+    if not isinstance(rows, list):
+        return set()
+    out = set()
+    for i in ids:
+        matches = [r for r in rows if isinstance(r, dict) and not isinstance(r.get("id"), bool) and r.get("id") == i]
+        if len(matches) != 1:
+            continue
+        f = matches[0].get("fallback")
+        if isinstance(f, dict) and set(f) == {"class", "missing", "added", "error"} \
+                and f["class"] == "C" and f["missing"] == [] and f["added"] == [] and f["error"] == "none":
+            out.add(i)
+    return out
 
 
 def _strings(raw: object) -> tuple[str, ...]:
     return tuple(dict.fromkeys(x.strip() for x in raw if isinstance(x, str) and x.strip())) if isinstance(raw, list) else ()
 
 
-def check_review(data: object, ids: Sequence[int]) -> tuple[dict[int, Coverage], dict[int, str]]:
+def check_review(data: object, ids: Sequence[int], *, strict_complete: bool = False) -> tuple[dict[int, Coverage], dict[int, str]]:
     """A review reply against the ids asked for: (a class for each id answered exactly once, why each other id has
     none). Ids nobody asked for are ignored. An E comes with its kind ("other" when the reply names none); the other
     classes carry none."""
@@ -47,6 +97,10 @@ def check_review(data: object, ids: Sequence[int]) -> tuple[dict[int, Coverage],
         if cls not in CLASSES:
             why[i] = f"class {cls!r} unknown"
             continue
+        if strict_complete and cls == "C" and (raw.get("missing") != [] or raw.get("added") != []
+                                                  or raw.get("error") != "none"):
+            why[i] = "complete verdict contradicts its findings"
+            continue
         error = (raw.get("error") if raw.get("error") in ERRORS else "other") if cls == "E" else None
         out[i] = Coverage(cls, _strings(raw.get("missing")), _strings(raw.get("added")), error)
     return out, why
@@ -60,20 +114,22 @@ def finding(c: Coverage) -> tuple[str, ...]:
     return (f"a review found a meaning error ({c.error}) in the earlier Telugu{added}",)
 
 
-def redo_class(en: str, before: Coverage, reviewed: Wording, new: Wording, tier: str = "full") -> Coverage:
-    """The class the checks give a re-translation's wording on `tier`, set against the line's own wording on that tier
-    (`reviewed`, the one the review classed when the re-translation has its tier). E when a negation, a question or a
-    number doesn't match the English, unless `reviewed` has the same mismatch and the review found no such error there:
-    a flag both carry is the heuristic missing the English, and says nothing of which wording is better. P, for a P
-    line, while it is no longer in aksharas than `reviewed` (the phrase can't be back). Else C. `first` keeps the
-    review's class of the wording it would replace."""
+def redo_class(en: str, before: Coverage, reviewed: Wording, new: Wording, tier: str = "full",
+               semantic: Coverage | None = None) -> Coverage | None:
+    """Combine the exact candidate's fresh semantic verdict with conservative deterministic rejection.
+
+    Missing semantic review never approves a candidate, regardless of its length. Existing shared heuristic
+    mismatches stay calibrated by the original review; a new/reconfirmed meaning error still vetoes acceptance.
+    `first` preserves the original verdict. An explicitly complete full correction is protected like a reviewed
+    full fallback, so a later timing fit cannot replace it with unreviewed shorter wording.
+    """
     was = meaning_flags(en, reviewed)
     flags = [k for k in meaning_flags(en, new) if k not in was or (before.cls == "E" and before.error == k)]
     if flags:
         return Coverage("E", error=flags[0], tier=tier, by="validators", first=before.cls)
-    if before.cls == "P" and count_units(new.spoken) <= count_units(reviewed.spoken):
-        return Coverage("P", before.missing, tier=tier, by="validators", first=before.cls)
-    return Coverage("C", tier=tier, by="validators", first=before.cls)
+    if semantic is not None and semantic.cls == "C" and (semantic.missing or semantic.added or semantic.error):
+        return None  # an internally contradictory verdict cannot certify a complete correction
+    return None if semantic is None else replace(semantic, tier=tier, by="review", first=before.cls)
 
 
 def rank(c: Coverage | None) -> int:

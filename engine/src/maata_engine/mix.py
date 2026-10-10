@@ -201,7 +201,9 @@ class Mix:
             out = np.zeros(b - a, np.float32)
             while k < len(self.lines) and int(round(self.lines[k].start * self.voice_sr)) + self.lines[k].samples <= a:
                 k += 1
-            for line in self.lines[k:]:
+            # Index only the overlapping lines; slicing the whole remaining timeline copies it on every block.
+            for j in range(k, len(self.lines)):
+                line = self.lines[j]
                 s = int(round(line.start * self.voice_sr))
                 if s >= b:
                     break
@@ -311,16 +313,26 @@ def duck_spans(lines: Spans, speech: Spans) -> tuple[list[tuple[float, float]], 
     return duck, bare
 
 
-def _ramps(spans: list[tuple[float, float]], a: int, n: int, sr: int) -> np.ndarray:
+class _RampIndex:
+    """Immutable span bounds reused by every block of one background mix."""
+
+    def __init__(self, spans: Spans) -> None:
+        self.spans = tuple(spans)
+        self.starts = tuple(s for s, _ in self.spans)
+        self.ends = tuple(e for _, e in self.spans)
+
+
+def _ramps(index: _RampIndex, a: int, n: int, sr: int) -> np.ndarray:
     """How far into its spans each sample of [a, a + n) (at `sr`) is: 1 inside one, a raised cosine from 0 to 1 over the
     ATTACK s before it and from 1 to 0 over the RELEASE s after it, 0 elsewhere (the highest where they meet)."""
     import bisect
 
     r = np.zeros(n, np.float64)
     t0, t1 = a / sr, (a + n) / sr
-    starts = [x for x, _ in spans]
-    for s, e in spans[max(0, bisect.bisect_left([y for _, y in spans], t0 - RELEASE) - 1):
-                      bisect.bisect_right(starts, t1 + ATTACK)]:
+    lo = max(0, bisect.bisect_left(index.ends, t0 - RELEASE) - 1)
+    hi = bisect.bisect_right(index.starts, t1 + ATTACK)
+    for k in range(lo, hi):
+        s, e = index.spans[k]
         for lo, hi, f in ((s - ATTACK, s, lambda t: 0.5 - 0.5 * np.cos(np.pi * (t - (s - ATTACK)) / ATTACK)),
                           (s, e, lambda t: np.ones_like(t)),
                           (e, e + RELEASE, lambda t: 0.5 + 0.5 * np.cos(np.pi * (t - e) / RELEASE))):
@@ -330,10 +342,14 @@ def _ramps(spans: list[tuple[float, float]], a: int, n: int, sr: int) -> np.ndar
     return r
 
 
-def envelope(duck: list[tuple[float, float]], bare: list[tuple[float, float]], a: int, n: int,
+def envelope(duck: Spans, bare: Spans, a: int, n: int,
              sr: int = MIX_SR) -> np.ndarray:
     """The bed's gain (linear) for samples [a, a + n) at `sr`: DUCK_DB times how far into a `duck` span, plus
     DUCK_BARE_DB - DUCK_DB times how far into a `bare` one (bare spans lie inside duck spans, so each ramp is exact)."""
+    return _envelope(_RampIndex(duck), _RampIndex(bare), a, n, sr)
+
+
+def _envelope(duck: _RampIndex, bare: _RampIndex, a: int, n: int, sr: int = MIX_SR) -> np.ndarray:
     db = DUCK_DB * _ramps(duck, a, n, sr) + (DUCK_BARE_DB - DUCK_DB) * _ramps(bare, a, n, sr)
     return (10 ** (db / 20)).astype(np.float32)
 
@@ -381,10 +397,10 @@ class Background:
         """The bed as the mix reads it, on the output's clock (dub time t plays at t + `off`), times `gain_db` (the
         balance) and the ducking envelope."""
         shift, g = int(round(off * MIX_SR)), 10 ** (gain_db / 20)
-        duck, bare = list(self.duck), list(self.bare)
+        duck, bare = _RampIndex(self.duck), _RampIndex(self.bare)
 
         def bed(a: int, b: int) -> np.ndarray:
-            return self.read(a - shift, b - shift) * (g * envelope(duck, bare, a - shift, b - a))
+            return self.read(a - shift, b - shift) * (g * _envelope(duck, bare, a - shift, b - a))
 
         return bed
 

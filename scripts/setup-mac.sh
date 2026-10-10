@@ -3,8 +3,8 @@
 #   ./scripts/setup-mac.sh            # engine deps, models (~4.9 GB: ASR, diarization, TTS), UI build
 # Env: HF_TOKEN   – needed once for pyannote/speaker-diarization-community-1 (accept its terms on HF first);
 #                   without it, Maata dubs every speaker with one voice until the model is added.
-# Translation runs through your own Claude Code (ADR-019): no translation model is downloaded. Install Claude Code and
-# sign in with `claude auth login`; only the English transcript, as text, goes to Anthropic.
+# Translation runs through your own Codex CLI (ADR-025): no translation model is downloaded. Install Codex and
+# sign in with `codex login`; transcript, translation and video-context text goes to OpenAI, never audio.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 bold() { printf "\033[1m%s\033[0m\n" "$*"; }
@@ -30,12 +30,16 @@ bold "→ Engine (Python, MLX + MPS; chatterbox-telugu's patched Chatterbox is p
 bold "→ Models (pinned by commit + sha256; resumable)"
 ( cd engine && uv run maata-bench fetch --backend apple ) || die "Model download failed (see above). Re-run to resume."
 
-bold "→ Claude Code (translation)"
-if command -v claude >/dev/null || [[ -x "${MAATA_CLAUDE_BIN:-}" ]]; then
-  echo "  $("${MAATA_CLAUDE_BIN:-claude}" --version 2>/dev/null || echo "claude found")"
-  echo "  Sign in once, if you haven't: claude auth login"
+bold "→ OmniVoice (separate pinned runtime and Telugu voice)"
+./scripts/setup-omnivoice.sh || die "OmniVoice setup failed (see above). Re-run to resume."
+
+bold "→ Codex CLI (translation)"
+maata_codex_bin="$(engine/.venv/bin/python -c 'from maata_engine.codex_cli import find_binary; print(find_binary() or "")')"
+if [[ -n "$maata_codex_bin" && -x "$maata_codex_bin" ]]; then
+  echo "  $("$maata_codex_bin" --version 2>/dev/null || echo "codex found")"
+  echo "  Sign in once, if you haven't: codex login"
 else
-  echo "  ! Claude Code isn't installed: Maata translates through it. Install it, then run: claude auth login"
+  echo "  ! Codex CLI isn't installed: Maata translates through it. Install it, then run: codex login"
 fi
 
 bold "→ UI"

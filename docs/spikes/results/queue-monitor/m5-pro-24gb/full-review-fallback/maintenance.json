@@ -1,0 +1,16 @@
+{
+  "checked_at": 1791253777.6957781,
+  "cached_files_preserved": 3299,
+  "missing_cached_files": 0,
+  "completed_outputs_identical": 7,
+  "current_job_resumed": "xi-zHJL5bnI",
+  "remaining_queue": [
+    "4Vz6L8B73i4"
+  ],
+  "deliberate_pauses_preserved": true,
+  "backend": "apple",
+  "device": "mps",
+  "text_model": "gpt-6-luna",
+  "health_problem": null,
+  "native_window": "not opened; using existing background-supervisor approach"
+}

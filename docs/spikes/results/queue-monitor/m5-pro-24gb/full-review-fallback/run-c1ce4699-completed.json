@@ -1,0 +1,487 @@
+{
+  "machine": "Apple M5 Pro 24 GB",
+  "observed_at": 1791257926.9610791,
+  "production_commit": "5ed957f",
+  "completed_job": {
+    "video_id": "xi-zHJL5bnI",
+    "status": "done",
+    "stage": "export",
+    "duration_s": 4296.13,
+    "queue_at": 1791223124.075826,
+    "state_age_s": 271.6,
+    "run_id": "c1ce46998a60489087d54c2b25762c9d",
+    "scope": "latest_run",
+    "scope_started_at": 1791253726.031,
+    "run_wall_s": 3866.039,
+    "observed_span_s": 3866.047,
+    "progress": {
+      "fetch": {
+        "state": "done",
+        "done": 69.5,
+        "total": 69.5,
+        "unit": "MB"
+      },
+      "speakers": {
+        "state": "done",
+        "done": 1,
+        "total": 1,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "state": "done",
+        "done": 4296.1,
+        "total": 4296.1,
+        "unit": "video s"
+      },
+      "units": {
+        "state": "done",
+        "done": 771,
+        "total": 771,
+        "unit": "lines"
+      },
+      "voices": {
+        "state": "done",
+        "done": 2,
+        "total": 2,
+        "unit": "speakers"
+      },
+      "brief": {
+        "state": "done",
+        "done": 2,
+        "total": 2,
+        "unit": "parts"
+      },
+      "separate": {
+        "state": "done",
+        "done": 4296.1,
+        "total": 4296.1,
+        "unit": "video s"
+      },
+      "translate": {
+        "state": "done",
+        "done": 771,
+        "total": 771,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "state": "done",
+        "done": 3759.9,
+        "total": 3759.9,
+        "unit": "speech s"
+      },
+      "finish": {
+        "state": "done",
+        "done": 771,
+        "total": 771,
+        "unit": "lines"
+      },
+      "video": {
+        "state": "done",
+        "done": 1005.9,
+        "total": 1005.9,
+        "unit": "MB"
+      },
+      "export": {
+        "state": "done",
+        "done": 4296.1,
+        "total": 4296.1,
+        "unit": "video s"
+      }
+    },
+    "progress_delta": {
+      "fetch": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      },
+      "speakers": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "fraction"
+      },
+      "transcript": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "units": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voices": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "speakers"
+      },
+      "brief": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "parts"
+      },
+      "separate": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "video s"
+      },
+      "translate": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "lines"
+      },
+      "voice_lines": {
+        "advanced": 683.1,
+        "interval_s": 897.669,
+        "units_per_second": 0.761,
+        "unit": "speech s"
+      },
+      "finish": {
+        "advanced": 158.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.176,
+        "unit": "lines"
+      },
+      "video": {
+        "advanced": 0.0,
+        "interval_s": 897.669,
+        "units_per_second": 0.0,
+        "unit": "MB"
+      }
+    },
+    "timings": {
+      "text_calls": [
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "fit",
+          "calls": 89,
+          "p50_s": 8.556,
+          "max_s": 26.563,
+          "successful_calls": 89,
+          "successful_p50_s": 8.556,
+          "successful_max_s": 26.563,
+          "summed_call_s": 860.787,
+          "active_union_s": 703.797,
+          "errors": {},
+          "input_tokens": 1131338,
+          "cached_input_tokens": 940032,
+          "total_input_tokens": 1131338,
+          "cached_input_fraction": 0.831
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "rephrase",
+          "calls": 15,
+          "p50_s": 12.331,
+          "max_s": 19.759,
+          "successful_calls": 15,
+          "successful_p50_s": 12.331,
+          "successful_max_s": 19.759,
+          "summed_call_s": 191.485,
+          "active_union_s": 191.485,
+          "errors": {},
+          "input_tokens": 196197,
+          "cached_input_tokens": 156928,
+          "total_input_tokens": 196197,
+          "cached_input_fraction": 0.8
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "retranslate",
+          "calls": 151,
+          "p50_s": 10.088,
+          "max_s": 40.993,
+          "successful_calls": 151,
+          "successful_p50_s": 10.088,
+          "successful_max_s": 40.993,
+          "summed_call_s": 1663.888,
+          "active_union_s": 1315.495,
+          "errors": {},
+          "input_tokens": 1959660,
+          "cached_input_tokens": 1482496,
+          "total_input_tokens": 1959660,
+          "cached_input_fraction": 0.757
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "review",
+          "calls": 237,
+          "p50_s": 7.069,
+          "max_s": 28.041,
+          "successful_calls": 237,
+          "successful_p50_s": 7.069,
+          "successful_max_s": 28.041,
+          "summed_call_s": 2000.391,
+          "active_union_s": 1587.725,
+          "errors": {},
+          "input_tokens": 1280181,
+          "cached_input_tokens": 604928,
+          "total_input_tokens": 1280181,
+          "cached_input_fraction": 0.473
+        },
+        {
+          "provider": "codex",
+          "model": "gpt-6-luna",
+          "call": "scene",
+          "calls": 98,
+          "p50_s": 16.48,
+          "max_s": 28.461,
+          "successful_calls": 98,
+          "successful_p50_s": 16.48,
+          "successful_max_s": 28.461,
+          "summed_call_s": 1616.04,
+          "active_union_s": 1144.236,
+          "errors": {},
+          "input_tokens": 1271779,
+          "cached_input_tokens": 1000448,
+          "total_input_tokens": 1271779,
+          "cached_input_fraction": 0.787
+        }
+      ],
+      "stages": [
+        {
+          "stage": "fetch",
+          "wall_s": 0.035,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "speakers",
+          "wall_s": 0.006,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "transcript",
+          "wall_s": 0.005,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "units",
+          "wall_s": 0.022,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voices",
+          "wall_s": 6.072,
+          "gpu_s": 6.051,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "brief",
+          "wall_s": 0.01,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "separate",
+          "wall_s": 0.262,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "translate",
+          "wall_s": 1925.934,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "voice_lines",
+          "wall_s": 3777.558,
+          "gpu_s": 2671.688,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "finish",
+          "wall_s": 3801.323,
+          "gpu_s": 23.615,
+          "outcome": "done",
+          "cached": false
+        },
+        {
+          "stage": "video",
+          "wall_s": 0.552,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": true
+        },
+        {
+          "stage": "export",
+          "wall_s": 58.451,
+          "gpu_s": 0.0,
+          "outcome": "done",
+          "cached": false
+        }
+      ],
+      "gpu_work": [
+        {
+          "stage": "finish",
+          "operation": "release",
+          "calls": 1,
+          "run_s": 23.615,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "transcript",
+          "operation": "release",
+          "calls": 1,
+          "run_s": 0.0,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "pack_take",
+          "calls": 795,
+          "run_s": 0.841,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "synthesize_takes",
+          "calls": 796,
+          "run_s": 1622.907,
+          "queue_wait_s": 0.009
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "unpack_take",
+          "calls": 14,
+          "run_s": 2.211,
+          "queue_wait_s": 0.0
+        },
+        {
+          "stage": "voice_lines",
+          "operation": "vocode",
+          "calls": 1040,
+          "run_s": 1045.73,
+          "queue_wait_s": 0.006
+        },
+        {
+          "stage": "voices",
+          "operation": "prepare_voice_parts",
+          "calls": 2,
+          "run_s": 6.051,
+          "queue_wait_s": 0.0
+        }
+      ],
+      "finalized_units_in_scope": 771,
+      "finalized_coverage": {
+        "P": 81,
+        "C": 682,
+        "m": 5,
+        "E": 3
+      },
+      "finalized_coverage_provenance": {
+        "review": 651,
+        "validators": 120
+      },
+      "skipped_events": 0,
+      "note": "Stage and model-call times overlap. Finalized units can include restored takes; their stored synthesis costs are deliberately not summed as work performed in this run. GPU work records completed scheduled operations only, not in-flight work or hardware utilization."
+    },
+    "output_ready": true,
+    "quality_report": {
+      "lines": 771,
+      "long": 21,
+      "unreviewed": 0,
+      "overdraft": 0.15,
+      "carried": 0.0
+    },
+    "coverage": {
+      "C": 682,
+      "m": 5,
+      "P": 81,
+      "E": 3,
+      "otherTier": 0,
+      "unreviewed": 0,
+      "skipped": 0,
+      "lines": 771
+    },
+    "has_error": false
+  },
+  "output_verification": {
+    "exists": true,
+    "size_bytes": 1111432741,
+    "state_size_matches": true,
+    "sha256": "aceed1551d20dda06d07ebdd583a4df30c9e3a5a2fbd03710e9fc2182281bff9",
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "index": 0,
+          "codec_name": "h264",
+          "codec_type": "video",
+          "duration": "4296.080000",
+          "tags": {
+            "language": "und"
+          }
+        },
+        {
+          "index": 1,
+          "codec_name": "aac",
+          "codec_type": "audio",
+          "duration": "4296.087007",
+          "tags": {
+            "language": "tel"
+          }
+        },
+        {
+          "index": 2,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "4292.844000",
+          "tags": {
+            "language": "tel"
+          }
+        },
+        {
+          "index": 3,
+          "codec_name": "mov_text",
+          "codec_type": "subtitle",
+          "duration": "4292.760000",
+          "tags": {
+            "language": "eng"
+          }
+        }
+      ],
+      "format": {
+        "duration": "4296.087007",
+        "size": "1111432741"
+      }
+    },
+    "loudness": {
+      "I": -16.03,
+      "TP": -1.73,
+      "LRA": 4.66
+    },
+    "export_warning": null
+  },
+  "interpretation": {
+    "run": "Resumed current run only; preprocessing reused. Not a fresh end-to-end benchmark, and excludes old quota waiting.",
+    "timing": "Text, speech, and finish stages overlap; scheduled operation durations are not GPU utilization.",
+    "quality": "Semantic-review and validators-only provenance are separated. P/E, timing-long, native listening, and underfill concerns remain; no all-quality-pass claim.",
+    "queue": "175-minute job started automatically; same background engine continued without maintenance."
+  }
+}

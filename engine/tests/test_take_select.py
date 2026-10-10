@@ -1,7 +1,29 @@
 """Take selection without a Telugu recogniser (ARCHITECTURE §3.8, §3.13): drop cap hits and takes far shorter than
 their wording, then pick by duration fit to the line's speech time."""
 
-from maata_engine.qa.take import failure, pick
+import numpy as np
+import pytest
+
+from maata_engine.qa.take import audio_failure, failure, pick
+
+
+@pytest.mark.parametrize(("audio", "reason"), [
+    (np.array([], dtype=np.float32), "audio_empty"),
+    (np.zeros(100, np.float32), "audio_silent"),
+    (np.full(100, 1e-8, np.float32), "audio_silent"),
+    (np.array([0.1, np.nan]), "audio_nonfinite"),
+    (np.array([0.1, np.inf]), "audio_nonfinite"),
+    (np.ones((2, 100), np.float32), "audio_shape"),
+])
+def test_selected_waveform_rejects_broken_audio(audio, reason):
+    assert audio_failure(audio) == reason
+
+
+def test_quiet_audio_and_long_pauses_are_not_mistaken_for_failed_speech():
+    quiet = 1e-4 * np.sin(np.arange(100))
+    assert audio_failure(quiet) is None
+    assert audio_failure(np.concatenate([np.zeros(10_000), quiet, np.zeros(10_000)])) is None
+    assert audio_failure(np.array([1.0, -1.0])) is None  # clipping is not proof of missing speech
 
 
 def test_a_take_that_ran_to_its_cap_or_is_far_too_short_failed():

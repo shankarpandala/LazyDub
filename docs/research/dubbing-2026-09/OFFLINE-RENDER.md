@@ -190,7 +190,7 @@ As built, unchanged: `ClaudeTranslator.make_brief(meta, transcript, previous)` o
 
 As built, unchanged except the prompt (§2.18):
 - Waits for the brief and the voices stage (the band rule uses each speaker's calibrated pace).
-- The whole video's units are cut once into scenes of up to 150 s and 30 lines (`scene_cut(…, nth=2, final=True)`). A preview translates the scenes that start before its stop point plus `PAST_STOP` (30 s).
+- The whole video's units are cut once into scenes of up to 30 s and 6 complete lines (`scene_cut`, ADR-023). Prefer a speaker turn or pause in the second half of the time limit; an overlong sentence stays whole. Smaller batches release reviewed text to the dub loop sooner. A preview translates the scenes that start before its stop point plus `PAST_STOP` (30 s); preview/cache state never changes the boundaries.
 - Scenes the line cache holds whole are served first, in order; the others are split into 3 contiguous lanes, each translating its block in order with `_scene(req)` (scene call, review, one re-translation of P/E lines), so every scene but a lane's first has the previous scene's Telugu as context.
 - Fits are waited for before a scene is voiced; failures back off and wait out holds with the job `waiting`; a scene released by a `ClaudeCLIError` is retried after the hold; skipped lines go to `render/skipped.jsonl`.
 - The coverage report (C/m/P/E/otherTier/unreviewed/skipped) goes to `job.json`.
@@ -208,7 +208,7 @@ One task owns the GPU and does, in this order of preference: fix-up takes the fi
 
 ### 2.10 Scene fix-ups and the voiced-wording review
 
-As built (step 4), unchanged: once a scene's last line is voiced, one batched `rephrase` for its long lines and one `review` of the wordings voiced without a class run beside the GPU (`RenderJob._settle`); rephrase answers and reviews go to `render/fixups.jsonl`, never to `lines.jsonl`; fix-up syntheses are capped at `max(3, FIXUP_SHARE` (15 %) `× lines)`; a kept fix-up is placed with `_shortened`; a line still long is flagged `long`; while Claude is held the scene settles as it is, its lines flagged.
+Once a scene's last line is voiced, one batched `rephrase` for its long lines and one `review` of the wordings voiced without a class run beside the GPU (`RenderJob._settle`); rephrase answers and reviews go to `render/fixups.jsonl`, never to `lines.jsonl`; fix-up syntheses are capped at `max(3, FIXUP_SHARE` (15 %) `× lines)`. Rephrases recheck the remaining budget when the dub loop executes them, because several scenes can queue work against the same remaining slot. Meaning corrections remain eligible when that budget is exhausted. A kept fix-up is placed with `_shortened`; a line still long is flagged `long`; while Claude is held the scene settles as it is, its lines flagged.
 
 ### 2.11 The final plan, trailing the dub loop — and no freezes
 

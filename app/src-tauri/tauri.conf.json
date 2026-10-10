@@ -18,7 +18,7 @@
     "category": "Video",
     "shortDescription": "YouTube, dubbed into Telugu on-device",
     "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.png"],
-    "resources": { "../dist/": "ui/" },
-    "macOS": { "minimumSystemVersion": "14.0" }
+    "resources": { "../dist/": "ui/", "./resources/runtime/": "runtime/" },
+    "macOS": { "minimumSystemVersion": "14.0", "signingIdentity": "-" }
   }
 }

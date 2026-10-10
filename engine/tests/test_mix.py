@@ -62,6 +62,25 @@ def test_two_overlapping_lines_of_different_speakers_are_summed(tmp_path):
     assert {int(round(f)) for f in freqs[np.argsort(spectrum)[-2:]]} == {300, 500}  # both voices are heard there
 
 
+def test_blockwise_voice_matches_direct_mix_with_nested_overlaps_and_boundary_clipping(tmp_path):
+    rng = np.random.default_rng(57)
+    # The first line outlasts several later ones; equal onsets retain their input summation order.
+    specs = [(10.0, 1.0, "S2"), (-0.5, 35.0, "S1"), (10.0, 15.0, "S1"),
+             (20.0, 0.0, "S2"), (39.5, 3.0, "S2"), (5.0, 2.0, "S2"), (42.0, 1.0, "S1")]
+    lines = [line(tmp_path, f"nested{k}", start, rng.uniform(-0.2, 0.2, round(length * SR)), sid)
+             for k, (start, length, sid) in enumerate(specs)]
+    gains = {"S1": -2.0, "S2": 3.0}
+    want = np.zeros(41 * SR, np.float32)
+    for row in sorted(lines, key=lambda x: x.start):
+        start = round(row.start * SR)
+        a, b = max(0, start), min(len(want), start + row.samples)
+        if b > a:
+            samples = np.asarray(np.load(row.pcm)[a - start:b - start], np.float32)
+            np.add(want[a:b], 10 ** (gains[row.speaker] / 20) * samples, out=want[a:b])
+    got = np.concatenate(list(Mix(lines, 41.0, SR, gains)._voice()))
+    assert np.array_equal(got, want)
+
+
 def test_speakers_are_equalised_and_the_gain_is_clamped(tmp_path):
     loud = [line(tmp_path, f"l{k}", 4.0 * k, tone(3.0, 220.0, 0.2), "S1") for k in range(4)]
     quiet = [line(tmp_path, f"q{k}", 20.0 + 4.0 * k, tone(3.0, 330.0, 0.1), "S2") for k in range(4)]  # 6 dB under
@@ -248,3 +267,23 @@ def test_the_bed_is_read_across_its_blocks_and_moved_onto_the_outputs_clock(tmp_
     env = mix.envelope(list(duck), [], -10, 2600)
     np.testing.assert_allclose(out[:, 10:2510], ref * 10 ** (-6 / 20) * env[10:2510], rtol=1e-5, atol=1e-7)
     assert not out[:, :10].any()
+
+
+def test_prepared_background_bounds_keep_the_envelope_on_a_long_timeline(tmp_path, monkeypatch):
+    # Three hours of original synthetic turns; inspect attacks, interiors, releases, and empty endpoints.
+    duck = tuple((6.0 * k + 0.25, 6.0 * k + 3.75) for k in range(1800))
+    bare = duck[::7]
+    bg = mix.Background(tmp_path, 1, 0, None, duck, bare)
+    monkeypatch.setattr(mix.Background, "read", lambda self, a, b: np.ones((2, b - a), np.float32))
+    off, gain = 0.137, -3.0
+    prepared = bg.on(off, gain)
+    shift = round(off * MIX_SR)
+    for seconds in (-1.0, 0.25, 3.75, 7 * 6.0 + 0.25, 5399.9, 10797.75, 10801.0):
+        a, n = round(seconds * MIX_SR) + shift - 1000, 2500
+        t = (a - shift + np.arange(n)) / MIX_SR
+        layers = [(s, e, mix.DUCK_DB) for s, e in duck if s - mix.ATTACK <= t[-1] and e + mix.RELEASE >= t[0]]
+        layers += [(s, e, mix.DUCK_BARE_DB - mix.DUCK_DB) for s, e in bare
+                   if s - mix.ATTACK <= t[-1] and e + mix.RELEASE >= t[0]]
+        expected = (10 ** (expected_db(t, layers) / 20)).astype(np.float32)
+        expected = np.repeat((10 ** (gain / 20) * expected)[None], 2, axis=0)
+        assert np.array_equal(prepared(a, a + n), expected)

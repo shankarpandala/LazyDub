@@ -55,6 +55,71 @@ MIN_SHARE = 0.01
 SAME_COS = 0.85
 FLOOR_CAP = 0.1
 _ADJACENT = 1.0            # s either side of a speaker's turn in which another's speech counts as next to theirs
+VOICE_PROFILE_POLICY = "source-pitch-v1"
+VOICE_PROFILE_SECONDS = 12.0
+
+
+def infer_voice_profile(clips: list[np.ndarray], sample_rate: int = 16_000) -> dict:
+    """Conservative vocal-range matching, not a person's gender identity.
+
+    Analyse at most twelve seconds of clean diarized speech with a YIN-style normalized difference function.
+    Low/high stable pitch may select the corresponding male/female synthesis profile; overlapping ranges, too
+    little periodic speech, noise and silence remain unresolved for the user to choose. No text/name inference.
+    The voiced fraction screens periodic versus unvoiced frames; it is not a calibrated confidence probability.
+    The caller must supply speech clips: pitch alone cannot reliably distinguish a musical note from a voice.
+    """
+    if sample_rate != 16_000:
+        raise ValueError("Voice profile analysis expects 16 kHz source audio")
+    pitches, usable, sampled = [], 0, 0
+    limit = round(VOICE_PROFILE_SECONDS * sample_rate)
+    sr, frame, hop, lo, hi = 8_000, 400, 160, 20, 123  # 50 ms; 20 ms hop; roughly 65–400 Hz
+    for clip in clips:
+        x = np.asarray(clip, np.float64).reshape(-1)[:max(0, limit - sampled)]
+        sampled += len(x)
+        if len(x) < 2 * frame or not np.isfinite(x).all():
+            continue
+        x = x[:len(x) // 2 * 2].reshape(-1, 2).mean(axis=1)
+        frames = np.lib.stride_tricks.sliding_window_view(x, frame)[::hop].copy()
+        frames -= frames.mean(axis=1, keepdims=True)
+        rms = np.sqrt(np.mean(frames * frames, axis=1))
+        frames = frames[rms >= max(1e-4, float(rms.max()) * 0.1)]
+        usable += len(frames)
+        if not len(frames):
+            continue
+        width = frame - hi
+        diff = np.zeros((len(frames), hi + 1))
+        for lag in range(1, hi + 1):
+            delta = frames[:, :width] - frames[:, lag:lag + width]
+            diff[:, lag] = np.sum(delta * delta, axis=1)
+        running = np.cumsum(diff[:, 1:], axis=1)
+        norm = np.ones_like(diff)
+        norm[:, 1:] = diff[:, 1:] * np.arange(1, hi + 1) / np.maximum(running, 1e-20)
+        for row in norm:
+            # First sufficiently periodic local minimum avoids choosing an octave below a strong fundamental.
+            candidates = np.flatnonzero((row[lo:hi] < 0.15) & (row[lo:hi] <= row[lo - 1:hi - 1])
+                                        & (row[lo:hi] <= row[lo + 1:hi + 1]))
+            if not len(candidates):
+                continue
+            lag = int(candidates[0]) + lo
+            denom = row[lag - 1] - 2 * row[lag] + row[lag + 1]
+            offset = 0.5 * (row[lag - 1] - row[lag + 1]) / denom if denom > 0 else 0.0
+            pitches.append(sr / (lag + float(np.clip(offset, -0.5, 0.5))))
+        if sampled >= limit:
+            break
+    voiced = len(pitches) * hop / sr
+    fraction = len(pitches) / usable if usable else 0.0
+    pitch = float(np.median(pitches)) if pitches else None
+    profile = None
+    if voiced >= 2.0 and fraction >= 0.2:
+        p = np.asarray(pitches)
+        if np.mean((p >= 70) & (p <= 160)) >= 0.8:
+            profile = "male"
+        elif np.mean((p >= 190) & (p <= 350)) >= 0.8:
+            profile = "female"
+    return {"policy": VOICE_PROFILE_POLICY, "profile": profile, "pitchHz": round(pitch, 1) if pitch else None,
+            "voicedSeconds": round(voiced, 2), "voicedFraction": round(fraction, 3),
+            "periodicFrames": len(pitches), "analysedFrames": usable,
+            "sampleSeconds": round(sampled / sample_rate, 2)}
 
 
 @dataclass(frozen=True, slots=True)

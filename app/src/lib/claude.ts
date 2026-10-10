@@ -1,28 +1,27 @@
 import type { ClaudeHealth, ClaudeProblem } from "./types";
 
 /**
- * What the Claude banner says (ADR-019, ARCHITECTURE §3.12): a title, what it means for the dub, and what to do. The
- * engine sends the problem; this turns it into words. Pure, so it is unit-tested.
+ * The Codex banner: a title, what it means for the dub, and what to do. The engine sends the problem; this turns
+ * it into words. The internal Claude names are retained for compatibility with the engine protocol.
  */
 export type ClaudeNotice = { title: string; detail: string; command?: string };
 
-/** localStorage key: the one-time notice that transcript text goes to Anthropic has been read. */
-export const PRIVACY_KEY = "maata.claudePrivacySeen";
+/** A new provider needs its own acknowledgment, even if the previous provider's notice was read. */
+export const PRIVACY_KEY = "maata.codexPrivacySeen.v1";
 
 export const PRIVACY_NOTICE = {
-  title: "Translation goes through your Claude Code",
+  title: "Translation goes through your Codex sign-in",
   detail:
-    "Speech recognition and the Telugu voices run on this Mac, and audio never leaves it. The English transcript, as text, " +
-    "is sent to Anthropic by your own Claude Code, signed in with your own plan, and counts toward that plan's usage. " +
-    "Whether Anthropic may use it to improve its models, and how long it is kept, follow the privacy settings of your " +
-    "account on claude.ai.",
+    "Speech recognition and the Telugu voices run on this Mac, and audio never leaves it. Only text goes to OpenAI: " +
+    "the English transcript and its translations, through your signed-in Codex CLI. Translation uses your ChatGPT " +
+    "plan and counts toward that plan's usage.",
 } as const;
 
 const LIMITS: Record<string, string> = {
-  session: "5-hour", weekly: "weekly", opus: "weekly Opus", sonnet: "weekly Sonnet", overage: "extra-usage",
+  session: "session", weekly: "weekly", overage: "extra-usage",
 };
 
-// Nothing plays in the app: a job held back by Claude does the work it can on this Mac meanwhile (OFFLINE-RENDER §4).
+// Nothing plays in the app: a job held back by Codex does the work it can on this Mac meanwhile (OFFLINE-RENDER §4).
 const KEEP = "The dub goes on with the work on this Mac meanwhile.";
 
 /** "3:05 PM", or "Tue 7 Oct, 2:00 AM" when it isn't today (the viewer's own locale and time zone). */
@@ -39,7 +38,7 @@ export function fmtRetry(seconds: number): string {
 }
 
 /**
- * The banner for a Claude problem. `retryIn` counts from when the engine sent it (`sentAt`, ms), so the countdown is
+ * The banner for a Codex problem. `retryIn` counts from when the engine sent it (`sentAt`, ms), so the countdown is
  * right however long the banner has been up.
  */
 export function claudeNotice(p: ClaudeProblem, sentAt: number = Date.now(), now: number = Date.now()): ClaudeNotice {
@@ -48,40 +47,37 @@ export function claudeNotice(p: ClaudeProblem, sentAt: number = Date.now(), now:
   switch (p.kind) {
     case "missing":
       return {
-        title: "Claude Code isn't installed",
-        detail: `Maata translates through your own Claude Code: install it from claude.com/claude-code, then sign in. ${KEEP}`,
-        command: "claude auth login",
+        title: "Codex CLI isn't installed",
+        detail: `Install the Codex CLI from developers.openai.com/codex/cli, then sign in with your ChatGPT account. ${KEEP}`,
+        command: "codex login",
       };
     case "not_signed_in":
       return {
-        title: "Claude Code isn't signed in",
-        detail: `Sign in with your own Claude plan in a terminal; Maata carries on by itself. ${KEEP}`,
-        command: "claude auth login",
+        title: "Codex CLI isn't signed in",
+        detail: `Sign in with your ChatGPT account in a terminal; Maata carries on by itself. ${KEEP}`,
+        command: "codex login",
       };
     case "outdated":
       return {
-        title: "Claude Code needs an update",
-        detail: `${p.message || "This version of Claude Code is too old for Maata."} ${KEEP}`,
-        command: "claude update",
+        title: "Codex CLI needs an update",
+        detail: `${p.message || "This version of Codex CLI is too old for Maata."} Update it using the method you installed it with. ${KEEP}`,
       };
     case "usage_limit": {
-      const which = p.limit ? `${LIMITS[p.limit] ?? p.limit} ` : "";
+      const which = p.limit && LIMITS[p.limit] ? `${LIMITS[p.limit]} ` : "";
       const when = p.resetsAt ? `Translation resumes when it resets, at ${fmtReset(p.resetsAt, new Date(now))}.` : retry;
-      return { title: `Your Claude ${which}usage limit is reached`, detail: `${when} ${KEEP}` };
+      return { title: `Your Codex ${which}usage limit is reached`, detail: `${when} ${KEEP}` };
     }
     case "stalled":
       return {
-        title: "Claude Code didn't start",
-        detail:
-          "If Claude Code is open in another window on the same version, it can block Maata (known issue #91987). " +
-          `${retry} ${KEEP}`,
+        title: "Codex CLI didn't start",
+        detail: `Codex did not begin a response. ${retry} ${KEEP}`,
       };
     case "transient":
-      return { title: "Claude is busy right now", detail: `${retry} ${KEEP}` };
+      return { title: "Codex is busy right now", detail: `${retry} ${KEEP}` };
     case "timeout":
-      return { title: "Claude is taking too long to answer", detail: `${retry} ${KEEP}` };
+      return { title: "Codex is taking too long to answer", detail: `${retry} ${KEEP}` };
     default:
-      return { title: "Translation through Claude Code failed", detail: `${p.message ? `${p.message} ` : ""}${retry} ${KEEP}` };
+      return { title: "Translation through Codex CLI failed", detail: `${p.message ? `${p.message} ` : ""}${retry} ${KEEP}` };
   }
 }
 

@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "checks": {
+    "exact_reviewed_Telugu_and_actual_TTS_equal_final_wording": true,
+    "raw_C_verdicts_consistent": true,
+    "cache_wording_and_coverage_match_final": true,
+    "all_cache_approvals_have_current_policy": true,
+    "all_actual_calls_one_attempt": true
+  },
+  "text_observations": {
+    "1": "Corrected wording includes రేపు (tomorrow), with Ravi, red book, and returning retained.",
+    "2": "Corrected wording includes ఉండొచ్చు (may last) and గ్యారంటీ లేదు (no guarantee), retaining six hours."
+  },
+  "interpretation": "This verifies the live production repair-plus-fresh-semantic-review path on two original controls. It is not a native-speaker evaluation or evidence of improved voice/pronunciation.",
+  "no_additional_model_calls": true
+}

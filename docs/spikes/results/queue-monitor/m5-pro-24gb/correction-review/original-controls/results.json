@@ -1,0 +1,499 @@
+{
+  "created_utc": "2026-10-06T03:55:46.951298+00:00",
+  "status": "complete",
+  "scope": "Two independent fresh ephemeral CLI invocations of production reviewer on six original candidate controls. No audio, translation, production caches, or policy changes.",
+  "model": "gpt-6-luna",
+  "effort": "low",
+  "fallback": null,
+  "review_hash": "4cdb4f668364",
+  "prompt_hash": "9550fc5e1ac9",
+  "system": "You check a Telugu dub against its English, line by line, for meaning only: never style, word choice, spelling or length.\nThe message is JSON. \"lines\" holds the lines to check, each {\"id\", \"en\", \"te\", \"tts\"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. \"context_before\" (earlier lines, with their Telugu when there is one) and \"context_after_en\" (the lines that follow) are context only: never return them.\nThe Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is \"settings\"). A line with \"cut_off\": true was interrupted in the English, and its Telugu is unfinished on purpose.\nReply with every id in \"lines\" exactly once, with \"class\":\n- \"C\": complete: every fact, name, number, negation, question and meaningful qualification of the English is there, and nothing is added;\n- \"m\": a minor drop only: a conversational filler or discourse marker, \"okay\", a trailing backchannel, or emphasis that does not change the factual claim;\n- \"P\": a content phrase or clause of the English is missing;\n- \"E\": a meaning error: a negation lost or added, a number, name or question changed, or content that isn't in the English.\nUncertainty, conditions, frequency and bounds qualify a factual claim. If a meaningful qualification is lost or certainty is strengthened, classify P or E, never m or C: \"may cost\" must not become \"will cost\", and \"rarely\" must not disappear.\nWith it: \"missing\", the English words (as the English has them) whose meaning is not in the Telugu, empty for \"C\"; \"added\", Telugu content that isn't in the English, said in English; \"error\", the kind of an \"E\" error, else \"none\".\nSome input lines also offer \"fallback\": an existing full wording with its own \"te\" and actual \"tts\". Only when the main wording is P or E, check that fallback against the SAME English and context, including its actual TTS form. Return its verdict in \"fallback\" with \"class\", \"missing\", \"added\" and \"error\"; otherwise omit it or return null. C requires every meaning detail, including uncertainty, conditions and quantities, with no additions; use empty missing/added and error none. Do not assume a longer wording is complete. Judge natural Telugu paraphrases and implicit subjects by meaning, not literal word matches. Do not rewrite, copy or generate a translation.",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "lines"
+    ],
+    "properties": {
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "class",
+            "missing",
+            "added",
+            "error"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "class": {
+              "enum": [
+                "C",
+                "m",
+                "P",
+                "E"
+              ]
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "added": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "error": {
+              "enum": [
+                "none",
+                "negation",
+                "number",
+                "name",
+                "question",
+                "addition",
+                "other"
+              ]
+            },
+            "fallback": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "class",
+                "missing",
+                "added",
+                "error"
+              ],
+              "properties": {
+                "class": {
+                  "enum": [
+                    "C",
+                    "m",
+                    "P",
+                    "E"
+                  ]
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "added": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "error": {
+                  "enum": [
+                    "none",
+                    "negation",
+                    "number",
+                    "name",
+                    "question",
+                    "addition",
+                    "other"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "requests": [
+    {
+      "round": 1,
+      "ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "prompt": "{\"scene\":1,\"call\":\"review\",\"context_before\":[],\"lines\":[{\"id\":1,\"en\":\"Ravi will return the red book tomorrow.\",\"te\":\"రవి ఎర్ర పుస్తకాన్ని రేపు తిరిగి ఇస్తాడు.\",\"tts\":\"రవి ఎర్ర పుస్తకాన్ని రేపు తిరిగి ఇస్తాడు.\"},{\"id\":2,\"en\":\"Meena must bring both keys before noon.\",\"te\":\"మీనా మధ్యాహ్నంలోపు రెండు తాళంచెవులూ తేవాలి.\",\"tts\":\"మీనా మధ్యాహ్నంలోపు రెండు తాళంచెవులూ తేవాలి.\"},{\"id\":3,\"en\":\"The library opens at nine, but the reading room stays closed.\",\"te\":\"లైబ్రరీ తలుపులు తెరుచుకునే సమయం తొమ్మిది గంటలు.\",\"tts\":\"లైబ్రరీ తలుపులు తెరుచుకునే సమయం తొమ్మిది గంటలు.\"},{\"id\":4,\"en\":\"Ravi did not send the letter, but Meena sent the parcel.\",\"te\":\"రవి ఉత్తరం పంపాడు, మీనా కూడా పార్సెల్ పంపించింది.\",\"tts\":\"రవి ఉత్తరం పంపాడు, మీనా కూడా పార్సెల్ పంపించింది.\"},{\"id\":5,\"en\":\"Only two of the six boxes need labels.\",\"te\":\"ఆరు పెట్టెలకూ రెండు లేబుళ్లు చొప్పున పెట్టాలి.\",\"tts\":\"ఆరు పెట్టెలకూ రెండు లేబుళ్లు చొప్పున పెట్టాలి.\"},{\"id\":6,\"en\":\"The repair may cost fifty rupees.\",\"te\":\"మరమ్మతు చేయించుకోవడానికి మొత్తం యాభై రూపాయలు ఖర్చవుతాయి.\",\"tts\":\"మరమ్మతు చేయించుకోవడానికి మొత్తం యాభై రూపాయలు ఖర్చవుతాయి.\"}],\"context_after_en\":[]}"
+    },
+    {
+      "round": 2,
+      "ids": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "prompt": "{\"scene\":2,\"call\":\"review\",\"context_before\":[],\"lines\":[{\"id\":6,\"en\":\"The repair may cost fifty rupees.\",\"te\":\"మరమ్మతు చేయించుకోవడానికి మొత్తం యాభై రూపాయలు ఖర్చవుతాయి.\",\"tts\":\"మరమ్మతు చేయించుకోవడానికి మొత్తం యాభై రూపాయలు ఖర్చవుతాయి.\"},{\"id\":5,\"en\":\"Only two of the six boxes need labels.\",\"te\":\"ఆరు పెట్టెలకూ రెండు లేబుళ్లు చొప్పున పెట్టాలి.\",\"tts\":\"ఆరు పెట్టెలకూ రెండు లేబుళ్లు చొప్పున పెట్టాలి.\"},{\"id\":4,\"en\":\"Ravi did not send the letter, but Meena sent the parcel.\",\"te\":\"రవి ఉత్తరం పంపాడు, మీనా కూడా పార్సెల్ పంపించింది.\",\"tts\":\"రవి ఉత్తరం పంపాడు, మీనా కూడా పార్సెల్ పంపించింది.\"},{\"id\":3,\"en\":\"The library opens at nine, but the reading room stays closed.\",\"te\":\"లైబ్రరీ తలుపులు తెరుచుకునే సమయం తొమ్మిది గంటలు.\",\"tts\":\"లైబ్రరీ తలుపులు తెరుచుకునే సమయం తొమ్మిది గంటలు.\"},{\"id\":2,\"en\":\"Meena must bring both keys before noon.\",\"te\":\"మీనా మధ్యాహ్నంలోపు రెండు తాళంచెవులూ తేవాలి.\",\"tts\":\"మీనా మధ్యాహ్నంలోపు రెండు తాళంచెవులూ తేవాలి.\"},{\"id\":1,\"en\":\"Ravi will return the red book tomorrow.\",\"te\":\"రవి ఎర్ర పుస్తకాన్ని రేపు తిరిగి ఇస్తాడు.\",\"tts\":\"రవి ఎర్ర పుస్తకాన్ని రేపు తిరిగి ఇస్తాడు.\"}],\"context_after_en\":[]}"
+    }
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "ids": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "status": "complete",
+      "output": {
+        "lines": [
+          {
+            "id": 1,
+            "class": "C",
+            "missing": [],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          },
+          {
+            "id": 2,
+            "class": "C",
+            "missing": [],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          },
+          {
+            "id": 3,
+            "class": "P",
+            "missing": [
+              "but the reading room stays closed"
+            ],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          },
+          {
+            "id": 4,
+            "class": "E",
+            "missing": [],
+            "added": [],
+            "error": "negation",
+            "fallback": null
+          },
+          {
+            "id": 5,
+            "class": "E",
+            "missing": [],
+            "added": [
+              "చొప్పున"
+            ],
+            "error": "number",
+            "fallback": null
+          },
+          {
+            "id": 6,
+            "class": "E",
+            "missing": [],
+            "added": [],
+            "error": "other",
+            "fallback": null
+          }
+        ]
+      },
+      "raw_text": "{\"lines\":[{\"id\":1,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":3,\"class\":\"P\",\"missing\":[\"but the reading room stays closed\"],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":4,\"class\":\"E\",\"missing\":[],\"added\":[],\"error\":\"negation\",\"fallback\":null},{\"id\":5,\"class\":\"E\",\"missing\":[],\"added\":[\"చొప్పున\"],\"error\":\"number\",\"fallback\":null},{\"id\":6,\"class\":\"E\",\"missing\":[],\"added\":[],\"error\":\"other\",\"fallback\":null}]}",
+      "usage": {
+        "input_tokens": 10231,
+        "cache_read_input_tokens": 1792,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 324,
+        "reasoning_output_tokens": 0
+      },
+      "model": "gpt-6-luna",
+      "seconds": 10.596013957998366,
+      "classes": {
+        "1": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        },
+        "2": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        },
+        "3": {
+          "class": "P",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [
+            "but the reading room stays closed"
+          ],
+          "added": [],
+          "error": null
+        },
+        "4": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": "negation"
+        },
+        "5": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [
+            "చొప్పున"
+          ],
+          "error": "number"
+        },
+        "6": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": "other"
+        }
+      },
+      "missing_or_invalid": {},
+      "elapsed_s": 10.607
+    },
+    {
+      "round": 2,
+      "ids": [
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+      ],
+      "status": "complete",
+      "output": {
+        "lines": [
+          {
+            "id": 6,
+            "class": "E",
+            "missing": [],
+            "added": [
+              "will"
+            ],
+            "error": "other",
+            "fallback": null
+          },
+          {
+            "id": 5,
+            "class": "E",
+            "missing": [
+              "Only two"
+            ],
+            "added": [
+              "two each for all six"
+            ],
+            "error": "number",
+            "fallback": null
+          },
+          {
+            "id": 4,
+            "class": "E",
+            "missing": [
+              "did not"
+            ],
+            "added": [
+              "also"
+            ],
+            "error": "negation",
+            "fallback": null
+          },
+          {
+            "id": 3,
+            "class": "P",
+            "missing": [
+              "but the reading room stays closed"
+            ],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          },
+          {
+            "id": 2,
+            "class": "C",
+            "missing": [],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          },
+          {
+            "id": 1,
+            "class": "C",
+            "missing": [],
+            "added": [],
+            "error": "none",
+            "fallback": null
+          }
+        ]
+      },
+      "raw_text": "{\"lines\":[{\"id\":6,\"class\":\"E\",\"missing\":[],\"added\":[\"will\"],\"error\":\"other\",\"fallback\":null},{\"id\":5,\"class\":\"E\",\"missing\":[\"Only two\"],\"added\":[\"two each for all six\"],\"error\":\"number\",\"fallback\":null},{\"id\":4,\"class\":\"E\",\"missing\":[\"did not\"],\"added\":[\"also\"],\"error\":\"negation\",\"fallback\":null},{\"id\":3,\"class\":\"P\",\"missing\":[\"but the reading room stays closed\"],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":1,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null}]}",
+      "usage": {
+        "input_tokens": 5024,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 171,
+        "reasoning_output_tokens": 0
+      },
+      "model": "gpt-6-luna",
+      "seconds": 6.565178625001863,
+      "classes": {
+        "6": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [
+            "will"
+          ],
+          "error": "other"
+        },
+        "5": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [
+            "Only two"
+          ],
+          "added": [
+            "two each for all six"
+          ],
+          "error": "number"
+        },
+        "4": {
+          "class": "E",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [
+            "did not"
+          ],
+          "added": [
+            "also"
+          ],
+          "error": "negation"
+        },
+        "3": {
+          "class": "P",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [
+            "but the reading room stays closed"
+          ],
+          "added": [],
+          "error": null
+        },
+        "2": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        },
+        "1": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      "missing_or_invalid": {},
+      "elapsed_s": 6.586
+    }
+  ],
+  "transport_retries": 0,
+  "timeout_s": 120,
+  "startup_timeout_s": 60,
+  "host": "macOS-27.0.1-arm64-arm-64bit",
+  "background_load": "User-authorized main application is transcribing another long video; this is not a latency benchmark.",
+  "limitations": [
+    "Six deliberately adversarial authored controls, not a representative sample.",
+    "Expected labels and before-P labels are author judgments; no native-human or audio evaluation.",
+    "Only candidate English/te/actualtts and empty context are sent, never expected labels, deterministic outputs or before wordings.",
+    "Two replies do not establish reviewer reliability, independence of model errors, or a production improvement.",
+    "English maps are empty so te==actualtts; this does not exercise Latin substitution errors.",
+    "No speed comparison or automatic policy adoption."
+  ],
+  "events": [
+    {
+      "experiment": "original-correction-controls",
+      "round": 1,
+      "lines": 6,
+      "event": "claude",
+      "provider": "codex",
+      "call": "review",
+      "attempt": 1,
+      "requested": "gpt-6-luna",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "wall_s": 10.596,
+      "startup_s": 0.055,
+      "input_tokens": 10231,
+      "cache_read_tokens": 1792,
+      "cache_creation_tokens": 0,
+      "cache_1h_tokens": 0,
+      "output_tokens": 324,
+      "reasoning_output_tokens": 0,
+      "rate_limit": null,
+      "error": null
+    },
+    {
+      "experiment": "original-correction-controls",
+      "round": 2,
+      "lines": 6,
+      "event": "claude",
+      "provider": "codex",
+      "call": "review",
+      "attempt": 1,
+      "requested": "gpt-6-luna",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "wall_s": 6.565,
+      "startup_s": 0.062,
+      "input_tokens": 5024,
+      "cache_read_tokens": 0,
+      "cache_creation_tokens": 0,
+      "cache_1h_tokens": 0,
+      "output_tokens": 171,
+      "reasoning_output_tokens": 0,
+      "rate_limit": null,
+      "error": null
+    }
+  ]
+}

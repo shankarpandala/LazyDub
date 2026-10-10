@@ -40,7 +40,7 @@ from websockets.http11 import Request, Response
 from . import notify
 from . import settings as config
 from .backends import load_backend
-from .claude_cli import DEFAULT_MODEL, ClaudeCLI
+from .codex_cli import DEFAULT_MODEL, CodexCLI
 from .gpu import GpuScheduler
 from .playback import voice_sample
 from .render import (STAGES, RenderJob, RenderSettings, _read_json, _write_json, estimate, found_on_disk, left,
@@ -133,16 +133,17 @@ class Engine:
         self.stopped = asyncio.Event()           # the graceful stop is done: the server closes, the engine exits
 
     def claude_health(self) -> dict | None:
-        """The Claude CLI's state for `hello`, checked afresh on every connect (the user may have signed in or updated
-        since); None for the demo engine, which never calls Claude."""
-        return None if self.backend.name == "mock" else ClaudeCLI(self.cache_dir).health()
+        """The Codex CLI's state for the legacy `hello.claude` field, checked afresh on every connect.
+        None for the demo engine, which never calls a translation CLI."""
+        return None if self.backend.name == "mock" else CodexCLI(self.cache_dir).health()
 
     async def claude_hello(self) -> dict | None:
         try:
             return await asyncio.wait_for(asyncio.to_thread(self.claude_health), HEALTH_TIMEOUT)
         except asyncio.TimeoutError:  # the check runs on in its thread; the UI isn't kept waiting for it
             return {"installed": True, "version": None, "signedIn": None, "models": [], "model": DEFAULT_MODEL,
-                    "problem": "stalled", "message": f"Claude Code didn't answer within {HEALTH_TIMEOUT:.0f} s."}
+                    "provider": "codex", "problem": "stalled",
+                    "message": f"Codex CLI didn't answer within {HEALTH_TIMEOUT:.0f} s."}
 
     def process_request(self, conn: ServerConnection, req: Request) -> Response | None:
         u = urlparse(req.path)
@@ -308,6 +309,9 @@ class Engine:
             task.cancel()
             await asyncio.wait([task])
         self._keep_awake(False)
+        release = getattr(self.backend.tts, "release", None)
+        if release is not None:
+            await asyncio.to_thread(release)
         self.stopped.set()
 
     def quit(self) -> None:
@@ -350,6 +354,14 @@ class Engine:
     async def _job_event(self, msg: dict) -> None:
         """What a job says goes to every window: its progress (`render`, with its place in the queue), the speakers it
         found and Claude's state."""
+        if msg.get("type") == "voice_ready":
+            video_dir = self._video_dir(msg["videoId"])
+            found = found_on_disk(video_dir, self.job.doc if self.job is not None else None) if video_dir else None
+            if found is None:
+                return
+            msg = found
+        if msg.get("type") == "speakers_found":
+            msg = self._voice_provenance(msg)
         if msg.get("type") == "render":
             msg = {**msg, "position": self._position(msg["videoId"])}
         elif msg.get("type") == "speakers_found" and msg.get("fresh"):
@@ -362,7 +374,7 @@ class Engine:
             title = self.job.doc.get("title") if self.job is not None else ""
             until = (f" It goes on at {time.strftime('%H:%M', time.localtime(msg['resetsAt']))}."
                      if msg.get("resetsAt") else "")
-            self._notify(f"Claude is holding back {title or msg['videoId']}: {msg.get('message')}{until}")
+            self._notify(f"Codex is holding back {title or msg['videoId']}: {msg.get('message')}{until}")
         for c in list(self.clients):
             await c.send_json(msg)
 
@@ -430,8 +442,42 @@ class Engine:
             if self.job is not None and self.job.video_id == path.parent.parent.name:
                 doc = self.job.doc
             if (msg := found_on_disk(path.parent.parent, doc)) is not None:
-                found.append(msg)
+                found.append(self._voice_provenance(msg))
         return found
+
+    def _voice_provenance(self, msg: dict) -> dict:
+        """An old dub keeps its old preview; never label it with a newly selected model's voice."""
+        video_dir = self._video_dir(msg["videoId"])
+        saved = _read_json(video_dir / "render" / "voices.json") if video_dir else None
+        saved = saved or {}
+        by_speaker = saved.get("speakers") or {}
+        entries = list(by_speaker.values())
+        native = bool(entries) and all(e.get("how") == "native" for e in entries)
+        tts = self.backend.tts
+        compatible = native == bool(getattr(tts, "native_voice", False))
+        if getattr(tts, "native_voice", False):
+            inputs = saved.get("inputs") or {}
+            compatible = compatible and inputs.get("model") == getattr(tts, "model_revision", None) \
+                         and inputs.get("synthesis") == tts.cache_identity
+        rows = msg.get("speakers", [])
+        if getattr(tts, "native_voice", False):
+            pending = next((s for v, s in self.queue if v == msg["videoId"] and s is not None), None)
+            job = self.job if self.job is not None and self.job.video_id == msg["videoId"] else None
+            doc = job.doc if job is not None else (_read_json(video_dir / "render" / "job.json") if video_dir else {})
+            settings = pending or (job.settings if job is not None else RenderSettings.from_json((doc or {}).get("settings")))
+            profiles = dict(settings.voice_profiles)
+            rows = []
+            for row in msg.get("speakers", []):
+                sid = row["id"]
+                requested = profiles.get(sid, "auto")
+                entry = by_speaker.get(sid) or {}
+                # A sample is evidence of the saved selection, never of a pending choice.
+                matches = compatible and requested == entry.get("voiceProfile", "auto")
+                resolved = entry.get("resolvedVoiceProfile") if matches else None
+                rows.append({**row, "voiceProfile": requested, "resolvedVoiceProfile": resolved,
+                             "voiceProfileSource": entry.get("voiceProfileSource", "unresolved") if matches else "unresolved",
+                             "voiceCompatible": matches and resolved in ("male", "female") and bool(entry.get("sample"))})
+        return {**msg, "speakers": rows, "voiceMode": "native" if native else "cloned", "voiceCompatible": compatible}
 
     async def _send_found(self, c: Client) -> None:
         """After `hello`, the speaker checks a new window needs (the job view's Wrong count?, Hear voice and stock-voice
@@ -521,7 +567,8 @@ class Engine:
                 settings = RenderSettings(
                     speakers=None if k in (None, "auto") else int(k), style=str(msg.get("style") or "colloquial"),
                     stop_at=_stop_at(msg.get("stopAt")), speed_cap=float(msg.get("speedCap") or 1.2),
-                    tts_script=str(msg.get("ttsScript") or "telugu"), presets=saved.presets)
+                    tts_script=str(msg.get("ttsScript") or "telugu"), presets=saved.presets,
+                    voice_profiles=saved.voice_profiles)
             except (URLError, ValueError, TypeError) as e:
                 await c.send_json({"type": "error", "message": str(e), "retryable": False})
                 return
@@ -550,6 +597,42 @@ class Engine:
                 await c.send_json({"type": "error", "message": str(e), "retryable": False})
                 return
             await self._submit(vid, settings)
+
+    async def _set_voice_profile(self, c: Client, vid: str, speaker: str, profile: object) -> None:
+        """Save a voice choice without starting stopped jobs or replacing completed outputs.
+
+        Running work restarts gracefully; queued work keeps its place. A pause already requested remains a pause.
+        """
+        async with self._control:
+            video_dir = self._video_dir(vid)
+            doc = _read_json(video_dir / "render" / "job.json") if video_dir else None
+            found = found_on_disk(video_dir, self.job.doc if self.job and self.job.video_id == vid else doc) if doc else None
+            if not getattr(self.backend.tts, "native_voice", False) or profile not in ("auto", "male", "female") \
+                    or found is None or speaker not in {row["id"] for row in found["speakers"]}:
+                await c.send_json({"type": "error", "message": "Choose Auto, Male or Female for a detected speaker.",
+                                   "retryable": False})
+                return
+            settings = await self._settings(vid)
+            profiles = dict(settings.voice_profiles)
+            if profile == "auto":
+                profiles.pop(speaker, None)
+            else:
+                profiles[speaker] = profile
+            updated = replace(settings, voice_profiles=tuple(profiles.items()))
+            active = self.job is not None and self.job.video_id == vid
+            queued = self._position(vid) is not None
+            if queued or (active and self.job.doc.get("status") in ("running", "waiting") and not self.job.stopping):
+                await self._submit(vid, updated)
+            else:
+                if active:
+                    # The user already paused this job; update the doc its closing run will save too.
+                    self.job.settings = updated
+                    doc = self.job.doc
+                doc["settings"] = updated.to_json()
+                await asyncio.to_thread(_write_json, video_dir / "render" / "job.json", doc)
+            await self._send_renders()
+            for client in list(self.clients):
+                await self._send_found(client)
 
     async def _remove(self, c: Client, vid: str, forget: bool) -> None:
         """`remove` (§4): take a job out of the library. Refused for anything but a video id naming a folder of the
@@ -612,8 +695,21 @@ class Engine:
 
     async def _voice_sample(self, c: Client, vid: str, speaker: str) -> None:
         video_dir = self._video_dir(vid)
+        provenance = self._voice_provenance({"videoId": vid, "speakers": [{"id": speaker}]}) if video_dir else {}
+        if video_dir is not None and (not provenance["voiceCompatible"] or
+                (getattr(self.backend.tts, "native_voice", False) and not provenance["speakers"][0]["voiceCompatible"])):
+            await c.send_json({"type": "error", "message": "This saved voice sample belongs to an earlier voice model or voice choice. The saved dub is unchanged.",
+                               "retryable": False})
+            return
+        async def send_if_current(frame: bytes) -> None:
+            # Loading PCM yields to profile changes. Recheck before sending a potentially stale sample.
+            current = self._voice_provenance({"videoId": vid, "speakers": [{"id": speaker}]})
+            if not getattr(self.backend.tts, "native_voice", False) or (
+                    current["voiceCompatible"] and current["speakers"][0]["voiceCompatible"] and
+                    current["speakers"][0] == provenance["speakers"][0]):
+                await c.send_bytes(frame)
         if video_dir is None or not await voice_sample(video_dir / "render", speaker, self.backend.tts.sample_rate,
-                                                       c.send_bytes):
+                                                       send_if_current):
             log.info("no Hear voice sample for %s of %s", speaker, vid)
 
     async def handler(self, ws: ServerConnection) -> None:
@@ -629,6 +725,8 @@ class Engine:
 
         client = Client(sj, sb)
         await sj({"type": "hello", "backend": self.backend.name, "device": self.backend.device, "demo": self.demo or self.backend.name == "mock",
+                  "voiceMode": "native" if getattr(self.backend.tts, "native_voice", False) else "cloned",
+                  "ttsModel": "OmniVoice" if getattr(self.backend.tts, "native_voice", False) else "Chatterbox Telugu",
                   "claude": await self.claude_hello(), "renders": await asyncio.to_thread(self._renders),
                   "render": {**self.job.snapshot(), "position": self._position(self.job.video_id)}
                   if self.job is not None else None, "settings": self.settings})
@@ -655,9 +753,15 @@ class Engine:
                     self._task(self._rerun(client, vid, lambda s, k=k: replace(
                         s, speakers=None if k in (None, "auto") else int(k))))
                 elif kind == "set_voice":
+                    if getattr(self.backend.tts, "native_voice", False):
+                        await sj({"type": "error", "message": "OmniVoice generates natural Telugu speech without cloning source voices.",
+                                  "retryable": False})
+                        continue
                     sid, on = str(msg.get("speaker", "")), bool(msg.get("usePreset"))
                     self._task(self._rerun(client, vid, lambda s, sid=sid, on=on: replace(
                         s, presets=tuple(set(s.presets) | {sid}) if on else tuple(set(s.presets) - {sid}))))
+                elif kind == "set_voice_profile":
+                    self._task(self._set_voice_profile(client, vid, str(msg.get("speaker", "")), msg.get("voiceProfile")))
                 elif kind == "remove":
                     self._task(self._remove(client, vid, bool(msg.get("forget"))))
                 elif kind == "renders":
@@ -675,11 +779,12 @@ class Engine:
 def retain(cache_dir: Path, keep: Collection[str], now: float, days: float = RETAIN_DAYS, cap: float = CACHE_CAP
            ) -> list[str]:
     """Retention (SPEC §8, §13, M6; OFFLINE-RENDER §4): renders last updated (`updatedAt`) over `days` ago lose their
-    voice data and source media (`expire`); then, while the cache holds more than `cap` bytes, done whole-video jobs (their
-    MP4 is written) lose theirs, least recently updated first, and expired jobs any of it they hold again. A job waiting
-    to be continued (paused, interrupted, waiting, or a done preview) never counts toward the cap: losing its takes would
-    cost hours of speech synthesis; it follows the age rule only. Never those in `keep` (the running one and the
-    engine's queue), nor one job.json says is queued: they are about to run (§4). The output folder is never touched.
+    voice data and source media (`expire`); then, while eligible job directories hold more than `cap` bytes, done
+    whole-video jobs (their MP4 is written) lose theirs, least recently updated first, and expired jobs any of it they
+    hold again. A job waiting to be continued (paused, interrupted, waiting, or a done preview) never counts toward the
+    cap: losing its takes would cost hours of speech synthesis; it follows the age rule only. Jobs in `keep` (the running
+    one and the engine's queue), or marked queued, are never expired: they are about to run (§4). The output folder is
+    never touched.
     Returns the video ids expired."""
     renders = []
     for path in cache_dir.glob("*/render/job.json"):
@@ -692,12 +797,16 @@ def retain(cache_dir: Path, keep: Collection[str], now: float, days: float = RET
     gone = [vid for at, vid, doc in renders if not doc.get("expired") and now - at > days * 86400.0]
     for vid in gone:
         expire(cache_dir / vid, next(doc for _, v, doc in renders if v == vid))
-    size = _bytes(cache_dir)
-    for _, vid, doc in renders:
+    # Account for exactly the jobs this cap may reclaim. Paused work, kept/queued jobs and unrelated runtime/model
+    # folders cannot consume this allowance and indirectly evict every completed dub.
+    capped = [(at, vid, doc) for at, vid, doc in renders
+              if doc.get("expired") or (doc.get("status") == "done"
+                                        and (doc.get("settings") or {}).get("stopAt") is None)]
+    size = sum(_bytes(cache_dir / vid) for _, vid, _ in capped)
+    for _, vid, doc in capped:
         if size <= cap:
             break
-        whole = doc.get("status") == "done" and (doc.get("settings") or {}).get("stopAt") is None
-        if vid in gone or not (whole or doc.get("expired")):
+        if vid in gone:
             continue
         before = bool(doc.get("expired"))
         freed = expire(cache_dir / vid, doc)

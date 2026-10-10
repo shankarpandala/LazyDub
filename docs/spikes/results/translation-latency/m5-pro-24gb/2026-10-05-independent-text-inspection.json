@@ -1,0 +1,2348 @@
+{
+  "version": 1,
+  "status": "complete",
+  "updated_utc": "2026-10-05T14:20:59.767932+00:00",
+  "reviewer": "Independent Codex app_review agent; model text inspection",
+  "method": "Read every final selected Telugu unit directly against its English source and original authored narrative. Automated coverage is retained as context only and is not the basis of findings.",
+  "check_scope": {
+    "authored_unit_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "source_artifact_unit_ids": [
+      9,
+      10
+    ],
+    "source_fixture": "/tmp/maata-quality-CWNtmF/fixture.json",
+    "source_fixture_sha256": "c4c9244f30b538b3511201d7db60a8f190c5f67340547436141fca41b78b99da",
+    "excluded": [
+      "audio intelligibility",
+      "pronunciation",
+      "speaker identity",
+      "prosody",
+      "waveform alignment",
+      "native-speaker naturalness rating"
+    ],
+    "authored_fixture_text": [
+      "Welcome back. Today we will build a small machine learning project on this laptop.",
+      "Before we start, please save a copy of the data. Do not delete the original file.",
+      "We have twenty examples for training and five separate examples for testing.",
+      "Why do we need a separate test set? Because memorizing the training data is not enough.",
+      "If the result is wrong, check the labels first. Then change one setting at a time.",
+      "That makes sense. Let us compare the results and explain what changed."
+    ]
+  },
+  "caveats": [
+    "No human native Telugu speaker review was performed.",
+    "No listening or audio-model calls were performed for this independent inspection.",
+    "One short original narrative, repeated within a 60-second video, cannot establish general translation-quality equivalence.",
+    "Units 9 and 10 are ASR/segmentation artifacts absent from the authored text and must not be used as clean translation-quality examples."
+  ],
+  "runs": [
+    {
+      "run_id": "formal-A1",
+      "arm": "A",
+      "scene_caps": {
+        "seconds": 150.0,
+        "lines": 30
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-A1.json",
+        "pipeline_sha256": "4b7099d14267cb9b13f65e8ff30c5e68fa501996950bab8afd00f40f09cbf7d0",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-A1/localbench0/units.jsonl",
+        "units_sha256": "59609240c08c414817f0f09a9fb679fa8dc62244faaeb7b7f4706524f2434934"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ ని చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది కరెక్టే. మనం రిజల్ట్స్ ని పోల్చి చూసి, ఏం మారిందో వివరించి చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "validators",
+            "tier": "full",
+            "first": "E",
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-A2",
+      "arm": "A",
+      "scene_caps": {
+        "seconds": 150.0,
+        "lines": 30
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-A2.json",
+        "pipeline_sha256": "17a0868e631099ad1515ab369f2abac81ee603afeb50ffb40b49ccffda40e954",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-A2/localbench0/units.jsonl",
+        "units_sha256": "4b0bd1cd3ecfc17f89101e9f68b569c4faa4a800c76f639baa4632446a14b55a"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈ రోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ తయారు చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ఎందుకంటే ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ ని చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది కరెక్టే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో వివరంగా చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈ రోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ తయారు చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 6,
+          "severity": "minor_addition",
+          "kind": "unsupported_degree",
+          "finding": "వివరంగా adds in detail to explain what changed. Core comparison/explanation is intact; this is a mild elaboration, not a changed fact."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్యూ.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-A3",
+      "arm": "A",
+      "scene_caps": {
+        "seconds": 150.0,
+        "lines": 30
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-A3.json",
+        "pipeline_sha256": "d55c247a7533a0daf69e0f0382ee45546257e0c232897ea43a8fc052ec6b43e0",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-A3/localbench0/units.jsonl",
+        "units_sha256": "824beb7fd20e6340d790d28bfdcde70bcbdd189dc6fd6d6d2d38063ce87ffe89"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పట్టడం సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "రిజల్ట్ తప్పుగా వస్తే, ముందు లేబుల్స్ చెక్ చేయండి, తర్వాత ఒకసారికి ఒక సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "full",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది నిజమే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో వివరంగా చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        },
+        {
+          "unit": 6,
+          "severity": "minor_addition",
+          "kind": "unsupported_degree",
+          "finding": "వివరంగా adds in detail to explain what changed. Core comparison/explanation is intact; this is a mild elaboration, not a changed fact."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "very_concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-A4",
+      "arm": "A",
+      "scene_caps": {
+        "seconds": 150.0,
+        "lines": 30
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-A4.json",
+        "pipeline_sha256": "ef954c2e035cac94aaf4e25c01f4ff97b87bfe58655c77fa3b512d764bad6614",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-A4/localbench0/units.jsonl",
+        "units_sha256": "174cf6f96685f8e64a5a5d2ef68aa69fd1c618ef514271641dc1771ddfc34abe"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈ రోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, ప్లీజ్ డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది కరెక్టే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో వివరించి చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈ రోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, ప్లీజ్ డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్యూ.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "validators",
+            "tier": "full",
+            "first": "E",
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-A5",
+      "arm": "A",
+      "scene_caps": {
+        "seconds": 150.0,
+        "lines": 30
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-A5.json",
+        "pipeline_sha256": "879106710c4584e84f4d88011ab52c64b135fa4d1059333c7c61c3a2a24c5828",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-A5/localbench0/units.jsonl",
+        "units_sha256": "c9285c29d512f48bc81499bd8895b5628ba1bc3f600729aeb89e879d17ffc812"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈ రోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషీన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, డేటా కాపీ ఒకటి సేవ్ చేసుకోండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరుగా టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "రిజల్ట్ తప్పుగా వస్తే, ముందు లేబుల్స్ చెక్ చేయండి, తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "full",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది నిజమే. మనం రిజల్ట్స్ ని పోల్చి చూసి, ఏం మారిందో వివరిద్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈ రోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషీన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, డేటా కాపీ ఒకటి సేవ్ చేసుకోండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "very_concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-B1",
+      "arm": "B",
+      "scene_caps": {
+        "seconds": 30.0,
+        "lines": 6
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-B1.json",
+        "pipeline_sha256": "129b495d8da2cf551918df127495cf6b93de27b9d23a060c283247cc2a3d5ca5",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-B1/localbench0/units.jsonl",
+        "units_sha256": "8cc71a1fc04ba641197ac91357faa997ef10cef72040fa1c87b8260ec282775a"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, ప్లీజ్ డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పట్టడం సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "m",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [
+              "Because"
+            ],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ ని చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది నిజమే. మనం రిజల్ట్స్ ని పోల్చి చూసి, ఏం మారిందో వివరిద్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ ని బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, ప్లీజ్ డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "validators",
+            "tier": "full",
+            "first": "E",
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-B2",
+      "arm": "B",
+      "scene_caps": {
+        "seconds": 30.0,
+        "lines": 6
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-B2.json",
+        "pipeline_sha256": "ad60bd2f42f43cdfd6648f0a61099ea8a33e5ddbe2178e63fc3cda3b6b81467b",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-B2/localbench0/units.jsonl",
+        "units_sha256": "f0a1b536db6836bf38eb4e9093d2e9cc7afef045d4e2d2b3dc2d1610a225bc98"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ని బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది నిజమే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో వివరిద్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-B3",
+      "arm": "B",
+      "scene_caps": {
+        "seconds": 30.0,
+        "lines": 6
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-B3.json",
+        "pipeline_sha256": "b97d9bcfc7de06247f276483a29035f5a754def505091fe8b0dcbf93249cae1e",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-B3/localbench0/units.jsonl",
+        "units_sha256": "4f13c77a0dd382d97893b7872cda2a11128890887c5b3311cd80b4b0c60bf508"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ ని బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ ని డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందుగా లేబుల్స్ చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అవును, అది నిజమే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, compare results and tell what changed remain; explain is weakened to say/tell, noted as minor undertranslation.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "m",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేద్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేసుకోండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        },
+        {
+          "unit": 6,
+          "severity": "minor_undertranslation",
+          "kind": "weaker_explanation_verb",
+          "finding": "చెప్దాం means let us say/tell, which is weaker than explain. Comparison and what changed remain; no factual proposition or instruction order is reversed."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "validators",
+            "tier": "full",
+            "first": "E",
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "formal-B4",
+      "arm": "B",
+      "scene_caps": {
+        "seconds": 30.0,
+        "lines": 6
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-B4.json",
+        "pipeline_sha256": "14e6beab449ebbaeaa844d6c0c10ebeec3539729239f8441a433daf61973cd4d",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-B4/localbench0/units.jsonl",
+        "units_sha256": "77fc334b53d738cbf8e43415a5adf4cd5e4342f34667891aaa5e47ecdc079266"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈ రోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషీన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "సెపరేట్ టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ఎందుకంటే ట్రైనింగ్ డేటా బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "రిజల్ట్ తప్పుగా వస్తే, ముందు లేబుల్స్ చెక్ చేయండి, తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "full",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది కరెక్టే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో వివరిద్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, invitation to compare results, and explanation of what changed are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషీన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేసుకోండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "very_concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "థాంక్స్ means thanks, adding a thanking act to isolated you. The automated C misses this unit-level error. The unit itself is an ASR/segmentation artifact absent from the authored fixture, so this is not clean authored translation evidence.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          },
+          "automated_reviewer_miss": true
+        }
+      ]
+    },
+    {
+      "run_id": "formal-B5",
+      "arm": "B",
+      "scene_caps": {
+        "seconds": 30.0,
+        "lines": 6
+      },
+      "evidence": {
+        "pipeline_json": "/tmp/maata-translation-priority/formal-B5.json",
+        "pipeline_sha256": "ad08f82149a7ca7b13181e5d640f6c731eaad759744cc5b29514bddec7048e5d",
+        "units_jsonl": "/tmp/maata-translation-priority/formal-B5/localbench0/units.jsonl",
+        "units_sha256": "d0f558b6c469be5b715b4602d8f5d6761fd66d1cec5e30fc94f0997014b68902"
+      },
+      "scope": "Final selected Telugu text in completed pipeline unit events; authored units 0–8; artifact units 9/10 separate.",
+      "authored_units_inspected": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "authored_material_meaning_errors": 0,
+      "checks": [
+        {
+          "unit": 0,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "మళ్ళీ స్వాగతం. ఈరోజు మనం ఈ ల్యాప్టాప్ మీద ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ తయారు చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Returning welcome, today, building a small machine-learning project on this laptop are retained.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 1,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, దయచేసి డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ మాత్రం డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Before starting, save a data copy and do not delete the original file are retained; polite Telugu imperative is acceptable without a separate please token.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 2,
+          "source": "We have 20 examples for training and 5 separate examples for testing.",
+          "selected_telugu": "మన దగ్గర ట్రైనింగ్ కి ఇరవై ఉదాహరణలు, టెస్టింగ్ కి వేరుగా ఐదు ఉదాహరణలు ఉన్నాయి.",
+          "selected_tier": "full",
+          "finding": "Twenty training examples and five separate testing examples retain quantities and roles.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 3,
+          "source": "Why do we need a separate test set?",
+          "selected_telugu": "వేరే టెస్ట్ సెట్ ఎందుకు కావాలి?",
+          "selected_tier": "full",
+          "finding": "The question asks why a separate test set is needed.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 4,
+          "source": "Because memorizing the training data is not enough.",
+          "selected_telugu": "ట్రైనింగ్ డేటాని బట్టీ పడితే సరిపోదు.",
+          "selected_tier": "concise",
+          "finding": "Training-data memorization remains insufficient; assessed together with the preceding why question.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 5,
+          "source": "If the result is wrong, check the labels first, then change one setting at a time.",
+          "selected_telugu": "ఒకవేళ రిజల్ట్ తప్పుగా వస్తే, ముందు లేబుల్స్ చెక్ చేయండి, ఆ తర్వాత ఒక్కోసారి ఒక్క సెట్టింగ్ మాత్రమే మార్చండి.",
+          "selected_tier": "fuller",
+          "finding": "A wrong result is conditional; check labels first, then change only one setting at a time.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 6,
+          "source": "That makes sense. Let us compare the results and explain what changed.",
+          "selected_telugu": "అది కరెక్టే. మనం రిజల్ట్స్ ని కంపేర్ చేసి, ఏం మారిందో చెప్దాం.",
+          "selected_tier": "fuller",
+          "finding": "Acknowledgement, compare results and tell what changed remain; explain is weakened to say/tell, noted as minor undertranslation.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 7,
+          "source": "Welcome back. Today we will build a small machine learning project on this laptop.",
+          "selected_telugu": "వెల్కమ్ బ్యాక్. ఈరోజు మనం ఈ ల్యాప్టాప్ లో ఒక చిన్న మెషిన్ లెర్నింగ్ ప్రాజెక్ట్ బిల్డ్ చేయబోతున్నాం.",
+          "selected_tier": "fuller",
+          "finding": "Repeated welcome/project statement preserves the same facts as unit 0; natural wording variation is acceptable.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "fuller",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 8,
+          "source": "Before we start, please save a copy of the data. Do not delete the original file.",
+          "selected_telugu": "మొదలుపెట్టే ముందు, ప్లీజ్ డేటా కాపీ ఒకటి సేవ్ చేయండి. ఒరిజినల్ ఫైల్ డిలీట్ చేయకండి.",
+          "selected_tier": "full",
+          "finding": "Repeated save-copy/do-not-delete instruction preserves the same facts and negation as unit 1.",
+          "material_meaning_error_found": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ],
+      "issues": [
+        {
+          "unit": 4,
+          "severity": "minor_formulation",
+          "kind": "implicit_causal_link",
+          "finding": "Explicit because is omitted. The insufficiency of memorization is intact and directly answers the preceding why question; no material change in this contiguous context."
+        },
+        {
+          "unit": 6,
+          "severity": "minor_undertranslation",
+          "kind": "weaker_explanation_verb",
+          "finding": "చెప్దాం means let us say/tell, which is weaker than explain. Comparison and what changed remain; no factual proposition or instruction order is reversed."
+        }
+      ],
+      "source_artifacts": [
+        {
+          "unit": 9,
+          "source": "Thank you.",
+          "selected_telugu": "థాంక్స్.",
+          "classification": "non_authored_asr_tail",
+          "finding": "Thanks accurately translates the ASR unit, but that thanks is absent from the authored source fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "concise",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        },
+        {
+          "unit": 10,
+          "source": "you.",
+          "selected_telugu": "మీకు.",
+          "classification": "non_authored_asr_tail",
+          "finding": "మీకు means to you. This retains a pronoun fragment, with a dative relation unspecified by the isolated English you; the unit itself is an ASR/segmentation artifact absent from the authored fixture.",
+          "included_in_authored_quality_comparison": false,
+          "automated_coverage_for_reference_only": {
+            "class": "C",
+            "by": "review",
+            "tier": "full",
+            "first": null,
+            "missing": [],
+            "added": [],
+            "error": null
+          }
+        }
+      ]
+    }
+  ],
+  "pending_run_ids": [],
+  "summary": {
+    "reviewed_runs": 10,
+    "authored_units_inspected": 90,
+    "material_candidate_regression_found": false,
+    "meaning": "No material meaning errors found in inspected authored units; minor formulation differences are listed per run.",
+    "minor_findings_by_arm": {
+      "A": {
+        "implicit_causal_link": 4,
+        "unsupported_degree": 2
+      },
+      "B": {
+        "implicit_causal_link": 4,
+        "weaker_explanation_verb": 2
+      }
+    },
+    "source_artifact_reviewer_misses": [
+      {
+        "run_id": "formal-B4",
+        "unit": 10
+      }
+    ],
+    "limits": "No material fact, number, negation, condition or instruction-order error found in this one authored narrative across these ten runs. Minor wording losses/additions and an ASR-tail reviewer miss remain; this does not establish native naturalness, audio quality or general quality equivalence."
+  }
+}

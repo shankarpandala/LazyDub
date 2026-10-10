@@ -1,0 +1,590 @@
+{
+  "version": 1,
+  "title": "Original library event lane scheduling fixture",
+  "duration": 270.0,
+  "provenance": {
+    "source": "Original authored English, no user transcript or audio",
+    "purpose": "Bounded text-only lane scheduling comparison"
+  },
+  "settings": {
+    "speakers": 1,
+    "style": "colloquial",
+    "stopAt": null,
+    "speedCap": 1.2,
+    "ttsScript": "latin",
+    "presets": []
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "Library event",
+      "channel": "Maata original fixture",
+      "description": "Original fictional library event.",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": []
+    },
+    "topic": "Ravi and Meena lend library books from two labeled boxes. Ravi has blue Aster with twelve books; Meena has red Cedar with nine.",
+    "register": "Neutral everyday spoken Telugu; polite audience address మీరు.",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "",
+        "gender": "unknown",
+        "role": "narrator",
+        "audience": "polite",
+        "address": []
+      }
+    ],
+    "glossary": [
+      {
+        "term": "Aster",
+        "spoken": "ఆస్టర్",
+        "keep_english": true,
+        "note": "Name of Ravi’s blue book box"
+      },
+      {
+        "term": "Cedar",
+        "spoken": "సీడర్",
+        "keep_english": true,
+        "note": "Name of Meena’s red book box"
+      }
+    ],
+    "entities": [
+      "Ravi",
+      "Meena",
+      "Aster",
+      "Cedar"
+    ],
+    "idioms": [],
+    "numbers": "Retain exact numbers and uncertainty; speak them in Telugu.",
+    "asr_fixes": []
+  },
+  "lines": [
+    {
+      "id": 0,
+      "speaker": "S1",
+      "start": 0.0,
+      "end": 5.0,
+      "speech_s": 4.5,
+      "text": "Ravi and Meena are preparing a small library event."
+    },
+    {
+      "id": 1,
+      "speaker": "S1",
+      "start": 5.0,
+      "end": 10.0,
+      "speech_s": 4.5,
+      "text": "Ravi keeps the blue box, and Meena keeps the red one."
+    },
+    {
+      "id": 2,
+      "speaker": "S1",
+      "start": 10.0,
+      "end": 15.0,
+      "speech_s": 4.5,
+      "text": "The blue box is called Aster; the red box is called Cedar."
+    },
+    {
+      "id": 3,
+      "speaker": "S1",
+      "start": 15.0,
+      "end": 20.0,
+      "speech_s": 4.5,
+      "text": "Aster contains twelve books, while Cedar contains nine."
+    },
+    {
+      "id": 4,
+      "speaker": "S1",
+      "start": 20.0,
+      "end": 25.0,
+      "speech_s": 4.5,
+      "text": "Neither box contains books that are for sale."
+    },
+    {
+      "id": 5,
+      "speaker": "S1",
+      "start": 25.0,
+      "end": 30.0,
+      "speech_s": 4.5,
+      "text": "Ravi thinks his box may need a stronger handle."
+    },
+    {
+      "id": 6,
+      "speaker": "S1",
+      "start": 30.0,
+      "end": 35.0,
+      "speech_s": 4.5,
+      "text": "He will replace it only if the old one breaks."
+    },
+    {
+      "id": 7,
+      "speaker": "S1",
+      "start": 35.0,
+      "end": 40.0,
+      "speech_s": 4.5,
+      "text": "Meena does not need to replace the handle on hers."
+    },
+    {
+      "id": 8,
+      "speaker": "S1",
+      "start": 40.0,
+      "end": 45.0,
+      "speech_s": 4.5,
+      "text": "Their event starts at ten, not at eleven."
+    },
+    {
+      "id": 9,
+      "speaker": "S1",
+      "start": 45.0,
+      "end": 50.0,
+      "speech_s": 4.5,
+      "text": "Visitors may borrow a book, but they cannot keep it forever."
+    },
+    {
+      "id": 10,
+      "speaker": "S1",
+      "start": 50.0,
+      "end": 55.0,
+      "speech_s": 4.5,
+      "text": "Meena wrote the return date on a yellow card."
+    },
+    {
+      "id": 11,
+      "speaker": "S1",
+      "start": 55.0,
+      "end": 60.0,
+      "speech_s": 4.5,
+      "text": "She put that card inside Cedar before closing the lid."
+    },
+    {
+      "id": 12,
+      "speaker": "S1",
+      "start": 60.0,
+      "end": 65.0,
+      "speech_s": 4.5,
+      "text": "It must stay there until the first visitor arrives."
+    },
+    {
+      "id": 13,
+      "speaker": "S1",
+      "start": 65.0,
+      "end": 70.0,
+      "speech_s": 4.5,
+      "text": "Ravi put a different card inside Aster."
+    },
+    {
+      "id": 14,
+      "speaker": "S1",
+      "start": 70.0,
+      "end": 75.0,
+      "speech_s": 4.5,
+      "text": "His card lists the twelve titles, not their prices."
+    },
+    {
+      "id": 15,
+      "speaker": "S1",
+      "start": 75.0,
+      "end": 80.0,
+      "speech_s": 4.5,
+      "text": "Three of those books have large print."
+    },
+    {
+      "id": 16,
+      "speaker": "S1",
+      "start": 80.0,
+      "end": 85.0,
+      "speech_s": 4.5,
+      "text": "The other nine use ordinary print."
+    },
+    {
+      "id": 17,
+      "speaker": "S1",
+      "start": 85.0,
+      "end": 90.0,
+      "speech_s": 4.5,
+      "text": "He reserved the large print books for visitors who requested them."
+    },
+    {
+      "id": 18,
+      "speaker": "S1",
+      "start": 90.0,
+      "end": 95.0,
+      "speech_s": 4.5,
+      "text": "They are not available to everyone yet."
+    },
+    {
+      "id": 19,
+      "speaker": "S1",
+      "start": 95.0,
+      "end": 100.0,
+      "speech_s": 4.5,
+      "text": "Meena has not reserved any books from her box."
+    },
+    {
+      "id": 20,
+      "speaker": "S1",
+      "start": 100.0,
+      "end": 105.0,
+      "speech_s": 4.5,
+      "text": "One visitor asked whether Cedar contained a dictionary."
+    },
+    {
+      "id": 21,
+      "speaker": "S1",
+      "start": 105.0,
+      "end": 110.0,
+      "speech_s": 4.5,
+      "text": "She said it contained two, but neither was new."
+    },
+    {
+      "id": 22,
+      "speaker": "S1",
+      "start": 110.0,
+      "end": 115.0,
+      "speech_s": 4.5,
+      "text": "Both dictionaries can still be borrowed."
+    },
+    {
+      "id": 23,
+      "speaker": "S1",
+      "start": 115.0,
+      "end": 120.0,
+      "speech_s": 4.5,
+      "text": "The visitor chose the smaller one and thanked Meena."
+    },
+    {
+      "id": 24,
+      "speaker": "S1",
+      "start": 120.0,
+      "end": 125.0,
+      "speech_s": 4.5,
+      "text": "He did not take the larger one as well."
+    },
+    {
+      "id": 25,
+      "speaker": "S1",
+      "start": 125.0,
+      "end": 130.0,
+      "speech_s": 4.5,
+      "text": "Ravi recorded that choice in the shared notebook."
+    },
+    {
+      "id": 26,
+      "speaker": "S1",
+      "start": 130.0,
+      "end": 135.0,
+      "speech_s": 4.5,
+      "text": "The notebook belongs to the library, not to either volunteer."
+    },
+    {
+      "id": 27,
+      "speaker": "S1",
+      "start": 135.0,
+      "end": 140.0,
+      "speech_s": 4.5,
+      "text": "It cost two hundred and fifty rupees, including delivery."
+    },
+    {
+      "id": 28,
+      "speaker": "S1",
+      "start": 140.0,
+      "end": 145.0,
+      "speech_s": 4.5,
+      "text": "A replacement cover might cost another fifty rupees."
+    },
+    {
+      "id": 29,
+      "speaker": "S1",
+      "start": 145.0,
+      "end": 150.0,
+      "speech_s": 4.5,
+      "text": "Meena has not ordered that cover yet."
+    },
+    {
+      "id": 30,
+      "speaker": "S1",
+      "start": 150.0,
+      "end": 155.0,
+      "speech_s": 4.5,
+      "text": "So the final cost is not confirmed."
+    },
+    {
+      "id": 31,
+      "speaker": "S1",
+      "start": 155.0,
+      "end": 160.0,
+      "speech_s": 4.5,
+      "text": "Ravi will check the old cover before buying a new one."
+    },
+    {
+      "id": 32,
+      "speaker": "S1",
+      "start": 160.0,
+      "end": 165.0,
+      "speech_s": 4.5,
+      "text": "If it can be repaired, they will keep it."
+    },
+    {
+      "id": 33,
+      "speaker": "S1",
+      "start": 165.0,
+      "end": 170.0,
+      "speech_s": 4.5,
+      "text": "That decision does not affect the return dates."
+    },
+    {
+      "id": 34,
+      "speaker": "S1",
+      "start": 170.0,
+      "end": 175.0,
+      "speech_s": 4.5,
+      "text": "A parent asked for one extra day to return a book."
+    },
+    {
+      "id": 35,
+      "speaker": "S1",
+      "start": 175.0,
+      "end": 180.0,
+      "speech_s": 4.5,
+      "text": "Meena agreed for that parent, but not for every visitor."
+    },
+    {
+      "id": 36,
+      "speaker": "S1",
+      "start": 180.0,
+      "end": 185.0,
+      "speech_s": 4.5,
+      "text": "The exception applies only to that borrowed book."
+    },
+    {
+      "id": 37,
+      "speaker": "S1",
+      "start": 185.0,
+      "end": 190.0,
+      "speech_s": 4.5,
+      "text": "All the other books are still due on Friday."
+    },
+    {
+      "id": 38,
+      "speaker": "S1",
+      "start": 190.0,
+      "end": 195.0,
+      "speech_s": 4.5,
+      "text": "Ravi wrote the exception beside the title in the notebook."
+    },
+    {
+      "id": 39,
+      "speaker": "S1",
+      "start": 195.0,
+      "end": 200.0,
+      "speech_s": 4.5,
+      "text": "He did not change the date on every card."
+    },
+    {
+      "id": 40,
+      "speaker": "S1",
+      "start": 200.0,
+      "end": 205.0,
+      "speech_s": 4.5,
+      "text": "By noon, Aster had five books left and Cedar had four."
+    },
+    {
+      "id": 41,
+      "speaker": "S1",
+      "start": 205.0,
+      "end": 210.0,
+      "speech_s": 4.5,
+      "text": "Meena checked both counts before announcing them."
+    },
+    {
+      "id": 42,
+      "speaker": "S1",
+      "start": 210.0,
+      "end": 215.0,
+      "speech_s": 4.5,
+      "text": "She said those numbers described books still in the boxes."
+    },
+    {
+      "id": 43,
+      "speaker": "S1",
+      "start": 215.0,
+      "end": 220.0,
+      "speech_s": 4.5,
+      "text": "They did not describe the total number of visitors."
+    },
+    {
+      "id": 44,
+      "speaker": "S1",
+      "start": 220.0,
+      "end": 225.0,
+      "speech_s": 4.5,
+      "text": "Two visitors had only looked around and borrowed nothing."
+    },
+    {
+      "id": 45,
+      "speaker": "S1",
+      "start": 225.0,
+      "end": 230.0,
+      "speech_s": 4.5,
+      "text": "Ravi thanked them too, because attendance did not require borrowing."
+    },
+    {
+      "id": 46,
+      "speaker": "S1",
+      "start": 230.0,
+      "end": 235.0,
+      "speech_s": 4.5,
+      "text": "The volunteers might repeat the event next month."
+    },
+    {
+      "id": 47,
+      "speaker": "S1",
+      "start": 235.0,
+      "end": 240.0,
+      "speech_s": 4.5,
+      "text": "They will decide after the borrowed books come back."
+    },
+    {
+      "id": 48,
+      "speaker": "S1",
+      "start": 240.0,
+      "end": 245.0,
+      "speech_s": 4.5,
+      "text": "Until then, another event is only a possibility."
+    },
+    {
+      "id": 49,
+      "speaker": "S1",
+      "start": 245.0,
+      "end": 250.0,
+      "speech_s": 4.5,
+      "text": "Neither volunteer has promised a date."
+    },
+    {
+      "id": 50,
+      "speaker": "S1",
+      "start": 250.0,
+      "end": 255.0,
+      "speech_s": 4.5,
+      "text": "Meena will keep Cedar at the library until Friday."
+    },
+    {
+      "id": 51,
+      "speaker": "S1",
+      "start": 255.0,
+      "end": 260.0,
+      "speech_s": 4.5,
+      "text": "Ravi will bring Aster back tomorrow morning."
+    },
+    {
+      "id": 52,
+      "speaker": "S1",
+      "start": 260.0,
+      "end": 265.0,
+      "speech_s": 4.5,
+      "text": "He must return the blue box, even if it is empty."
+    },
+    {
+      "id": 53,
+      "speaker": "S1",
+      "start": 265.0,
+      "end": 270.0,
+      "speech_s": 4.5,
+      "text": "She will check both boxes again before closing the library."
+    }
+  ],
+  "semantic_expectations": [
+    {
+      "ids": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7
+      ],
+      "check": "Ravi owns blue Aster/12 books; Meena red Cedar/9. Only his handle may need replacement, conditional on breaking."
+    },
+    {
+      "ids": [
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      "check": "The yellow return-date card stays in Cedar until first visitor. Ravi has a different title-list card, not prices."
+    },
+    {
+      "ids": [
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "check": "Three large-print books reserved only for requesting visitors; other nine ordinary. Not available to everyone yet. Meena has no reservations."
+    },
+    {
+      "ids": [
+        20,
+        21,
+        22,
+        23,
+        24
+      ],
+      "check": "Cedar has two non-new dictionaries. Visitor took smaller only, not both."
+    },
+    {
+      "ids": [
+        27,
+        28,
+        29,
+        30,
+        31,
+        32
+      ],
+      "check": "250 includes delivery; possible extra50 cover un-ordered; finalcost unconfirmed; retain old cover if repairable."
+    },
+    {
+      "ids": [
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "check": "One parent/book gets one extra day; all others due Friday. Not blanket date change."
+    },
+    {
+      "ids": [
+        40,
+        41,
+        42,
+        43,
+        44
+      ],
+      "check": "Aster five/Cedar four left are remaining books, not visitor totals; two visitors borrowed nothing."
+    },
+    {
+      "ids": [
+        46,
+        47,
+        48,
+        49
+      ],
+      "check": "Next-month repeat possible only; decision after returns, no promised date."
+    },
+    {
+      "ids": [
+        50,
+        51,
+        52,
+        53
+      ],
+      "check": "Meena keeps red Cedar until Friday; Ravi returns blue Aster tomorrow even empty. She later checks both."
+    }
+  ]
+}

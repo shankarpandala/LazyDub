@@ -1,0 +1,141 @@
+{
+  "scope": "CPU-only reread of the six existing marked authored samples; no regeneration or model inference.",
+  "source": "engine/src/maata_engine/speakers.py",
+  "source_sha256": "f1a68990cee2985aba566f096cd46c13b294fb023c5de766412b27c3d6ef3820",
+  "function_sha256": "2431d9a79620fe7e46eccd52569141d9068165408d6e75896815aee7240bd5c8",
+  "thresholds": {
+    "minimum_voiced_seconds": 2.0,
+    "minimum_voiced_fraction": 0.2,
+    "required_range_fraction": 0.8,
+    "male_range_hz": [
+      70,
+      160
+    ],
+    "female_range_hz": [
+      190,
+      350
+    ],
+    "maximum_source_seconds": 12.0
+  },
+  "audio_input": "PerTh-marked24kHz files resampled to16kHz by scipy.signal.resample_poly(2,3)",
+  "samples": [
+    {
+      "profile": "male",
+      "phrase": "conversation",
+      "audio_sha256": "aced470637a739d4c9d19a7af10609ad71f84c742abe03105c1d926cb5f919e4",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 132.2,
+        "voicedSeconds": 0.58,
+        "voicedFraction": 0.309,
+        "periodicFrames": 29,
+        "analysedFrames": 94,
+        "sampleSeconds": 2.92
+      }
+    },
+    {
+      "profile": "male",
+      "phrase": "names_numbers",
+      "audio_sha256": "11b71078596a4b6989feba943e4589a366b65d0d72b188db1a1e6d13f0268bf7",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 142.5,
+        "voicedSeconds": 1.64,
+        "voicedFraction": 0.506,
+        "periodicFrames": 82,
+        "analysedFrames": 162,
+        "sampleSeconds": 4.04
+      }
+    },
+    {
+      "profile": "male",
+      "phrase": "expressive",
+      "audio_sha256": "e0c682da92ca1c8290f6c91d9c8169e22f2208d208a98ac69740bdfcee2aa48b",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 129.4,
+        "voicedSeconds": 1.1,
+        "voicedFraction": 0.474,
+        "periodicFrames": 55,
+        "analysedFrames": 116,
+        "sampleSeconds": 3.28
+      }
+    },
+    {
+      "profile": "female",
+      "phrase": "conversation",
+      "audio_sha256": "6997d2395729921d43b7662a2ed742ed325321155dd22d0aa8315f695f7a5b37",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 259.0,
+        "voicedSeconds": 0.88,
+        "voicedFraction": 0.463,
+        "periodicFrames": 44,
+        "analysedFrames": 95,
+        "sampleSeconds": 2.92
+      }
+    },
+    {
+      "profile": "female",
+      "phrase": "names_numbers",
+      "audio_sha256": "e0dcceb9413128d5f07125ba1d2380f1306addf262067b4dea7a283975df1368",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 269.0,
+        "voicedSeconds": 1.32,
+        "voicedFraction": 0.455,
+        "periodicFrames": 66,
+        "analysedFrames": 145,
+        "sampleSeconds": 4.04
+      }
+    },
+    {
+      "profile": "female",
+      "phrase": "expressive",
+      "audio_sha256": "d654668766561bcaa216200c23df9ee64cd84b69bf292118fc0daa3d1cc72df7",
+      "diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 261.8,
+        "voicedSeconds": 1.22,
+        "voicedFraction": 0.526,
+        "periodicFrames": 61,
+        "analysedFrames": 116,
+        "sampleSeconds": 3.28
+      }
+    }
+  ],
+  "pooled": {
+    "male": {
+      "policy": "source-pitch-v1",
+      "profile": null,
+      "pitchHz": 138.5,
+      "voicedSeconds": 3.32,
+      "voicedFraction": 0.446,
+      "periodicFrames": 166,
+      "analysedFrames": 372,
+      "sampleSeconds": 10.24
+    },
+    "female": {
+      "policy": "source-pitch-v1",
+      "profile": "female",
+      "pitchHz": 262.8,
+      "voicedSeconds": 3.42,
+      "voicedFraction": 0.48,
+      "periodicFrames": 171,
+      "analysedFrames": 356,
+      "sampleSeconds": 10.24
+    }
+  },
+  "limitations": [
+    "Pitch is not gender identity or naturalness proof.",
+    "This is a generated-audio diagnostic, not a validation of source-speaker classification.",
+    "Existing raw results preserve earlier 0.6 voiced-fraction and1.5-second thresholds.",
+    "Human listening acceptance is tracked separately by the parent; this measurement does not change it."
+  ]
+}

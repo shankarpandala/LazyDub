@@ -1,0 +1,23 @@
+{
+  "video_id": "8qCc_hMCB0w",
+  "analysis": "bounded local source pitch only; no identity ground truth or listening claim",
+  "limitations": [
+    "Voiced fraction is periodic versus unvoiced evidence, not confidence probability.",
+    "Diarized clean speech required; pitch alone cannot distinguish all music.",
+    "No voice identity guarantee."
+  ],
+  "profiles": [
+    {
+      "speaker": "S1",
+      "clip_seconds": 12.0,
+      "policy": "source-pitch-v1",
+      "profile": "male",
+      "pitchHz": 126.5,
+      "voicedSeconds": 2.22,
+      "voicedFraction": 0.285,
+      "periodicFrames": 111,
+      "analysedFrames": 390,
+      "sampleSeconds": 12.0
+    }
+  ]
+}

@@ -17,7 +17,62 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   - the Svelte UI (Library, New dub, Job, Settings) and the Tauri shell;
   - the streaming player and `Session` are gone.
 - Runs end to end on the M5 Pro (2026-10-04): a YouTube link becomes a dubbed MP4, with real models. An 8.2-minute talk took 9.8 minutes.
-- Not yet committed: real-model numbers. Run `./scripts/verify-mac.sh` and commit its JSON.
+- Speed/quality pass (ADR-022, 2026-10-05): vectorized separator mask merge; duration-aware complete first translations;
+  priority admission for queued Claude calls; selected-waveform checks with bounded retries; synthesis-versioned take
+  restoration; corrected export wall-time traces. Models, precision and CFM defaults are unchanged.
+- Translation latency (ADR-023): scenes now hold at most 30 seconds / 6 complete lines, preserving the whole-video
+  brief, context, models and meaning reviews. Queued rephrases recheck the synthesis budget before spending it.
+  `scripts/bench_scene_pipeline.py` compares explicit scene limits on fresh whole-video runs;
+  `scripts/bench_translation_scenes.py` also checks context-dependent original text without loading audio models.
+- Text model (ADR-025, maintainer request): all text calls use the signed-in Codex CLI with `gpt-6-luna` at low
+  reasoning effort, including meaning reviews. This replaces Haiku and has no Claude fallback.
+  Earlier Claude speed and quality measurements do not establish Luna's performance or Telugu quality.
+- Long-queue monitoring (ADR-026): English substitutions are anchored to exact Telugu words and retained only
+  for the tier approved by meaning review, which checks the actual Latin TTS input too. Cache restoration and
+  voice calibration follow the corrected input. Completed outputs remain intact.
+  Run-scoped stage and GPU-operation traces distinguish new work from cached take costs; inspect them with
+  `engine/.venv/bin/python scripts/monitor-queue.py --out /tmp/maata-queue.json`.
+  Streaming mix allocation is reduced without changing PCM; export progress includes the cancellable final
+  audio-quality pass. Lane weights remain an internal experiment until measured against the balanced baseline.
+- Initial meaning review (ADR-027): an eligible existing full wording can replace a rejected short wording after
+  explicit semantic C, avoiding a generated correction. Explicitly qualified/uncertain sources keep the normal
+  corrective path. Full approval survives later fits and cache restoration. Scene-v5 wording can be reused under
+  scene-v7 only after clearing old approval/maps and re-reviewing; old audio cannot restore obsolete approval.
+  Original text and offline audio evidence is in the queue-monitor results. Successful-call timings now exclude
+  usage-limit rejection attempts; overnight holds are not processing throughput.
+- Quality recovery (ADR-028, 2026-10-10): the maintainer cancelled long jobs over unnatural voice/pronunciation.
+  After a blind original-text audition against Chatterbox, the maintainer explicitly preferred Voice B (OmniVoice).
+  Apple now uses a persistent isolated OmniVoice runtime in automatic Telugu mode: no source-speaker clones,
+  reference audio or forced duration. Voice identity can vary between lines. A reference-conditioned trial was
+  rejected after a possible omitted clause; its evidence remains separate from automatic-mode validation;
+  long-video quality and earlier underfill remain unproven. `MAATA_TTS=chatterbox` is explicit rollback only. Research and
+  evidence are in `docs/research/telugu-voice-selection-2026-10-10.md` and `docs/spikes/results/model-evaluation-2026-10-10/`.
+  Corrective translations now need fresh semantic review of their actual TTS wording; length cannot grant C.
+  Approval caches include reviewer/policy identity, and old wording/audio cannot resurrect obsolete approval.
+  Failed correction reviews remain retryable; a voiced correction gets C only after its replacement take succeeds.
+  Model/mode/seed identity separates take caches; PerTh follows time stretching. Cancel, timeout and parent exit
+  reap the worker. Run `scripts/setup-omnivoice.sh` to provision its separate pinned runtime and model.
+  Cancelled jobs stay stopped, completed outputs stay intact, and the deleted monitoring schedule stays deleted.
+- Speaker voice matching (ADR-029): OmniVoice now uses a persisted male/female profile per speaker, selected from
+  bounded local source-pitch evidence or an explicit user choice. Ambiguous source speech requires a choice before
+  synthesis. Each profile has its own calibration and audio cache identity; Auto/Male/Female controls are in the
+  speaker panel. Editing a stopped job saves settings without restarting it. The maintainer accepted six original
+  profile samples as correctly matched with all words audible; this is not long-video or speaker-identity acceptance.
+  See `docs/spikes/results/model-evaluation-2026-10-10/voice-mapping/`.
+- Installable Apple Silicon preview (ADR-030): `scripts/build-installer.sh` builds a DMG with a versioned source/lock
+  runtime payload and Setup Maata.command. Setup installs independently under Application Support, verifies models,
+  and preserves prior runtimes. Release shells require a matching runtime ID. The `/Applications/Maata.app` copy was
+  tested with nine completed jobs unchanged. The preview is ad-hoc signed, not Developer ID signed/notarized;
+  clean-Mac online setup remains untested. See `docs/release-installation.md` and release-installation results.
+- Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
+  `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
+  separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`
+  checks the production prompt through the isolated Codex CLI on original text. The integration smoke covers MP4,
+  subtitles, loudness, synchronization and watermark; it is not a paired whole-video speed or listening evaluation.
+- Still owed: native Telugu listening, representative long-video throughput, and the complete `./scripts/verify-mac.sh`
+  acceptance run (including separation/leakage quality and UI inspection).
+  The latest original-audio smoke passes export checks but has excess uncovered source speech from early endings;
+  final heuristic coverage must not be presented as independent semantic approval.
 
 ## Where work runs
 
@@ -34,13 +89,13 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   - Start: `cd engine && uv run maata-engine --backend mock --demo --ui ../app/dist --token demo --port 8765` (add `--config-dir <dir>` to keep its settings apart).
   - Open `http://127.0.0.1:8765/?token=demo`, paste any YouTube link and press Dub.
   - The dubbed MP4 lands in the output folder: `~/Movies/Maata`, unless Settings says otherwise.
-- Mac setup and launch: `./scripts/setup-mac.sh` (and `claude auth login` once: translation runs through the Claude CLI), then `cd app && npm run tauri dev`
+- Mac setup and launch: `./scripts/setup-mac.sh` (and `codex login` once: translation runs through Codex), then `cd app && npm run tauri dev`
 - Fetch models: `uv run maata-bench fetch --backend apple`.
 - Bench: `uv run maata-bench pipeline FILE --backend apple`.
   - FILE is a local video. It is dubbed to an MP4 in `--out`, by default `<cache>/out`.
-  - Translation goes through the Claude CLI; `--translator mock` runs offline.
+  - Translation goes through Codex CLI; `--translator mock` runs offline.
 - Verify on the M5 Pro: `./scripts/verify-mac.sh` (it takes no URL), then review and commit the results.
-  - It makes a speech + music video, then checks separation, runs the bench under a network sandbox that lets only the Claude CLI out, checks the MP4 and takes a Library screenshot.
+  - It makes a speech + music video, then checks separation, runs the bench under a network sandbox that allows the Codex CLI's OpenAI traffic, checks the MP4 and takes a Library screenshot.
   - The results go into `docs/spikes/results/<machine>/`.
 - Check YouTube once: `./scripts/check-youtube-video.sh URL` shows which video format the engine gets.
 
@@ -60,14 +115,14 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   - Fetch only through `models.lock.json` (pinned commit and sha256).
   - Load from local paths with `HF_HUB_OFFLINE=1`.
   - Run model benches with outbound network blocked.
-- **Engine interface:** a loopback WebSocket, using a per-launch token from the shell. The engine makes no network calls except yt-dlp fetching from YouTube and the `claude` CLI for translation.
+- **Engine interface:** a loopback WebSocket, using a per-launch token from the shell. The engine makes no network calls except yt-dlp fetching from YouTube and the `codex` CLI for translation.
 - **yt-dlp:** pinned; `--no-remote-components`; never `-U`.
 - **Test media:** only self-recorded or CC0/CC-BY. Never commit downloaded YouTube media.
 
 ## Hard constraints
 
 - On-device inference for all audio: speech recognition, diarization, TTS and voice cloning run locally, and audio never leaves the machine. No telemetry.
-- Translation is the one exception (maintainer, 2026-09-24): no local LLMs. English→Telugu text goes through the `claude` CLI on the maintainer's own subscription, run headless and sealed off (no tools, hooks, plugins or MCP servers). Only transcript text is sent.
+- Translation is the one exception (maintainer, 2026-10-05, ADR-025): no local LLMs. English→Telugu text goes through the signed-in `codex` CLI on the maintainer's plan, headless with user configuration, hooks, plugins and action tools disabled. Transcript, translation and video-context text is sent; all audio inference stays local.
 - The translation target is the everyday spoken Telugu of the general public (maintainer, 2026-10-03), with English words where people naturally use them, never bookish. Everything else stays on the device.
 - Model licences (maintainer, 2026-10-03): they don't constrain choices. Maata is for the maintainer's personal viewing only, so pick the best model that runs locally, whatever its licence. Weights are still pinned and loaded offline.
 - No bundled model weights; the engine runtime is downloaded pinned and checksummed.

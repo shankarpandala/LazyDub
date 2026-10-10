@@ -32,7 +32,7 @@ from .backends.base import (SR_ANALYSIS, Backend, LineResult, LineSpec, SceneReq
 from .claude_cli import ClaudeCLIError
 from .gpu import BACKGROUND, VOICE, GpuScheduler
 from .qa import take as take_qa
-from .qa.coverage import CLASSES, voiced_class
+from .qa.coverage import CLASSES, approved_full, voiced_class
 from .segment import sentence_end
 from .speakers import SpeakerRegistry
 from .text import asr_guard, tenglish
@@ -53,8 +53,8 @@ REF_TARGET = 10.0        # s of reference audio per cloned voice (S3Gen uses 10 
 REF_MIN = 4.0            # s: below this a speaker keeps a preset voice until more clean speech appears
 MAX_LINE_SECONDS = 30.0
 SINGLE_CLIP_MIN = 8.0   # s: a speaker's best single clean clip must be this long to be the timbre reference (ADR-017)
-# Scenes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): at most 150 s and 30 lines, cut at a speaker turn or a pause >= 1 s.
-SCENE_MAX_S, SCENE_MAX_UNITS, SCENE_PAUSE = 150.0, 30, 1.0
+# Bounded translation scenes: at most 30 s and 6 whole lines, cut at a speaker turn or a pause >= 1 s.
+SCENE_MAX_S, SCENE_MAX_UNITS, SCENE_PAUSE = 30.0, 6, 1.0
 CONTEXT_BEFORE, CONTEXT_AFTER, CONTEXT_SPAN = 3, 2, 60.0  # context lines each side of a scene, from within this many s
 # Aksharas of `full` per English syllable (§4.3): a weak prior until a speaker has K_MIN_LINES validated lines, then
 # the running median of theirs (lines of at least K_MIN_SYLLABLES syllables, the last K_WINDOW).
@@ -62,9 +62,6 @@ K_PRIOR, K_MIN_LINES, K_MIN_SYLLABLES, K_WINDOW = 1.4, 3, 4, 400
 BAND = (0.85, 1.10)     # §4.5: a wording fits when its predicted duration is within this share of the line's speech time
 DENSE = 0.8             # a slot is speech-dense when speech fills this share of its span (only then is `fuller` asked)
 TIERS_BY_FULLNESS = ("fuller", "full", "concise", "very_concise")
-# %: a scene's code-mixing index is logged, and warned about only well outside CoSTA's ~20-40 (it tops out at 50, where
-# half the words are English)
-CMI_WARN = (5.0, 45.0)
 CLAUDE_BACKOFF, CLAUDE_BACKOFF_MAX = 30.0, 300.0  # s before the next scene call after a failure, doubling
 MARKS = re.compile(r"[,;:.!?।॥…—]+")  # where a wording breaks inside: a Telugu pause there is plausible (§3.10 step 3)
 BRIEF_TRIES = 3
@@ -87,6 +84,9 @@ class VoiceState:
     use_preset: bool = False
     status: str = "found"  # found | cloning | cloned | preset
     key: VoiceKey | None = None  # the clone's key in the duration estimator, taken (and calibrated) when it is built
+    voice_profile: str = "auto"
+    resolved_voice_profile: str | None = None
+    voice_profile_source: str = "unresolved"
 
 
 @dataclass
@@ -236,6 +236,7 @@ class Dubber:
         self.units: dict[int, UnitState] = {}
         self._wake = _Wake()
         self._dir: Path | None = None  # the video's cache directory (units.jsonl)
+        self._run_id: str | None = None  # distinguishes fresh work from earlier attempts and cache replay
         self.tr: SceneTranslator | None = None
         self._side_tasks: set[asyncio.Task] = set()   # fits, a scene's fix-ups, saves: never awaited by the dub loop
         self._ratios: dict[str, list[float]] = {}   # per speaker: `full` aksharas / English syllables of each line
@@ -309,7 +310,8 @@ class Dubber:
             return
         try:
             with (self._dir / "units.jsonl").open("a", encoding="utf-8") as f:
-                f.write(json.dumps({"t": round(time.time(), 3), **rec}, ensure_ascii=False) + "\n")
+                f.write(json.dumps({"t": round(time.time(), 3), "run_id": self._run_id, **rec},
+                                   ensure_ascii=False) + "\n")
         except OSError:
             log.warning("could not write units.jsonl", exc_info=True)
 
@@ -369,7 +371,7 @@ class Dubber:
         """The estimator's key for the voice a speaker's lines are voiced with now, as `_voice_for` picks it: their clone,
         else their preset (keyed by its name, so speakers who share a preset share its pace)."""
         v = self.voices.get(sid)
-        if v is not None and v.kind is VoiceKind.CLONED and v.voice is not None and v.key is not None and not v.use_preset:
+        if v is not None and v.kind in (VoiceKind.CLONED, VoiceKind.NATIVE) and v.voice is not None and v.key is not None and not v.use_preset:
             return v.key
         return self._voice_key(_preset_name(sid), None)
 
@@ -509,6 +511,10 @@ class Dubber:
         from the Telugu script, whichever script the TTS reads, for the voice `key` (by default the speaker's voice now).
         Returns (the tier, whether it fits: in the band, or absorbed)."""
         key = key or self._key(st.unit.speaker)
+        if approved_full(line):
+            pred = self.estimator.estimate(line.full.spoken, key)
+            fits = BAND[0] * st.speech_s <= pred <= BAND[1] * st.speech_s or self._absorbs(st, pred)
+            return "full", fits  # timing cannot choose the shorter wording that the same review found incomplete
         tiers = [t for t in TIERS_BY_FULLNESS if t in line.tiers]
         pred = {t: self.estimator.estimate(line.tiers[t].spoken, key) for t in tiers}
         lo, hi = BAND[0] * st.speech_s, BAND[1] * st.speech_s
@@ -544,6 +550,8 @@ class Dubber:
         pick is `full`, which a fit never rewrites, a `fuller` closer to the slot instead, from the pick. Under it with
         nothing longer: `fuller`, for a speech-dense slot."""
         u, line = st.unit, st.line
+        if approved_full(line):
+            return None  # preserve the complete wording; a new unreviewed fit cannot reverse that decision
         start = line.tiers[st.tier]  # the fit's `current`: the wording its tiers are made from
         if self.estimator.estimate(start.spoken, self._key(u.speaker)) > BAND[1] * st.speech_s:
             want = tuple(t for t in ("concise", "very_concise") if t not in line.tiers)
@@ -627,8 +635,8 @@ class Dubber:
         if fits:
             self._side(self._fit(SceneRequest(req.scene, tuple(fits), "fit")))
         mix = tenglish.cmi((s.line.tiers[s.tier].spoken, s.line.tiers[s.tier].english) for s in done)
-        if done and not CMI_WARN[0] <= mix <= CMI_WARN[1]:
-            log.warning("scene %d: code-mixing index %.0f %% is well outside the usual 20-40 %%", req.scene, mix)
+        # Legacy trace field: now it counts reviewed Latin substitutions only, not all Telugu-spelled English loans.
+        # There is no preferred mixing quota, and declined/unreviewed substitutions must not trigger a quality warning.
         self._trace({"event": "scene", "scene": req.scene, "a": round(req.lines[0].start, 2),
                      "b": round(req.lines[-1].end, 2), "lines": len(req.lines), "translated": len(done),
                      "cached": sum(1 for s in done if s.cache_hit), "fits": len(fits), "cmi": round(mix, 1),
@@ -646,22 +654,36 @@ class Dubber:
         as a scene call does."""
         if not lines:
             return lines
+        def safe_wordings(answer: dict[int, LineResult]) -> dict[int, LineResult]:
+            # The Latin spelling is an optional pronunciation aid. Only a semantic review of that exact tier may
+            # authorize it; unexpected reviewer failures must still preserve the full Telugu wording.
+            return {i: replace(line, tiers={tier: w if line.coverage is not None
+                                            and line.coverage.by == "review" and line.coverage.cls in ("C", "m")
+                                            and line.coverage.tier == tier else Wording(w.spoken)
+                                            for tier, w in line.tiers.items()}) for i, line in answer.items()}
         chosen = {i: self._pick(self.units[i], line)[0] for i, line in lines.items()}
+        def fallback_ok(lid: int) -> bool:
+            st, line = self.units.get(lid), lines.get(lid)
+            return (st is not None and line is not None and not (st.voicing or st.voiced)
+                    and chosen.get(lid) != "full" and line.full != line.tiers.get(chosen.get(lid))
+                    and self._absorbs(st, self.estimator.estimate(line.full.spoken, self._key(st.unit.speaker))))
+        fallback_kw = ({"fallbacks": {i for i in lines if fallback_ok(i)}, "fallback_check": fallback_ok}
+                       if getattr(self.tr, "supports_full_fallback", False) else {})
         asked = time.monotonic()
         try:
-            res = await self.tr.review(req, lines, chosen)
+            res = await self.tr.review(req, lines, chosen, **fallback_kw)
         except asyncio.CancelledError:
             if _cancelling():
                 raise
             return None
         except Exception:
             log.exception("the review of scene %d failed; its lines go on unreviewed", req.scene)
-            return lines
+            return safe_wordings(lines)
         if res.error is not None:
             await self._claude_failed(res.error)
         elif res.calls:
             await self._claude_ok(asked)
-        return res.lines
+        return safe_wordings(res.lines)
 
     def _release(self, req: SceneRequest) -> None:
         """A scene call that ended without an answer: its lines go back to be asked for again."""
@@ -686,6 +708,8 @@ class Dubber:
         for lid, line in res.lines.items():
             st = self.units.get(lid)
             if st is not None and st.line is not None and not (st.voicing or st.voiced):
+                if approved_full(st.line):
+                    continue  # a fit submitted before the complete fallback was approved may arrive afterwards
                 st.line = line
                 self._choose(st)
         self._wake.set()
@@ -706,7 +730,7 @@ class Dubber:
         if err.kind == "usage_limit" and err.resets_at:
             wait = max(wait, err.resets_at - time.time() + 5.0)
         self._claude_hold = time.monotonic() + wait
-        log.warning("Claude %s: %s; the next scene call in %.0f s", err.kind, err, wait)
+        log.warning("Translation %s: %s; the next scene call in %.0f s", err.kind, err, wait)
         await self.notify({"type": "claude_error", "kind": err.kind, "message": str(err), "limit": err.limit,
                               "resetsAt": err.resets_at, "retryIn": round(wait)})
 
@@ -810,6 +834,13 @@ class Dubber:
         their cap when none passed: a voice faster than its estimate is still learned; None if all ran away), and why
         the take voiced failed, or None). `speech`: the speech time the take is picked against, for a piece of the line;
         by default the line's."""
+        got, failed = await self._take_candidates(w, voice, key, seconds, cost, n)
+        k = take_qa.pick([secs for _, secs, _ in got], failed, st.speech_s if speech is None else speech)
+        return got[k][0], got[k][1], self._take_pace(got, failed), failed[k]
+
+    async def _take_candidates(self, w: Wording, voice: object, key: VoiceKey, seconds: float, cost: VoiceCost,
+                               n: int) -> tuple[list[tuple[object, float, bool]], list[str | None]]:
+        """Keep a batch's candidates until the chosen waveform passes QA; flow still runs only for candidates tried."""
         batched = hasattr(self.b.tts, "synthesize_takes")
         n = max(n, 1) if batched else 1
         cost.takes_n = n if cost.takes_n is None else cost.takes_n
@@ -825,10 +856,14 @@ class Dubber:
             got += more
             failed += [take_qa.failure(secs, capped, estimate) for _, secs, capped in more]
         cost.failures += [f for f in failed if f]
-        k = take_qa.pick([secs for _, secs, _ in got], failed, st.speech_s if speech is None else speech)
+        return got, failed
+
+    @staticmethod
+    def _take_pace(got: list[tuple[object, float, bool]], failed: list[str | None]) -> float | None:
+        # Duration-only "short" failures can teach a newly calibrated voice's true pace. Broken waveforms cannot.
         usable = ([secs for (_, secs, _), f in zip(got, failed) if f is None]
-                  or [secs for _, secs, capped in got if not capped])
-        return got[k][0], got[k][1], (sum(usable) / len(usable) if usable else None), failed[k]
+                  or [secs for (_, secs, capped), f in zip(got, failed) if not capped and f == "short"])
+        return sum(usable) / len(usable) if usable else None
 
     async def _render(self, take: object, rate: float, cost: VoiceCost) -> np.ndarray:
         """The take voiced, rendered at the planned rate: vocoded (after its S3Gen flow, which counts as synthesis), or
@@ -869,12 +904,41 @@ class Dubber:
                          cost: VoiceCost, n: int, speech: float
                          ) -> tuple[object, float, np.ndarray | None, tuple[tuple[float, float], ...], float | None,
                                     str | None]:
-        """One wording of `_say`: its take (`_take`, picked against `speech` s), rendered at its natural pace, where its
-        pauses are found. Returns (the take, its natural seconds, that audio, its pauses, the pace the estimator learns
-        from, why it failed)."""
-        take, dur, pace, failed = await self._take(st, w, voice, key, seconds, cost, n, speech=speech)
-        natural = await self._render(take, 1.0, cost)
-        return take, dur, natural, pz.pauses(natural, self.b.tts.sample_rate), pace, failed
+        """One wording of `_say`: select against `speech` s, render at its natural pace, and check its waveform before
+        finding pauses. Only broken audio tries other candidates, then at most one fresh batched take. Returns (take,
+        natural seconds, audio, pauses, the pace learned, duration failure); no usable audio raises UnusableAudioError.
+        """
+        got, failed = await self._take_candidates(w, voice, key, seconds, cost, n)
+        pending = list(range(len(got)))
+        retried = False
+        while pending:
+            k = pending.pop(take_qa.pick([got[i][1] for i in pending], [failed[i] for i in pending], speech))
+            take, dur, _ = got[k]
+            natural = await self._render(take, 1.0, cost)
+            reason = take_qa.audio_failure(natural)
+            if reason is None:
+                return (take, dur, natural, pz.pauses(natural, self.b.tts.sample_rate),
+                        self._take_pace(got, failed), failed[k])
+            failed[k] = reason
+            cost.failures.append(reason)
+            log.warning("unit %d: rejected a take (%s)", st.unit.id, reason)
+            # Exhaust the existing candidates first. Only stochastic/batched engines get one fresh retry;
+            # deterministic engines would return the same broken output. Never loop indefinitely on a bad model.
+            if not pending and not retried and hasattr(self.b.tts, "synthesize_takes"):
+                retried = True
+                self._retakes += 1
+                cost.retakes += 1
+                cap = min(MAX_LINE_SECONDS, max(4.0, seconds * self.speed_cap * 2.0))
+                more = await self._synth(self._tts_text(w), voice, cap, 1, cost)
+                pending.extend(range(len(got), len(got) + len(more)))
+                got += more
+                reasons = [take_qa.failure(secs, capped, self.estimator.estimate(w.spoken, key))
+                           for _, secs, capped in more]
+                failed += reasons
+                cost.failures += [f for f in reasons if f]
+        raise take_qa.UnusableAudioError(
+            f"Could not generate usable audio for line {st.unit.id + 1}. Resume to retry this line. "
+            f"Audio checks: {', '.join(sorted(set(f for f in failed if f)))}.")
 
     def _learn(self, said: Said, key: VoiceKey) -> None:
         for w, pace in zip(said.wordings, said.paces):
@@ -915,6 +979,8 @@ class Dubber:
         the most complete shorter one predicted within the band of `seconds`, else the shortest; None when it has none
         shorter than its tier."""
         size = lambda t: count_units(st.line.tiers[t].spoken)  # noqa: E731
+        if approved_full(st.line):
+            return None
         shorter = [t for t in st.line.tiers if size(t) < size(st.tier)]
         if not shorter:
             return None
@@ -1100,22 +1166,27 @@ def _audio_hash(*clips: np.ndarray) -> str:
     return h.hexdigest()[:16]
 
 
-def scene_cut(run: list[SourceUnit]) -> int:
+def scene_cut(run: list[SourceUnit], *, max_seconds: float | None = None, max_units: int | None = None) -> int:
     """How many lines of `run` (lines in time order, from where the next scene starts to the video's end, or at least
-    one past SCENE_MAX_UNITS of them) the next scene takes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): at most SCENE_MAX_S
-    s and SCENE_MAX_UNITS lines, cut at the last speaker turn or pause of SCENE_PAUSE s or more in its second half, else
-    at the limit; one line longer than a scene is a scene of its own, and the rest of the video under the limit is one."""
+    one past its line limit) the next scene takes (ARCHITECTURE §4.1, OFFLINE-RENDER §2.8): cut at the last speaker turn
+    or pause of SCENE_PAUSE s or more in its second half, else at the limit. One line longer than a scene stays whole,
+    and the rest of the video under the limits is one. Explicit caps support controlled latency comparisons; omitted
+    caps keep the production SCENE_MAX_S/SCENE_MAX_UNITS defaults."""
+    max_seconds = SCENE_MAX_S if max_seconds is None else max_seconds
+    max_units = SCENE_MAX_UNITS if max_units is None else max_units
+    if not 0 < max_seconds < float("inf") or not isinstance(max_units, int) or max_units < 1:
+        raise ValueError("scene limits must be a positive finite duration and a positive integer line count")
     s0 = run[0].start
     fit = 0
-    while fit < min(len(run), SCENE_MAX_UNITS) and run[fit].end - s0 <= SCENE_MAX_S:
+    while fit < min(len(run), max_units) and run[fit].end - s0 <= max_seconds:
         fit += 1
     if fit == 0:
         return 1  # one sentence longer than a scene
-    if fit == len(run) and fit < SCENE_MAX_UNITS:
+    if fit == len(run) and fit < max_units:
         return fit  # the rest of the video
     for i in range(fit - 1, 0, -1):
         a, b = run[i], run[i + 1] if i + 1 < len(run) else None
-        if a.end - s0 < SCENE_MAX_S / 2:
+        if a.end - s0 < max_seconds / 2:
             break
         if b is None or b.speaker != a.speaker or b.start - a.end >= SCENE_PAUSE:
             return i + 1

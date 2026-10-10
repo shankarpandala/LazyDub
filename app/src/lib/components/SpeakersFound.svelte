@@ -5,7 +5,8 @@
   import { fmtTime, speakerHue } from "../format";
   import { foundText, speakerChangeCost, voiceSwitchCost } from "../jobs";
   import { SPEAKER_OPTIONS } from "../settings";
-  import type { ClientMessage, Render, SpeakersFound } from "../types";
+  import { VOICE_PROFILES, voiceProfileChangeCost, voiceProfileDescription, voiceProfileLabel, voiceProfileSampleReady } from "../voices";
+  import type { ClientMessage, Render, SpeakersFound, VoiceProfile } from "../types";
 
   /**
    * The speaker check (OFFLINE-RENDER §2.3, §5): who the whole-video diarization found, how much and where each talks,
@@ -16,6 +17,9 @@
   } = $props();
 
   const text = $derived(foundText(found));
+  const nativeVoice = $derived(app.voiceMode === "native");
+  const hasProfiles = $derived(nativeVoice && found.speakers.some((s) => s.voiceProfile !== undefined));
+  const previousVoice = $derived(found.voiceCompatible === false || (nativeVoice && found.voiceMode === "cloned"));
   const voicesReady = $derived(job?.stages.some((s) => s.key === "voices" && s.state === "done") ?? false);
   let fixing = $state(false);
   let count = $state<"auto" | number>("auto");
@@ -42,6 +46,11 @@
     confirmVoice = null;
   }
 
+  function setProfile(sid: string, profile: VoiceProfile) {
+    hear.stop();
+    app.setVoiceProfile(found.videoId, sid, profile, send);
+  }
+
   const strip = (activity: readonly number[]) => {
     const max = Math.max(0.0001, ...activity);
     return activity.map((x) => Math.min(1, x / max));
@@ -53,12 +62,23 @@
     <h3>{text.title}</h3>
     <span class="muted">{found.mode === "hint" ? "the count you chose" : "counted over the whole video"}</span>
   </header>
+  {#if nativeVoice}
+    <p class="muted">{hasProfiles
+      ? previousVoice
+        ? "This saved dub uses its previous voice. New audio uses the voice choices below."
+        : "Choose a Telugu voice for each speaker. Auto suggests a voice from the source audio; you can correct it here."
+      : previousVoice
+      ? "This saved dub uses its previous voice. New dubs use natural Telugu speech without cloning source voices; the automatic voice can vary between lines."
+      : "Natural Telugu speech without cloning source voices. The automatic voice can vary between lines."}</p>
+    {#if hasProfiles}<p class="muted">{voiceProfileChangeCost(job)}</p>{/if}
+  {/if}
   {#each text.merges as m (m)}<p class="merge"><Icon name="check" size={12} /> {m}</p>{/each}
 
   <ul class="speakers">
     {#each found.speakers as s (s.id)}
       {@const hue = speakerHue(s.id)}
-      {@const stock = presets.includes(s.id)}
+      {@const stock = !nativeVoice && presets.includes(s.id)}
+      {@const pendingProfile = app.voiceProfileRequests[found.videoId]?.[s.id]}
       <li style={`--h:${hue}`} class:stock>
         <div class="row">
           <div class="avatar" aria-hidden="true"><span>{s.label.replace("Speaker ", "")}</span></div>
@@ -73,21 +93,39 @@
             </div>
           </div>
           <div class="acts">
-            {#if voicesReady && !stock}
+            {#if voicesReady && !stock && !previousVoice && !pendingProfile && (!nativeVoice || voiceProfileSampleReady(s))}
               <button class="btn" aria-pressed={hear.playing === s.id} onclick={() => listen(s.id)} disabled={hear.waiting === s.id}>
                 <Icon name={hear.playing === s.id ? "stop" : "volume"} size={13} />
                 {hear.waiting === s.id ? "Loading…" : hear.playing === s.id ? "Stop" : "Hear voice"}
               </button>
             {/if}
-            <button class="switch" role="switch" aria-checked={stock} aria-label={`Stock voice for ${s.label}`}
+            {#if nativeVoice}
+              {#if s.voiceProfile !== undefined}
+                <label class="profile">
+                  <span>Telugu voice</span>
+                  <select aria-label={`Telugu voice for ${s.label}`} value={pendingProfile ?? s.voiceProfile}
+                      disabled={pendingProfile !== undefined} onchange={(event) => setProfile(s.id, event.currentTarget.value as VoiceProfile)}>
+                    {#each VOICE_PROFILES as profile (profile)}
+                      <option value={profile}>{voiceProfileLabel(profile)}</option>
+                    {/each}
+                  </select>
+                </label>
+                <span class="muted profile-note" aria-live="polite">{pendingProfile ? "Saving voice choice…" : voiceProfileDescription(s)}</span>
+                {#if previousVoice || s.voiceCompatible === false}<span class="muted">Saved sample uses the previous voice</span>{/if}
+              {:else}
+                <span class="muted">{previousVoice ? "Previous voice" : "Natural Telugu speech"}</span>
+              {/if}
+            {:else}
+              <button class="switch" role="switch" aria-checked={stock} aria-label={`Stock voice for ${s.label}`}
                     title={stock ? "Uses a stock Telugu voice" : "Uses a clone of their voice"}
                     onclick={() => { confirmVoice = s.id; pendingOn = !stock; }}>
               <span class="track"><span class="thumb"></span></span>
               <span class="sl">Stock voice</span>
-            </button>
+              </button>
+            {/if}
           </div>
         </div>
-        {#if confirmVoice === s.id}
+        {#if !nativeVoice && confirmVoice === s.id}
           <div class="confirm" role="alertdialog" aria-labelledby={`v-${s.id}`}>
             <p class="c-title" id={`v-${s.id}`}>{pendingOn ? `Use a stock Telugu voice for ${s.label}?` : `Use ${s.label}'s own voice again?`}</p>
             <p class="c-body">{voiceSwitchCost(job, s.label)}</p>
@@ -142,6 +180,10 @@
   .strip { display: grid; grid-template-columns: repeat(120, 1fr); gap: 1px; height: 14px; align-items: end; }
   .strip span { height: calc(2px + var(--a) * 12px); border-radius: 1px; background: hsl(var(--h) 80% 60% / calc(0.15 + var(--a) * 0.85)); }
   .acts { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .profile { display: flex; align-items: center; gap: 8px; color: var(--text-2); font-size: 12px; }
+  .profile select { min-height: 30px; padding: 3px 22px 3px 8px; border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--surface-strong); color: var(--text); font: inherit; cursor: pointer; }
+  .profile select:disabled { opacity: 0.6; cursor: default; }
+  .profile-note { max-width: 220px; text-align: right; }
   .btn {
     display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; cursor: pointer;
     font-size: 12px; font-weight: 600; color: var(--text); background: var(--surface-strong); border: 1px solid var(--border-strong); white-space: nowrap;
@@ -167,4 +209,9 @@
   .seg { display: inline-flex; gap: 3px; padding: 3px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
   .seg button { min-width: 32px; height: 28px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--text-2); font-weight: 600; cursor: pointer; }
   .seg button.on { background: var(--accent-grad); color: #1a0f08; }
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 36px minmax(0, 1fr); gap: 8px; }
+    .acts { grid-column: 2; align-items: flex-start; }
+    .profile-note { text-align: left; }
+  }
 </style>

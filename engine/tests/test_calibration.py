@@ -5,7 +5,6 @@ sentences and all test text are original."""
 
 from __future__ import annotations
 
-import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -50,7 +49,9 @@ class PacedTTS(MockTTS):
         return Take(min(seconds, max_seconds) if max_seconds else seconds)
 
     def vocode(self, take: Take, rate: float = 1.0) -> np.ndarray:
-        return np.zeros(int(take.seconds / rate * self.sample_rate), np.float32)
+        # Valid, audible output at the controlled duration; silence is now a synthesis failure, not a timing fixture.
+        t = np.arange(int(take.seconds / rate * self.sample_rate), dtype=np.float32) / self.sample_rate
+        return 0.1 * np.sin(2 * np.pi * 140 * t)
 
     def pack_take(self, take: Take) -> dict[str, np.ndarray]:
         return {"mel": np.zeros(1, np.float16)}
@@ -61,9 +62,11 @@ class PacedTTS(MockTTS):
 
 # ---- the sentences ------------------------------------------------------------------------------------------------
 def test_the_calibration_sentences_follow_the_script_contract():
-    for w in CALIBRATION_TE:
-        raw = {"spoken": w.spoken, "english": [{"i": i, "en": en} for i, en in w.english]}
-        assert validators.wording(raw) == (w, [], [])  # Telugu script only; every map entry is a Telugu word
+    for w, safe_indices in zip(CALIBRATION_TE, ((3, 5), (5, 8), (0, 5, 6, 12, 15))):
+        raw = {"spoken": w.spoken, "english": tenglish.anchored_english(w.spoken, w.english)}
+        safe = Wording(w.spoken, tuple((i, en) for i, en in w.english if i in safe_indices))
+        assert validators.wording(raw) == (safe, [], [])  # exact anchors; inflected channel/mind stay in Telugu
+        assert tenglish.latin_spoken(safe.spoken, safe.english) == tenglish.latin_spoken(w.spoken, w.english)
         assert w.english  # English loans, written in Telugu script
         assert not any(ch.isascii() and ch.isalpha() for ch in w.spoken)
         assert tenglish.lint(w.spoken, w.english, "") == []
@@ -102,6 +105,8 @@ async def test_for_the_latin_ab_the_sentences_are_said_in_latin_and_counted_in_t
     assert await job._calibrate("S1", key, {"f0": 140.0}, VoiceCost()) == 3
     said = [text for text, _ in tts.asked]
     assert said == [tenglish.latin_spoken(w.spoken, w.english) for w in CALIBRATION_TE] and "topic" in said[0]
+    assert "ఛానెల్లో" in said[1] and "channel" not in said[1]
+    assert "మైండ్కి" in said[2] and "mind" not in said[2]  # preserve the attached Telugu endings
     expected = DurationEstimator()
     expected.calibrate(key, [(w.spoken, 0.3 + mixed_units(text) / 5.2) for w, text in zip(CALIBRATION_TE, said)])
     assert job.estimator.rate(key) == pytest.approx(expected.rate(key))
@@ -146,7 +151,7 @@ async def test_a_clone_is_keyed_by_its_settings_and_reference_and_calibrated_und
     assert second.reference != first.reference and job.estimator.rate(second) == pytest.approx(6.4)
     assert job.estimator.rate(first) == pytest.approx(5.2)
     # both calibrations' time adds up for maata-bench (`calibration_seconds`), as each clone's trace has it
-    clones = [json.loads(line) for line in (job._dir / "units.jsonl").read_text().splitlines()]
+    clones = [e for e in _read_rows(job._dir / "units.jsonl") if e["event"] == "clone"]
     assert [e["calibration_takes"] for e in clones] == [3, 3] and job.calibrate_s > 0
     assert job.calibrate_s == pytest.approx(sum(e["calibrate_s"] for e in clones), abs=0.01)
 
@@ -188,12 +193,16 @@ def line_with_english(job) -> UnitState:
 def test_the_band_rule_predicts_from_the_telugu_script_whatever_the_tts_reads(tmp_path, script):
     job = bare_job(tmp_path, PacedTTS(), tts_script=script)
     st = line_with_english(job)
+    st.speech_s = 2.25
+    st.unit.end = st.unit.start + st.speech_s
     job.estimator.calibrate(job._key("S1"), [("ప" * n, 0.2 + n / 7.0) for n in (15, 27, 45)])
     full, concise = st.line.full, st.line.tiers["concise"]
-    assert 0.2 + count_units(full.spoken) / 7.0 > BAND[1] * 2.0  # full runs long at this pace; concise fits
-    # (the Latin rebuild of full, counted as a dub line, would look short enough: Latin letters count nothing)
-    assert BAND[0] * 2.0 <= 0.2 + count_units(tenglish.latin_spoken(full.spoken, full.english)) / 7.0 <= BAND[1] * 2.0
-    assert job._choose(st) and st.tier == "concise" and job._target(st) == pytest.approx((2.0 - 0.2) * 7.0)
+    assert 0.2 + count_units(full.spoken) / 7.0 > BAND[1] * st.speech_s  # full runs long; concise fits
+    # The Latin rebuild still retains the router's case ending in Telugu, but would undercount the other loans.
+    latin = tenglish.latin_spoken(full.spoken, full.english)
+    assert latin == "ఒకసారి రౌటర్ని restart చేసి, తర్వాత settings check చేయండి." and count_units(latin) == 15.0
+    assert BAND[0] * st.speech_s <= 0.2 + count_units(latin) / 7.0 <= BAND[1] * st.speech_s
+    assert job._choose(st) and st.tier == "concise" and job._target(st) == pytest.approx((st.speech_s - 0.2) * 7.0)
     assert st.telugu == (tenglish.latin_spoken(concise.spoken, concise.english) if script == "latin" else concise.spoken)
 
 
