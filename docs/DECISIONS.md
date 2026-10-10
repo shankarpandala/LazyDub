@@ -912,3 +912,36 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
   stable speaker identity, whole-video synchronization or throughput. Earlier underfill/early endings remain
   unresolved. Semantic approval, timing, voice-quality and watermark checks remain in force. No new dependency,
   model download, schedule, cancelled run or automatic completed-output redub is introduced.
+
+## ADR-030 — Install the Apple Silicon release without a checkout (2026-10-10)
+
+- **Trigger:** the maintainer requests an installable setup file and a GitHub push. The previous release shell
+  expected an engine under Application Support, but local setup only provisioned the source checkout. A development
+  shim hid that gap on the reference Mac.
+- **Package:** `scripts/build-installer.sh` produces an Apple Silicon DMG containing Maata.app, an Applications
+  shortcut, Setup Maata.command and installation instructions. The app embeds an allowlisted source/lock payload,
+  without model weights, virtual environments, local media or credentials. A deterministic SHA-256 manifest identifies
+  the payload. CI uploads the DMG and checksum instead of a raw app directory that can lose permissions.
+- **Runtime:** setup verifies the payload, installs frozen Python dependencies into a versioned Application Support
+  snapshot, verifies pinned models and the isolated OmniVoice runtime, then activates a launcher and matching stamp.
+  The source checkout is not a runtime dependency. Old runtime generations remain available; an existing development
+  launcher directory is backed up with rollback on failed promotion. Later symlink upgrades switch the launcher and
+  stamp together. Setup refuses an active engine and does not launch, resume, remove or redub jobs.
+- **Prerequisites:** uv, its Python 3.12, Deno and a signed-in Codex CLI are installed separately. End users do not need
+  Node or Rust. Models use the existing verified downloader and declared licences; optional gated pyannote assets
+  still require the user's own accepted terms and token. No new third-party package is introduced.
+- **Compatibility:** the native shell requires the installed runtime ID to match its bundled manifest and presents
+  setup instructions on missing or mismatched installations. Finder launches receive predictable tool paths while
+  preserving inherited custom paths. Explicit development engine overrides remain available.
+- **Distribution limit:** this machine has no Developer ID signing identity. The preview is ad-hoc signed with a sealed
+  resource bundle and checked with strict codesign verification, but is not Apple notarized. Documentation describes
+  Apple's per-app security approval, without disabling Gatekeeper or removing quarantine. A trusted public release
+  still requires the maintainer's Developer ID/notarization credentials. This preview does not establish clean-Mac
+  installation success or representative long-video listening quality; earlier underfill remains unresolved.
+- **Reference-Mac checks:** 45 focused Python packaging/model tests, four Rust runtime tests and 83 UI tests passed;
+  Svelte reported no errors/warnings. The final DMG passed verification and mounted payload checks. Its setup command
+  ran with provisioning network access denied, reusing existing packages/models. The installed `/Applications` app
+  opened with the independent runtime, OmniVoice and all nine completed jobs. All job JSON hashes and the size/mtime
+  of 40 MP4s remained unchanged; MP4 content hashes were not rerun. Actual installation was correctly refused while
+  this engine was running. Sanitized artifact hashes and limitations are in
+  `docs/spikes/results/release-installation-2026-10-10/validation.json`.

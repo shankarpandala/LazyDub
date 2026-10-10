@@ -11,6 +11,8 @@ app/dist/
 # Rust / Tauri
 app/src-tauri/target/
 app/src-tauri/gen/
+app/src-tauri/resources/runtime/
+dist/
 # Local models and caches
 models/
 *.safetensors

@@ -59,6 +59,11 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   speaker panel. Editing a stopped job saves settings without restarting it. The maintainer accepted six original
   profile samples as correctly matched with all words audible; this is not long-video or speaker-identity acceptance.
   See `docs/spikes/results/model-evaluation-2026-10-10/voice-mapping/`.
+- Installable Apple Silicon preview (ADR-030): `scripts/build-installer.sh` builds a DMG with a versioned source/lock
+  runtime payload and Setup Maata.command. Setup installs independently under Application Support, verifies models,
+  and preserves prior runtimes. Release shells require a matching runtime ID. The `/Applications/Maata.app` copy was
+  tested with nine completed jobs unchanged. The preview is ad-hoc signed, not Developer ID signed/notarized;
+  clean-Mac online setup remains untested. See `docs/release-installation.md` and release-installation results.
 - Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
   `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
   separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`

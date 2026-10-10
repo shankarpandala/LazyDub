@@ -161,7 +161,10 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     token = os.environ.get("HF_TOKEN")
     missing_gated: list[str] = []
     for m in models_for(args.backend or detect()):
-        print(f"→ {m['id']}  ({m['total_bytes'] / 1e9:.2f} GB, {m['license']})", flush=True)
+        total = m.get("total_bytes")
+        if not isinstance(total, (int, float)) or total < 0:
+            total = sum(f["size"] for f in m["files"])
+        print(f"→ {m['id']}  ({total / 1e9:.2f} GB, {m['license']})", flush=True)
         last = [0.0]
 
         def progress(path: str, got: int, total: int) -> None:

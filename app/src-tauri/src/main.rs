@@ -12,8 +12,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::collections::VecDeque;
+use std::ffi::{OsStr, OsString};
+use std::fs;
 use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
@@ -28,6 +30,7 @@ const QUIT_POLL: Duration = Duration::from_millis(100);
 /// At most this many restarts of an engine that died on its own within RESTART_WINDOW.
 const RESTARTS: usize = 3;
 const RESTART_WINDOW: Duration = Duration::from_secs(600);
+const SETUP_RUNTIME: &str = "Quit Maata first, run Setup Maata.command from the matching installer, then reopen Maata.";
 
 /// The engine process, and whether Maata is quitting (then an engine that stops isn't restarted).
 struct Engine {
@@ -41,10 +44,56 @@ fn random_token() -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// A release id is a full SHA-256, never a path or an arbitrary version label.
+fn runtime_id(bytes: &[u8], require_schema: bool) -> Result<String, ()> {
+    let doc: serde_json::Value = serde_json::from_slice(bytes).map_err(|_| ())?;
+    if require_schema && doc.get("schema").and_then(serde_json::Value::as_u64) != Some(1) {
+        return Err(());
+    }
+    let id = doc.get("runtime_id").and_then(serde_json::Value::as_str).ok_or(())?;
+    if id.len() != 64 || !id.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
+        return Err(());
+    }
+    Ok(id.to_owned())
+}
+
+/// Never silently launch an engine left by a different installer or an old checkout shim.
+fn installed_engine(resources: &Path, data: &Path) -> Result<PathBuf, String> {
+    let bundled = fs::read(resources.join("runtime/release.json"))
+        .ok().and_then(|bytes| runtime_id(&bytes, true).ok())
+        .ok_or_else(|| format!("Maata's bundled runtime information is missing or invalid. {SETUP_RUNTIME}"))?;
+    let installed = fs::read(data.join("engine/installed-runtime.json"))
+        .ok().and_then(|bytes| runtime_id(&bytes, false).ok())
+        .ok_or_else(|| format!("The matching Maata engine is not installed. {SETUP_RUNTIME}"))?;
+    if installed != bundled {
+        return Err(format!("The installed engine belongs to a different Maata release. {SETUP_RUNTIME}"));
+    }
+    let bin = data.join("engine/.venv/bin/maata-engine");
+    if !bin.is_file() {
+        return Err(format!("The installed Maata engine launcher is missing. {SETUP_RUNTIME}"));
+    }
+    Ok(bin)
+}
+
+/// Finder/Dock launches omit shell startup files. Preserve custom lookup locations after predictable native bins.
+fn native_path(data: &Path, home: &Path, inherited: Option<&OsStr>) -> Result<OsString, String> {
+    let mut paths = vec![data.join("engine/.venv/bin"), data.join("bin"), home.join(".local/bin"),
+        home.join(".deno/bin"), PathBuf::from("/opt/homebrew/bin"), PathBuf::from("/usr/local/bin"),
+        PathBuf::from("/usr/bin"), PathBuf::from("/bin"), PathBuf::from("/usr/sbin"), PathBuf::from("/sbin")];
+    if let Some(inherited) = inherited {
+        for path in std::env::split_paths(inherited) {
+            if !path.as_os_str().is_empty() && !paths.contains(&path) {
+                paths.push(path);
+            }
+        }
+    }
+    std::env::join_paths(paths).map_err(|e| format!("Couldn't configure the engine's tool paths: {e}"))
+}
+
 /// How to launch the engine:
 /// - `MAATA_ENGINE_CMD` (whitespace-separated) overrides everything;
 /// - debug builds run `uv run maata-engine` from the repo's `engine/`;
-/// - release builds run the engine runtime installed in the app data dir (ADR-011).
+/// - release builds require the installed engine stamp to match their bundled runtime (ADR-011).
 fn engine_command(app: &tauri::AppHandle, token: &str) -> Result<Command, String> {
     let ui_dir: PathBuf = if cfg!(debug_assertions) {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../dist")
@@ -63,11 +112,12 @@ fn engine_command(app: &tauri::AppHandle, token: &str) -> Result<Command, String
         c
     } else {
         let data = app.path().app_data_dir().map_err(|e| e.to_string())?;
-        let bin = data.join("engine/.venv/bin/maata-engine");
-        if !bin.exists() {
-            return Err("The Maata engine isn't installed yet. Run scripts/setup-mac.sh (first-run setup arrives in Phase 2).".into());
-        }
-        Command::new(bin)
+        let resources = app.path().resource_dir().map_err(|e| e.to_string())?;
+        let home = app.path().home_dir().map_err(|e| e.to_string())?;
+        let mut command = Command::new(installed_engine(&resources, &data)?);
+        command.current_dir(data.join("engine"));
+        command.env("PATH", native_path(&data, &home, std::env::var_os("PATH").as_deref())?);
+        command
     };
     // The engine exits when its stdin closes. The write end lives in the stored `Child`, so the
     // engine goes away with the shell even if the shell is killed without running its exit hook.
@@ -248,4 +298,98 @@ fn main() {
         }
         _ => {}
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct RuntimeFixture {
+        root: PathBuf,
+        resources: PathBuf,
+        data: PathBuf,
+    }
+
+    impl RuntimeFixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!("maata-runtime-test-{}", random_token()));
+            let resources = root.join("resources");
+            let data = root.join("application-support");
+            fs::create_dir_all(resources.join("runtime")).unwrap();
+            fs::create_dir_all(data.join("engine/.venv/bin")).unwrap();
+            Self { root, resources, data }
+        }
+
+        fn bundle(&self, id: &str) {
+            fs::write(self.resources.join("runtime/release.json"),
+                serde_json::json!({"schema": 1, "runtime_id": id}).to_string()).unwrap();
+        }
+
+        fn install(&self, id: &str) {
+            fs::write(self.data.join("engine/installed-runtime.json"),
+                serde_json::json!({"runtime_id": id, "setup_version": 1}).to_string()).unwrap();
+            fs::write(self.data.join("engine/.venv/bin/maata-engine"), b"fixture launcher, never executed").unwrap();
+        }
+    }
+
+    impl Drop for RuntimeFixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn runtime_ids_require_a_full_lowercase_hash_and_a_supported_bundle_schema() {
+        let id = "a1".repeat(32);
+        assert_eq!(runtime_id(serde_json::json!({"schema": 1, "runtime_id": id}).to_string().as_bytes(), true), Ok(id.clone()));
+        for invalid in ["", "../engine", &"a".repeat(63), &"A".repeat(64), &"g".repeat(64)] {
+            assert!(runtime_id(serde_json::json!({"schema": 1, "runtime_id": invalid}).to_string().as_bytes(), true).is_err());
+        }
+        for invalid in [b"not json".as_slice(), b"[]", b"{}", b"{\"runtime_id\":3}"] {
+            assert!(runtime_id(invalid, false).is_err());
+        }
+        assert!(runtime_id(serde_json::json!({"schema": 2, "runtime_id": id}).to_string().as_bytes(), true).is_err());
+        assert!(runtime_id(serde_json::json!({"runtime_id": id}).to_string().as_bytes(), true).is_err());
+    }
+
+    #[test]
+    fn release_refuses_old_launchers_without_a_matching_installed_stamp() {
+        let fixture = RuntimeFixture::new();
+        fixture.bundle(&"a".repeat(64));
+        fs::write(fixture.data.join("engine/.venv/bin/maata-engine"), b"old checkout shim").unwrap();
+        let error = installed_engine(&fixture.resources, &fixture.data).unwrap_err();
+        assert!(error.contains("not installed"));
+        assert!(error.contains("Setup Maata.command"));
+        fixture.install(&"b".repeat(64));
+        assert!(installed_engine(&fixture.resources, &fixture.data).unwrap_err().contains("different Maata release"));
+        fs::write(fixture.data.join("engine/installed-runtime.json"), b"corrupt").unwrap();
+        assert!(installed_engine(&fixture.resources, &fixture.data).unwrap_err().contains("not installed"));
+    }
+
+    #[test]
+    fn matching_release_requires_both_its_manifest_and_launcher() {
+        let fixture = RuntimeFixture::new();
+        fixture.install(&"c".repeat(64));
+        assert!(installed_engine(&fixture.resources, &fixture.data).unwrap_err().contains("bundled runtime information"));
+        fixture.bundle(&"c".repeat(64));
+        let launcher = fixture.data.join("engine/.venv/bin/maata-engine");
+        assert_eq!(installed_engine(&fixture.resources, &fixture.data).unwrap(), launcher);
+        fs::remove_file(&launcher).unwrap();
+        assert!(installed_engine(&fixture.resources, &fixture.data).unwrap_err().contains("launcher is missing"));
+        fs::create_dir(&launcher).unwrap();
+        assert!(installed_engine(&fixture.resources, &fixture.data).is_err());
+    }
+
+    #[test]
+    fn dock_tool_paths_are_predictable_and_preserve_custom_locations_afterward() {
+        let path = native_path(Path::new("/app data"), Path::new("/home/me"),
+            Some(OsStr::new("/custom/codex/bin:/opt/homebrew/bin:/another/bin"))).unwrap();
+        let paths: Vec<PathBuf> = std::env::split_paths(&path).collect();
+        assert_eq!(paths[0], PathBuf::from("/app data/engine/.venv/bin"));
+        assert_eq!(paths[1], PathBuf::from("/app data/bin"));
+        assert_eq!(paths[2], PathBuf::from("/home/me/.local/bin"));
+        assert_eq!(paths[3], PathBuf::from("/home/me/.deno/bin"));
+        assert_eq!(paths.iter().filter(|p| **p == PathBuf::from("/opt/homebrew/bin")).count(), 1);
+        assert_eq!(&paths[paths.len() - 2..], &[PathBuf::from("/custom/codex/bin"), PathBuf::from("/another/bin")]);
+    }
 }

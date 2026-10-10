@@ -42,15 +42,17 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: app/src-tauri }
-      - name: Build Maata.app (unsigned)
+      - name: Install UI build dependencies
         working-directory: app
-        run: |
-          npm ci
-          npx tauri build --bundles app
+        run: npm ci
+      - name: Build Maata DMG (ad-hoc signed)
+        run: ./scripts/build-installer.sh
       - uses: actions/upload-artifact@v4
         with:
           name: Maata-macos-arm64
-          path: app/src-tauri/target/release/bundle/macos/Maata.app
+          path: |
+            dist/Maata-*-macos-arm64.dmg
+            dist/SHA256SUMS
           if-no-files-found: error
 
   apple-mlx-smoke:
