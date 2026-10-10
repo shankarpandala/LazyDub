@@ -11,6 +11,10 @@ export type TranslationStyle = "colloquial" | "formal";
  */
 export type TtsScript = "telugu" | "latin";
 
+/** Whether the engine uses automatic Telugu speech or clones each source speaker. */
+export type VoiceMode = "native" | "cloned";
+export type TtsModel = "OmniVoice" | "Chatterbox Telugu";
+
 /** The engine's stages, in order (`render.STAGES`). */
 export type StageKey =
   | "fetch" | "speakers" | "transcript" | "units" | "voices" | "brief" | "separate" | "translate" | "voice_lines"
@@ -159,6 +163,10 @@ export type FoundSpeaker = {
 /** The speaker check (§2.3): who the whole-file diarization found, and what it merged. */
 export type SpeakersFound = {
   videoId: string;
+  /** Saved voice provenance may differ from the engine's current choice. */
+  voiceMode?: VoiceMode;
+  /** False when a saved sample cannot represent the current voice/model. */
+  voiceCompatible?: boolean;
   mode: "auto" | "hint";
   fresh: boolean;
   /** Seconds, by the priors when it was sent, until the Telugu speech starts: correcting is free until then. */
@@ -208,6 +216,8 @@ export type EngineMessage =
   /** claude: null when the engine never calls Codex (the demo engine); field retained for wire compatibility. */
   | {
       type: "hello"; backend: string; device: string; demo: boolean; claude?: ClaudeHealth | null;
+      /** Absent on older engines, which use Chatterbox speaker clones. */
+      voiceMode?: VoiceMode; ttsModel?: TtsModel;
       renders: JobItem[]; render: Render | null; settings: EngineSettings;
     }
   /** `url`: the link `inspect` asked about, as sent. */

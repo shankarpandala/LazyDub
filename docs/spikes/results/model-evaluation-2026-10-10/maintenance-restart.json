@@ -1,0 +1,34 @@
+{
+  "time_utc": "2026-10-10T09:45:03.123051+00:00",
+  "purpose": "Activate speech-failure routing; a worker error must not turn into skipped speech.",
+  "stop": "Native Cmd-Q; engine logged normal interruption at 2026-10-10 15:14:09 local; app, engine and worker absent before reopening.",
+  "restart": "Rebuilt native app opened through CUA; visible OmniVoice and same active video at89percent.",
+  "before_states": {
+    "xi-zHJL5bnI": "done",
+    "3iRUwVzRDZQ": "done",
+    "9TsjAaFZG20": "done",
+    "8qCc_hMCB0w": "running",
+    "9GSDvO0LFFE": "done",
+    "5XTJRU9na3Y": "done",
+    "yWBP-gDUXiQ": "done",
+    "Is8XU3J5ZZE": "done",
+    "0eFln_mdXGY": "done"
+  },
+  "after_states": {
+    "xi-zHJL5bnI": "done",
+    "3iRUwVzRDZQ": "done",
+    "9TsjAaFZG20": "done",
+    "8qCc_hMCB0w": "running",
+    "9GSDvO0LFFE": "done",
+    "5XTJRU9na3Y": "done",
+    "yWBP-gDUXiQ": "done",
+    "Is8XU3J5ZZE": "done",
+    "0eFln_mdXGY": "done"
+  },
+  "previously_cached_audio_files_compared": 117,
+  "changed_or_missing_cached_audio_files": [],
+  "cancelled_removed_video_recreated": false,
+  "resumed_only_previously_running_job": true,
+  "render_source_sha256": "b6c5a19baeedefe0574f7a3d40df36be07c122bb3b0773f19ecca592b8e94d59",
+  "note": "A maintenance split and concurrent regression suite make this live video unsuitable as a paired speed comparison."
+}

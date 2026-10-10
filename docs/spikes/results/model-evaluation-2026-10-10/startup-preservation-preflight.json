@@ -1,0 +1,151 @@
+{
+  "created_utc": "2026-10-10T09:26:51.063764+00:00",
+  "purpose": "Read-only startup recovery and retention preservation preflight; no speech-model readiness claim",
+  "safe_to_open_for_saved_work_preservation": true,
+  "jobs": [
+    {
+      "video_id": "0eFln_mdXGY",
+      "status": "done",
+      "stage": "export",
+      "age_days": 6.15527,
+      "expired": false,
+      "directory_bytes": 31568188,
+      "cap_eligible": true,
+      "job_sha256": "880d9456d28fc637f6e93be3cba4916ea3146892313ab7a11557b9dd0954a786"
+    },
+    {
+      "video_id": "3iRUwVzRDZQ",
+      "status": "done",
+      "stage": "export",
+      "age_days": 4.702616,
+      "expired": false,
+      "directory_bytes": 43581606,
+      "cap_eligible": true,
+      "job_sha256": "891aa36a4c8f6bc7b792dc583390d6b48db4830832876d8e48d22983fc852e95"
+    },
+    {
+      "video_id": "4Vz6L8B73i4",
+      "status": "paused",
+      "stage": "translate",
+      "age_days": 0.013036,
+      "expired": false,
+      "directory_bytes": 5245646865,
+      "cap_eligible": false,
+      "job_sha256": "cafb216503fa8f421f63830900f2db440b0a72ae6893f58229185520f4a2d78a"
+    },
+    {
+      "video_id": "5XTJRU9na3Y",
+      "status": "done",
+      "stage": "export",
+      "age_days": 6.06172,
+      "expired": false,
+      "directory_bytes": 42972907,
+      "cap_eligible": true,
+      "job_sha256": "1b03bc07c684afe54e683b29645f92cbe7e346d3e37937075b9e68eaddd290fa"
+    },
+    {
+      "video_id": "9GSDvO0LFFE",
+      "status": "done",
+      "stage": "export",
+      "age_days": 5.228321,
+      "expired": false,
+      "directory_bytes": 79656369,
+      "cap_eligible": true,
+      "job_sha256": "99c0d6fff2eb1ab35337459030429825f5aeb859f72204cfa7204fdf288c8d4c"
+    },
+    {
+      "video_id": "9TsjAaFZG20",
+      "status": "done",
+      "stage": "export",
+      "age_days": 6.114696,
+      "expired": false,
+      "directory_bytes": 151515617,
+      "cap_eligible": true,
+      "job_sha256": "0bfbf64c249ae181608da2f2fffb52d6a3da4ab0546498086aa1445e0f852e97"
+    },
+    {
+      "video_id": "Is8XU3J5ZZE",
+      "status": "done",
+      "stage": "export",
+      "age_days": 4.612466,
+      "expired": false,
+      "directory_bytes": 50094320,
+      "cap_eligible": true,
+      "job_sha256": "c130f883b7000251cdd397369e8a4e73a734761a1d29560ef5af1bdc18953df3"
+    },
+    {
+      "video_id": "xi-zHJL5bnI",
+      "status": "done",
+      "stage": "export",
+      "age_days": 4.245535,
+      "expired": false,
+      "directory_bytes": 283327607,
+      "cap_eligible": true,
+      "job_sha256": "56fb8bded4ca1f439bd14b79f10b49d0e7c2ef98499b56cbee2daa70f91e4c46"
+    },
+    {
+      "video_id": "yWBP-gDUXiQ",
+      "status": "done",
+      "stage": "export",
+      "age_days": 5.733232,
+      "expired": false,
+      "directory_bytes": 63410594,
+      "cap_eligible": true,
+      "job_sha256": "69defe67593c530f3489ec3103126caa463e2ad5c86fca2d77b81ee0a6735bc7"
+    }
+  ],
+  "recovery": {
+    "would_queue": [],
+    "would_rewrite_job_ids": [],
+    "would_start_job": null,
+    "cancelled_job_stays_paused": true
+  },
+  "retention": {
+    "default_days": 14.0,
+    "default_cap_bytes": 5000000000.0,
+    "cap_eligible_count": 8,
+    "cap_eligible_bytes": 746127208,
+    "excluded_production_job_bytes": 5245646865,
+    "would_expire_by_age": [],
+    "would_expire_by_cap": [],
+    "would_modify_cache": false,
+    "unrelated_research_and_monitoring_directories_excluded": true,
+    "source_sha256": "ea3b9472dc6f4c5372715a73b5b0364f10af91d3a381723d745dc56fcef3a683"
+  },
+  "inventory": {
+    "compared_to": "/Users/shankarpandala/Library/Application Support/Maata/cancellation-backups/20261010T090755Z/inventory-after.json",
+    "cache_entries": 4925,
+    "completed_export_entries": 39,
+    "changed_cache_entries": 0,
+    "changed_export_entries": 0,
+    "all_protected_hashes_identical": true,
+    "state_stable_during_check": true
+  },
+  "process_before": {
+    "matching_live_processes": 0,
+    "recorded_engine_pid_present": false,
+    "recorded_supervisor_pid_present": false,
+    "own_audit_ancestors_excluded": true
+  },
+  "process_after": {
+    "matching_live_processes": 0,
+    "recorded_engine_pid_present": false,
+    "recorded_supervisor_pid_present": false,
+    "own_audit_ancestors_excluded": true
+  },
+  "recovery_source_sha256": "c9bc3afaf6d63a57a3cf49b2fa8177e0f3e2823b86ef8b8d3efd7a01319a853d",
+  "monitor_snapshot": "/tmp/maata-native-startup-snapshot.json",
+  "actions": {
+    "engine_constructed": false,
+    "engine_started": false,
+    "retain_called": false,
+    "expire_called": false,
+    "jobs_held_or_rewritten": false,
+    "model_calls": 0,
+    "production_cache_writes": 0
+  },
+  "limits": [
+    "Point-in-time result: recheck if job state, retention/recovery code, or cache contents change.",
+    "Does not certify synthesis quality, native voice readiness, or active dubbing performance."
+  ]
+}

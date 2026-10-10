@@ -38,6 +38,19 @@ const hello = (over: Partial<Extract<EngineMessage, { type: "hello" }>> = {}): E
 });
 
 describe("hello", () => {
+  it("uses the announced voice mode and resets legacy defaults after reconnect", () => {
+    const app = new AppState();
+    const { send } = recorder();
+    expect(app.voiceMode).toBe("cloned");
+    expect(app.ttsModel).toBe("Chatterbox Telugu");
+    app.receive(hello({ voiceMode: "native", ttsModel: "OmniVoice" }), send);
+    expect(app.voiceMode).toBe("native");
+    expect(app.ttsModel).toBe("OmniVoice");
+    app.receive(hello(), send);
+    expect(app.voiceMode).toBe("cloned");
+    expect(app.ttsModel).toBe("Chatterbox Telugu");
+  });
+
   it("brings the library, the running job's progress and the settings", () => {
     const app = new AppState();
     const { send } = recorder();
@@ -254,6 +267,18 @@ describe("renders", () => {
 });
 
 describe("speakers_found", () => {
+  it("keeps existing presets but never sends a voice switch in native mode", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    const existing = item("rrrrrrrrrrr");
+    existing.settings = { ...existing.settings, presets: ["S2"] };
+    app.receive(hello({ voiceMode: "native", ttsModel: "OmniVoice", renders: [existing] }), send);
+    app.setVoice(existing.videoId, "S2", false, send);
+    app.setVoice(existing.videoId, "S1", true, send);
+    expect(sent).toEqual([]);
+    expect(app.jobs[0]!.settings?.presets).toEqual(["S2"]);
+  });
+
   it("keeps each job's speaker check; the job view shows the open job's", () => {
     const app = new AppState();
     const { send } = recorder();

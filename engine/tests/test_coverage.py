@@ -85,10 +85,10 @@ def test_full_shortcut_exclusion_does_not_change_general_meaning_flags():
 
 
 @pytest.mark.parametrize("en,before,reviewed,new,cls,error", [
-    # a P line whose re-translation says more, and flags nothing: C
+    # a fresh semantic C is necessary even when a correction says more
     ("The kite climbs over the hill.", Coverage("P", ("over the hill",)), UP, "గాలిపటం కొండ మీదుగా పైకి వెళ్తుంది.",
      "C", None),
-    # ... no longer than the wording that lacked the phrase: the phrase can't be back
+    # an explicit fresh P remains P, independently of length
     ("The kite climbs over the hill.", Coverage("P", ("over the hill",)), UP, UP, "P", None),
     # a negation, a question or a number the reviewed wording said and the new one doesn't: E, whatever the review said
     ("The kite never comes down.", Coverage("P", ("never",)), "గాలిపటం ఎప్పుడూ కిందికి రాదు.",
@@ -98,7 +98,7 @@ def test_full_shortcut_exclusion_does_not_change_general_meaning_flags():
      "E", "question"),
     ("Two kites came down.", Coverage("E", error="number"), "గాలిపటాలు కిందికి వచ్చాయి.", "గాలిపటాలు కిందికి వచ్చాయి.",
      "E", "number"),
-    # an E line whose re-translation passes the checks: C (the checks can't see names or additions)
+    # a corrected number plus a fresh semantic C can replace the E
     ("Two kites came down.", Coverage("E", error="number"), "గాలిపటాలు కిందికి వచ్చాయి.",
      "రెండు గాలిపటాలు కిందికి వచ్చాయి.", "C", None),
     # a flag both wordings carry, where the review found no such error ("a pair" for "two", which the number check
@@ -107,13 +107,13 @@ def test_full_shortcut_exclusion_does_not_change_general_meaning_flags():
      "జంట గాలిపటాలు నెమ్మదిగా కిందికి వచ్చాయి.", "C", None),
 ])
 def test_the_checks_class_a_retranslation(en, before, reviewed, new, cls, error):
-    got = redo_class(en, before, Wording(reviewed), Wording(new))
-    assert (got.cls, got.error, got.by, got.first, got.tier) == (cls, error, "validators", before.cls, "full")
+    got = redo_class(en, before, Wording(reviewed), Wording(new), semantic=Coverage(cls, error=error))
+    assert (got.cls, got.error, got.by, got.first, got.tier) == (cls, error, "validators" if error else "review", before.cls, "full")
 
 
 def test_a_retranslation_is_classed_on_the_tier_it_is_set_against():
     got = redo_class("The kite climbs over the hill.", Coverage("P", ("over the hill",), tier="concise"),
-                     Wording(UP), Wording(UP), "concise")
+                     Wording(UP), Wording(UP), "concise", Coverage("P", ("over the hill",)))
     assert (got.cls, got.tier, got.missing) == ("P", "concise", ("over the hill",))
 
 
@@ -171,3 +171,31 @@ def test_fallback_verdict_must_be_unique_and_offered():
     assert check_review_fallbacks({"lines": [row, row]}, [1]) == set()
     assert check_review_fallbacks({"lines": [{**row, "id": True}]}, [1]) == set()
     assert check_review_fallbacks({"lines": None}, [1]) == set()
+
+
+@pytest.mark.parametrize("new", [UP, "గాలిపటం కొండ మీదుగా నెమ్మదిగా చాలా పైకి వెళ్తుంది."])
+def test_correction_length_never_supplies_missing_semantic_approval(new):
+    assert redo_class("The kite climbs over the hill.", Coverage("P"), Wording(UP), Wording(new)) is None
+
+
+def test_shorter_complete_correction_uses_semantic_verdict_not_character_length():
+    old = Wording("గాలిపటం ఇప్పుడు ఇక్కడ చాలా నెమ్మదిగా పైకి వెళ్తుంది.")
+    new = Wording("గాలిపటం కొండ దాటింది.")
+    assert len(new.spoken) < len(old.spoken)
+    got = redo_class("The kite crossed the hill.", Coverage("P", ("crossed the hill",)), old, new,
+                     semantic=Coverage("C"))
+    assert got == Coverage("C", tier="full", by="review", first="P")
+
+
+def test_longer_incomplete_correction_keeps_fresh_missing_content_verdict():
+    new = Wording("గాలిపటం ఇప్పుడు చాలా నెమ్మదిగా పైకి వెళ్తుంది.")
+    verdict = Coverage("P", ("over the hill",))
+    got = redo_class("The kite climbs over the hill.", verdict, Wording(UP), new, semantic=verdict)
+    assert got == Coverage("P", ("over the hill",), tier="full", by="review", first="P")
+
+
+@pytest.mark.parametrize("verdict", [Coverage("C", missing=("may",)), Coverage("C", added=("always",)),
+                                    Coverage("C", error="negation")])
+def test_contradictory_complete_verdict_never_approves_correction(verdict):
+    assert redo_class("The kite crossed the hill.", Coverage("P"), Wording(UP), Wording("గాలిపటం కొండ దాటింది."),
+                      semantic=verdict) is None

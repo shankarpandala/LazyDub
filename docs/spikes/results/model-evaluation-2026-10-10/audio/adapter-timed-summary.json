@@ -1,0 +1,495 @@
+{
+  "version": 1,
+  "scope": "Exactly three original production-normalized utterances via the production persistent OmniVoice adapter; CPU synthetic-video AAC export and local forced-Telugu ASR afterward. No queue or real source media.",
+  "results_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/results.json",
+  "results_sha256": "69a9b4a34d0c324ffc683e3e2e1ce9a92e21e90610edf7117966f2505057fbd4",
+  "harness": "scripts/experiments/omnivoice_adapter_smoke.py",
+  "commands": [
+    "sandbox-exec -p '(version 1)(allow default)(deny network*)' engine/.venv/bin/python scripts/experiments/omnivoice_adapter_smoke.py synthesize",
+    "sandbox-exec -p '(version 1)(allow default)(deny network*)' engine/.venv/bin/python scripts/experiments/omnivoice_adapter_smoke.py export",
+    "sandbox-exec -p '(version 1)(allow default)(deny network*)' engine/.venv/bin/python scripts/experiments/omnivoice_adapter_smoke.py roundtrip"
+  ],
+  "initial_failure": {
+    "stage": "prepare",
+    "synthesis_calls": 0,
+    "error": "ImportError: attempted relative import with no known parent package",
+    "cause": "Standalone worker script directory shadowed installed upstream omnivoice package with sibling engine adapter module.",
+    "fix": "Isolated Python -I worker launch, with regression test.",
+    "log_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/adapter-timed.log"
+  },
+  "constructor": "OmniVoiceTTS(modeldir, voice_dir=modeldir / voices), matching Apple backend metadata discovery",
+  "reference_policy": "Same fixed selected original B generated reference for all speakers; no source-audio cloning. This conditioning differs from the auto B configuration the user originally auditioned.",
+  "seed": "Production default stochastic generation; no manual seed override. Original auto auditions used fixed seeds, so output differences are not a controlled voice-conditioning experiment.",
+  "runs": {
+    "omnivoice-adapter": {
+      "cache_identity": {
+        "model": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+        "source": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+        "steps": 32,
+        "precision": "float16",
+        "device": "mps",
+        "voice_policy": "selected-auto-telugu-v1",
+        "reference_audio_sha256": "9e6ab4e1566c10ef4ee7984a8e2d7ff072d0f69b0a2a09de245dcecc895752e8",
+        "reference_text_sha256": "c27b364680aa8404d2bc896b6a7535237866cf5d316a4409c2b658ff475d49a4",
+        "preprocess_prompt": false,
+        "normalize_text": false,
+        "duration": "natural",
+        "watermark": "PerthImplicitWatermarker",
+        "watermark_version": "1.1.0",
+        "protocol": 1
+      },
+      "status": "complete",
+      "memory": {
+        "process_max_rss_bytes": 413384704
+      }
+    }
+  },
+  "persistent_worker_reused": true,
+  "saved_take_resume_pcm_equal": [
+    true,
+    true,
+    true
+  ],
+  "resume_spawned_worker": false,
+  "samples": [
+    {
+      "id": "conversation",
+      "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను.",
+      "model": "omnivoice-adapter",
+      "sample_rate": 24000,
+      "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-conversation-raw.wav",
+      "marked_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-conversation-marked.wav",
+      "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-conversation-marked.wav",
+      "raw_sha256": "d835232f84501b521d70b4271947ff350901425ca444f87b674b77808869607d",
+      "packed_take": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-conversation-take.npz",
+      "prepare_seconds": 22.17509383300785,
+      "generation_seconds": 5.7114799590199254,
+      "render_and_watermark_seconds": 0.19629920896841213,
+      "duration_seconds": 1.79,
+      "natural_duration_seconds": 1.79,
+      "advisory_max_seconds": 15.0,
+      "capped": false,
+      "over_budget": false,
+      "rtf": 3.190770926826774,
+      "call": "first",
+      "worker_pid": 42631,
+      "plan": {
+        "id": 1,
+        "start": 0.0,
+        "rate": 1.0,
+        "wall": 1.79,
+        "lag": 0.0,
+        "freeze": 0.0,
+        "overdraft": 0.0,
+        "needs_shorter": false,
+        "freeze_at": null,
+        "carried": 0.0,
+        "excess": 0.0,
+        "parts": [],
+        "voiced": [
+          [
+            0.0,
+            1.79
+          ]
+        ],
+        "said": "whole"
+      },
+      "slot": {
+        "id": 1,
+        "speaker": "S1",
+        "start": 0.0,
+        "end": 3.5,
+        "next_start": 4.0,
+        "prev_end": null,
+        "overlaps_prev": false,
+        "resume_start": null,
+        "rate_cap": null,
+        "breaks": [],
+        "heard": [],
+        "anchors": [],
+        "speech": []
+      },
+      "end_error_seconds": -1.71,
+      "early_end_seconds": 1.71,
+      "waveform": {
+        "frames": 42960,
+        "peak": 0.4858306646347046,
+        "rms": 0.06579135379579203,
+        "nonfinite": 0,
+        "last_100ms_rms": 2.0272426020075854e-11,
+        "trailing_below_1pct_peak_s": 0.19975,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "watermark": {
+        "marked_probability": 1.0,
+        "threshold": 0.5,
+        "detected": true
+      },
+      "energy_voiced_vs_authored_window": {
+        "end_error_s": -1.9,
+        "overlap_speech": 0.4086,
+        "voiced": [
+          [
+            0.17,
+            1.6
+          ]
+        ]
+      },
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నమస్కారం మిరి యలా ఉన్నారు",
+        "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/omnivoice-adapter-conversation-asr.json",
+        "seconds": 0.958202000008896,
+        "normalized_character_errors": 17,
+        "expected_characters": 36,
+        "cer": 0.4722222222222222,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1889304576
+        }
+      }
+    },
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+      "model": "omnivoice-adapter",
+      "sample_rate": 24000,
+      "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-names_numbers-raw.wav",
+      "marked_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-names_numbers-marked.wav",
+      "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-names_numbers-marked.wav",
+      "raw_sha256": "8aa76f2b310f358150e07353661141fc2fa9913b1254dcf1db853f278f66666a",
+      "packed_take": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-names_numbers-take.npz",
+      "prepare_seconds": 1.3750395737588406e-06,
+      "generation_seconds": 3.991942583990749,
+      "render_and_watermark_seconds": 0.009366707992739975,
+      "duration_seconds": 4.13,
+      "natural_duration_seconds": 4.13,
+      "advisory_max_seconds": 2.0,
+      "capped": false,
+      "over_budget": true,
+      "rtf": 0.9665720542350482,
+      "call": "warm (different sentence)",
+      "worker_pid": 42631,
+      "plan": {
+        "id": 2,
+        "start": 4.0,
+        "rate": 1.0,
+        "wall": 4.13,
+        "lag": 0.0,
+        "freeze": 0.0,
+        "overdraft": 0.0,
+        "needs_shorter": false,
+        "freeze_at": null,
+        "carried": 0.0,
+        "excess": 0.0,
+        "parts": [],
+        "voiced": [
+          [
+            4.0,
+            8.13
+          ]
+        ],
+        "said": "whole"
+      },
+      "slot": {
+        "id": 2,
+        "speaker": "S2",
+        "start": 4.0,
+        "end": 8.75,
+        "next_start": 9.5,
+        "prev_end": 3.5,
+        "overlaps_prev": false,
+        "resume_start": null,
+        "rate_cap": null,
+        "breaks": [],
+        "heard": [],
+        "anchors": [],
+        "speech": []
+      },
+      "end_error_seconds": -0.620000000000001,
+      "early_end_seconds": 0.620000000000001,
+      "waveform": {
+        "frames": 99120,
+        "peak": 0.6665710210800171,
+        "rms": 0.06648853690591813,
+        "nonfinite": 0,
+        "last_100ms_rms": 2.1753702570864208e-11,
+        "trailing_below_1pct_peak_s": 0.207625,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "watermark": {
+        "marked_probability": 1.0,
+        "threshold": 0.5,
+        "detected": true
+      },
+      "energy_voiced_vs_authored_window": {
+        "end_error_s": -0.82,
+        "overlap_speech": 0.7937,
+        "voiced": [
+          [
+            4.16,
+            7.93
+          ]
+        ]
+      },
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " రవిరేపు ఉదయం తొమిది గంటలకు వాట్సాప్ లో రెండు పాయలు పంపు తాడు.",
+        "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/omnivoice-adapter-names_numbers-asr.json",
+        "seconds": 0.5674170840065926,
+        "normalized_character_errors": 6,
+        "expected_characters": 54,
+        "cer": 0.1111111111111111,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1894776832
+        }
+      }
+    },
+    {
+      "id": "expressive",
+      "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!",
+      "model": "omnivoice-adapter",
+      "sample_rate": 24000,
+      "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-expressive-raw.wav",
+      "marked_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-expressive-marked.wav",
+      "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-expressive-marked.wav",
+      "raw_sha256": "45f248707191913f91dd528ced29872512a2922444df0212cb1c041b99bdce6c",
+      "packed_take": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-expressive-take.npz",
+      "prepare_seconds": 7.079797796905041e-07,
+      "generation_seconds": 3.988943875010591,
+      "render_and_watermark_seconds": 0.0072101670084521174,
+      "duration_seconds": 3.25,
+      "natural_duration_seconds": 3.25,
+      "advisory_max_seconds": 15.0,
+      "capped": false,
+      "over_budget": false,
+      "rtf": 1.2273673461571049,
+      "call": "warm (different sentence)",
+      "worker_pid": 42631,
+      "plan": {
+        "id": 3,
+        "start": 9.5,
+        "rate": 1.0,
+        "wall": 3.25,
+        "lag": 0.0,
+        "freeze": 0.0,
+        "overdraft": 0.0,
+        "needs_shorter": false,
+        "freeze_at": null,
+        "carried": 0.0,
+        "excess": 0.0,
+        "parts": [],
+        "voiced": [
+          [
+            9.5,
+            12.75
+          ]
+        ],
+        "said": "whole"
+      },
+      "slot": {
+        "id": 3,
+        "speaker": "S1",
+        "start": 9.5,
+        "end": 13.5,
+        "next_start": null,
+        "prev_end": 8.75,
+        "overlaps_prev": false,
+        "resume_start": null,
+        "rate_cap": null,
+        "breaks": [],
+        "heard": [],
+        "anchors": [],
+        "speech": []
+      },
+      "end_error_seconds": -0.75,
+      "early_end_seconds": 0.75,
+      "waveform": {
+        "frames": 78000,
+        "peak": 0.424714595079422,
+        "rms": 0.059097989590029244,
+        "nonfinite": 0,
+        "last_100ms_rms": 1.9797232011403983e-06,
+        "trailing_below_1pct_peak_s": 0.197375,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "watermark": {
+        "marked_probability": 1.0,
+        "threshold": 0.5,
+        "detected": true
+      },
+      "energy_voiced_vs_authored_window": {
+        "end_error_s": -0.94,
+        "overlap_speech": 0.62,
+        "voiced": [
+          [
+            9.69,
+            10.31
+          ],
+          [
+            10.7,
+            12.56
+          ]
+        ]
+      },
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నిజంగా నా ఇంతా మంచి వార్తా నాకు ఇప్డి చెబుతునారా",
+        "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/omnivoice-adapter-expressive-asr.json",
+        "seconds": 0.5003174169687554,
+        "normalized_character_errors": 7,
+        "expected_characters": 43,
+        "cer": 0.16279069767441862,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1897611264
+        }
+      }
+    }
+  ],
+  "timed_scene_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-timed-scene.wav",
+  "tight_window_control": {
+    "id": 99,
+    "start": 0.0,
+    "rate": 1.2,
+    "wall": 3.441666666666667,
+    "lag": 0.0,
+    "freeze": 0.0,
+    "overdraft": 2.041666666666667,
+    "needs_shorter": true,
+    "freeze_at": null,
+    "carried": 0.0,
+    "excess": 2.691666666666667,
+    "parts": [],
+    "voiced": [
+      [
+        0.0,
+        3.442
+      ]
+    ],
+    "said": "whole"
+  },
+  "planner_stats_whole_waveform_proxy": {
+    "lines": 3,
+    "minutes": 0.225,
+    "lag_p50": 0.0,
+    "lag_p95": 0.0,
+    "lag_max": 0.0,
+    "lag_min": 0.0,
+    "lag_max_unflagged": 0.0,
+    "late_share": 0.0,
+    "rate_mean": 1.0,
+    "rate_p50": 1.0,
+    "rate_p90": 1.0,
+    "rate_max": 1.0,
+    "at_cap_share": 0.0,
+    "rate_step_p90": 0.0,
+    "rate_step_ok_share": 1.0,
+    "video_slowdowns": 0,
+    "freezes": 0,
+    "freeze_s": 0,
+    "freezes_per_min": 0.0,
+    "freeze_s_per_min": 0.0,
+    "freeze_s_per_10min": 0.0,
+    "freeze_line_share": 0.0,
+    "overdraft_s": 0.0,
+    "overdraft_lines": 0,
+    "overdraft_carried_s": 0.0,
+    "needs_shorter": 0,
+    "iou_mean": 0.7311,
+    "pieced_lines": 0,
+    "joined_lines": 0,
+    "anchored_lines": 0,
+    "speech_lines": 3,
+    "end_error_p10": -1.518,
+    "end_error_p50": -0.75,
+    "end_error_p90": -0.646,
+    "end_early_1s_share": 0.3333,
+    "long_lines": 0,
+    "long_end_error_p50": null,
+    "overlap_speech_mean": 0.7311,
+    "silent_s_per_min": 15.0857,
+    "anchors": 0,
+    "anchor_err_p50": null,
+    "anchor_err_p95": null
+  },
+  "energy_voiced_vs_authored_window": {
+    "scope": "Production energy-pause detector versus authored fixed windows; no recorded source speech exists, so not full dubbing acceptance.",
+    "metrics": {
+      "speech_lines": 3,
+      "end_error_p10": -1.708,
+      "end_error_p50": -0.94,
+      "end_error_p90": -0.844,
+      "end_early_1s_share": 0.3333,
+      "long_lines": 0,
+      "long_end_error_p50": null,
+      "overlap_speech_mean": 0.6074,
+      "silent_s_per_min": 22.3837,
+      "anchors": 0,
+      "anchor_err_p50": null,
+      "anchor_err_p95": null
+    }
+  },
+  "export": {
+    "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-timed-export.mp4",
+    "decoded_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/adapter-timed/adapter-timed-export-decoded.wav",
+    "seconds": 0.18309570895507932,
+    "path_under_test": "production export.export: float16 PCM, mastering, PyAV/FFmpeg AAC, final decoded loudness",
+    "encoder": "aac_at",
+    "codec": "aac",
+    "encoded_sample_rate": 44100,
+    "result": {
+      "bytes": 345941,
+      "seconds": 13.2,
+      "loudness": {
+        "I": -16.18,
+        "TP": -1.91,
+        "LRA": 5.15
+      },
+      "warning": "No background sound: the file has the Telugu voices only.",
+      "bedGain": null
+    },
+    "watermarks_by_line": [
+      {
+        "id": "conversation",
+        "probability": 1.0,
+        "detected": true
+      },
+      {
+        "id": "names_numbers",
+        "probability": 1.0,
+        "detected": true
+      },
+      {
+        "id": "expressive",
+        "probability": 1.0,
+        "detected": true
+      }
+    ],
+    "all_watermarks_detected": true,
+    "true_peak_passed": true
+  },
+  "acceptance": {
+    "technical": "Three finite, nonsilent 24kHz takes; persistent worker; complete natural output uncapped; advisory over_budget true for second phrase; exact resume without worker; all raw-timing and mastered AAC watermarks detected; decoded export true peak within ceiling.",
+    "semantic_audio": "Not accepted as complete/native-quality solely from these checks. Conversation roundtrip lacks final I-am-well clause, with only1.79s waveform and47.22% CER versus original autoB2.92s/16.67%. Needs targeted human audition to distinguish synthesis omission from ASR error.",
+    "timing": "No lag, speedup or overdraft in chosen windows, but median energy-voiced end error -0.94s and one of3 ends>1s early. Authored-window coverage diagnostic only; underfill is not solved.",
+    "not_a_speed_benchmark": "Preparation22.175s includes worker startup/imports/modelverification/loading and prompt preparation. Generation5.711/3.992/3.989s excludes prepare and PerTh. Parent CPU tests concurrent; different sentences, n1; no throughput claim."
+  },
+  "limitations": [
+    "No full-video or native-listening acceptance claim.",
+    "Parent CPU tests may be concurrent; first/warm times are different sentences and not repeated speed trials.",
+    "Selected B generated voice conditions every line; no source English or human reference cloning.",
+    "Planner coverage uses authored source windows and whole waveform spans, not measured source/dub VAD or native listening.",
+    "ASR CER is only a diagnostic; it does not prove natural pronunciation or prosody.",
+    "Parent-process RSS does not measure isolated worker peak or unified memory.",
+    "Whisper may misrecognize or omit words; it is not human listening.",
+    "Synthetic test card has no background bed; watermark survival in arbitrary mixed source audio is not established."
+  ]
+}

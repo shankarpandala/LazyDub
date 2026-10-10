@@ -1,0 +1,122 @@
+{
+  "authored_originals": true,
+  "request": {
+    "scene": 1,
+    "lines": [
+      {
+        "id": 1,
+        "speaker": "S1",
+        "en": "Ravi will return the red book tomorrow.",
+        "start": 0.0,
+        "end": 7.0,
+        "speech_s": 7.0,
+        "target_aksharas": 40.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      },
+      {
+        "id": 2,
+        "speaker": "S1",
+        "en": "The battery may last six hours, but that is not guaranteed.",
+        "start": 7.5,
+        "end": 16.5,
+        "speech_s": 9.0,
+        "target_aksharas": 50.0,
+        "want": [
+          "full"
+        ],
+        "to": null,
+        "breaks": [],
+        "cut_off": false,
+        "delivery_hint": null,
+        "current": null,
+        "overflow": null,
+        "missing": [],
+        "finding": null,
+        "problems": []
+      }
+    ],
+    "call": "scene",
+    "context_before": [],
+    "context_after_en": [],
+    "deadline": null
+  },
+  "brief": {
+    "version": 1,
+    "meta": {
+      "title": "Two original semantic correction controls",
+      "channel": "Maata experiments",
+      "description": "",
+      "chapters": [],
+      "tags": [],
+      "talk_shares": []
+    },
+    "topic": "Two independent everyday examples",
+    "register": "Natural everyday Telugu, neutral and polite",
+    "speakers": [
+      {
+        "id": "S1",
+        "name": "",
+        "gender": "unknown",
+        "role": "narrator",
+        "audience": "polite",
+        "address": []
+      }
+    ],
+    "glossary": [],
+    "entities": [
+      "Ravi"
+    ],
+    "idioms": [],
+    "numbers": "",
+    "asr_fixes": []
+  },
+  "initial_wordings": [
+    {
+      "id": 1,
+      "full": {
+        "spoken": "రవి ఎర్ర పుస్తకాన్ని తిరిగి ఇస్తాడు.",
+        "english": []
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "coverage": null,
+      "model": null,
+      "flags": []
+    },
+    {
+      "id": 2,
+      "full": {
+        "spoken": "ఈ బ్యాటరీ ఆరు గంటలు పనిచేస్తుంది.",
+        "english": []
+      },
+      "delivery": {
+        "emotion": "neutral",
+        "energy": "mid",
+        "question": false,
+        "emphasis": []
+      },
+      "coverage": null,
+      "model": null,
+      "flags": []
+    }
+  ],
+  "expected_defects": {
+    "1": "Missing tomorrow",
+    "2": "Possibility and lack of guarantee become certainty"
+  }
+}

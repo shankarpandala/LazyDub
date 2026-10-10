@@ -40,6 +40,19 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   scene-v7 only after clearing old approval/maps and re-reviewing; old audio cannot restore obsolete approval.
   Original text and offline audio evidence is in the queue-monitor results. Successful-call timings now exclude
   usage-limit rejection attempts; overnight holds are not processing throughput.
+- Quality recovery (ADR-028, 2026-10-10): the maintainer cancelled long jobs over unnatural voice/pronunciation.
+  After a blind original-text audition against Chatterbox, the maintainer explicitly preferred Voice B (OmniVoice).
+  Apple now uses a persistent isolated OmniVoice runtime in automatic Telugu mode: no source-speaker clones,
+  reference audio or forced duration. Voice identity can vary between lines. A reference-conditioned trial was
+  rejected after a possible omitted clause; its evidence remains separate from automatic-mode validation;
+  long-video quality and earlier underfill remain unproven. `MAATA_TTS=chatterbox` is explicit rollback only. Research and
+  evidence are in `docs/research/telugu-voice-selection-2026-10-10.md` and `docs/spikes/results/model-evaluation-2026-10-10/`.
+  Corrective translations now need fresh semantic review of their actual TTS wording; length cannot grant C.
+  Approval caches include reviewer/policy identity, and old wording/audio cannot resurrect obsolete approval.
+  Failed correction reviews remain retryable; a voiced correction gets C only after its replacement take succeeds.
+  Model/mode/seed identity separates take caches; PerTh follows time stretching. Cancel, timeout and parent exit
+  reap the worker. Run `scripts/setup-omnivoice.sh` to provision its separate pinned runtime and model.
+  Cancelled jobs stay stopped, completed outputs stay intact, and the deleted monitoring schedule stays deleted.
 - Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
   `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
   separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`

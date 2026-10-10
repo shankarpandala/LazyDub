@@ -1,0 +1,51 @@
+{
+  "created_utc": "2026-10-10T09:08:03.590073+00:00",
+  "action": "Existing RenderJob.hold('paused') on a never-run mock-backed job; saved settings retained",
+  "video_id": "4Vz6L8B73i4",
+  "status_before": "running",
+  "status_after": "paused",
+  "changed_fields": [
+    "status",
+    "updatedAt"
+  ],
+  "updated_at_before": 1791262283.9044979,
+  "updated_at_after": 1791623279.969856,
+  "job_sha256_before": "537334cdb07cbc8175cfe9074b5a9a6edf00e536f1dfe3a97911df96782e833d",
+  "job_sha256_after": "cafb216503fa8f421f63830900f2db440b0a72ae6893f58229185520f4a2d78a",
+  "exact_backup_path": "/Users/shankarpandala/Library/Application Support/Maata/cancellation-backups/20261010T090755Z/job.json",
+  "exact_backup_sha256": "537334cdb07cbc8175cfe9074b5a9a6edf00e536f1dfe3a97911df96782e833d",
+  "private_manifest_before": "/Users/shankarpandala/Library/Application Support/Maata/cancellation-backups/20261010T090755Z/inventory-before.json",
+  "private_manifest_after": "/Users/shankarpandala/Library/Application Support/Maata/cancellation-backups/20261010T090755Z/inventory-after.json",
+  "production_job_directories_hashed": 9,
+  "production_cache_entries": 4925,
+  "completed_export_entries": 39,
+  "completed_export_existing_files": 39,
+  "completed_export_missing_paths_unchanged": 0,
+  "protected_files_changed": [
+    "4Vz6L8B73i4/render/job.json"
+  ],
+  "all_other_cache_and_export_hashes_unchanged": true,
+  "settings_progress_completed_fields_unchanged": true,
+  "background_metadata_sha256_unchanged": "d43adad4b7173bc901cb59f0fd768a33f09e8bdec0bb4b208f89e64dea8bbd3a",
+  "process_check_before": {
+    "matching_live_processes": 0,
+    "recorded_engine_pid_present": false,
+    "recorded_supervisor_pid_present": false,
+    "own_audit_ancestors_excluded": true
+  },
+  "process_check_after": {
+    "matching_live_processes": 0,
+    "recorded_engine_pid_present": false,
+    "recorded_supervisor_pid_present": false,
+    "own_audit_ancestors_excluded": true
+  },
+  "engine_started": false,
+  "model_calls": 0,
+  "files_deleted": 0,
+  "scope_exclusions": [
+    "Research model-evaluation environments/downloads",
+    "Monitoring/supervisor logs",
+    "Other cache directories without a production job.json"
+  ],
+  "next_launch_behavior": "Paused job is not added to the automatic recovery queue."
+}

@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-10",
+  "source": "Direct maintainer response in this task",
+  "question": "Which voice sounds more natural and pronounces Telugu better?",
+  "answer": "Voice B is clearly better",
+  "identities": {
+    "A": "Chatterbox Telugu builtin conditioning",
+    "B": "OmniVoice auto Telugu,32steps,no reference"
+  },
+  "scope": "Three original untimed A/B pairs; native reference and production-conditioned variants were not included",
+  "adoption": "OmniVoice as natural Telugu narrator; stable generated B reference and actual production path validated separately",
+  "not_established": [
+    "Original speaker cloning quality",
+    "Long-video timing or completeness",
+    "Exact pronunciation of every word",
+    "Production-conditioned voice listening acceptance"
+  ]
+}

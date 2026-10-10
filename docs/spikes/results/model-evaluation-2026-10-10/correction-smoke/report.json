@@ -1,0 +1,113 @@
+{
+  "status": "passed",
+  "created_utc": "2026-10-10T09:00:42.342145+00:00",
+  "scope": "Single original-text production correction-path smoke; no audio or user jobs",
+  "limits": {
+    "model_calls": 6,
+    "operation_timeout_seconds": 180,
+    "transport_retries": 0,
+    "outer_repeats": 0
+  },
+  "provenance": {
+    "git_head": "932c4cf26c7302288663293f2e46aff9b4b076b4",
+    "source_sha256": {
+      "engine/src/maata_engine/backends/claude_translator.py": "8c5d73c75f260d69c60d9da6cf5a518744b4714d70ff80fb99a0abf266f50e06",
+      "engine/src/maata_engine/backends/base.py": "3ad7f1ea7ec51381b8d2ac2aa4ffb05b04bc3825660768fe068ac400c8ac7e40",
+      "engine/src/maata_engine/qa/coverage.py": "4684146685d4077d82d0b69f9098aa453956174baaf6b8b0a55eda52a6573d1a",
+      "engine/src/maata_engine/text/scene_prompt.py": "b9ad4327c3e1e7137e482b0a801f9ef1b374b5a04c4647d0fe92012c4d507b38",
+      "engine/src/maata_engine/codex_cli.py": "a7216fd7ccb8fa0f50c2fb78a2407d6b27b803700144586d31308387366b1c20",
+      "scripts/experiments/check_semantic_correction.py": "65df41b95acd365009c7f93a2631bbe6e71f2699fac5978017d1a6da761f670b"
+    },
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "architecture": "arm64",
+    "python": "3.12.11",
+    "prompt_version": "scene-v7",
+    "prompt_hash": "9550fc5e1ac9",
+    "review_hash": "4cdb4f668364",
+    "approval_policy_base": "semantic-correction-v1"
+  },
+  "human_native_speaker_review": "not performed",
+  "limitations": [
+    "Automated semantic review is not ground truth.",
+    "Two controls do not establish general Telugu translation quality.",
+    "No speech synthesis, pronunciation, voice or audio quality was tested."
+  ],
+  "model": "gpt-6-luna",
+  "effort": "low",
+  "review_model": "gpt-6-luna",
+  "review_effort": "low",
+  "approval_policy": "semantic-correction-v1:35cda2fe1fad",
+  "isolated_cache": true,
+  "production_cache_touched": false,
+  "result": {
+    "calls": 3,
+    "seconds": 13.99752354202792,
+    "review_pending": [],
+    "output": [
+      {
+        "id": 1,
+        "full": {
+          "spoken": "రవి రేపు ఎర్ర పుస్తకం తిరిగి ఇస్తాడు.",
+          "english": []
+        },
+        "delivery": {
+          "emotion": "neutral",
+          "energy": "mid",
+          "question": false,
+          "emphasis": []
+        },
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": "full",
+          "first": "P",
+          "missing": [],
+          "added": [],
+          "error": null
+        },
+        "model": "gpt-6-luna",
+        "flags": []
+      },
+      {
+        "id": 2,
+        "full": {
+          "spoken": "బ్యాటరీ ఆరు గంటలు ఉండొచ్చు, కానీ అంతసేపు ఉంటుందని గ్యారంటీ లేదు.",
+          "english": []
+        },
+        "delivery": {
+          "emotion": "neutral",
+          "energy": "mid",
+          "question": false,
+          "emphasis": []
+        },
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": "full",
+          "first": "E",
+          "missing": [],
+          "added": [],
+          "error": null
+        },
+        "model": "gpt-6-luna",
+        "flags": []
+      }
+    ],
+    "error": null
+  },
+  "checks": {
+    "both_primary_defects_detected": true,
+    "generated_correction_call": true,
+    "one_fresh_batched_correction_review": true,
+    "both_changed_candidates_explicitly_C": true,
+    "no_pending_review": true,
+    "no_error": true
+  },
+  "model_calls": 3,
+  "wall_seconds": 14.0,
+  "cli_version": "0.162.0",
+  "cache_files": [
+    "original-correction-smoke/lines.jsonl"
+  ],
+  "trace_events": 4
+}

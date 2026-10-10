@@ -3,20 +3,21 @@
 Claude classes every line of a scene on the wording chosen for it (the review call, with its own system prompt and schema
 in text/scene_prompt.py): C complete, m a minor drop (a filler, non-factual emphasis, a backchannel), P a content
 phrase or clause missing, E a meaning error. A P or E line gets one re-translation from its English, with the missing
-words named; Claude never reviews that one again. The checks here class it instead, and the better of the two wordings
-by class is kept, the reviewed one on a tie. Pure: no model, no I/O.
+words named. Its exact candidate wording receives one fresh semantic review; deterministic checks can reject it,
+never approve it. The better of the two wordings by class is kept, the original on a tie. Pure: no model, no I/O.
 """
 
 from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 
 from ..backends.base import Coverage, LineResult, Wording
-from ..text.akshara import count_units
 from .validators import meaning_flags
 
 CLASSES = ("C", "m", "P", "E")  # best first
+APPROVAL_POLICY = "semantic-correction-v1"
 REDO = frozenset("PE")           # classes that get a re-translation
 ERRORS = ("negation", "number", "name", "question", "addition", "other")
 
@@ -39,9 +40,9 @@ def source_allows_full_fallback(en: str) -> bool:
 
 
 def approved_full(line: LineResult) -> bool:
-    """An existing full wording explicitly passed semantic review after the selected short tier failed.
+    """A full wording explicitly passed semantic review after the selected wording failed.
 
-    This exact tuple is the persisted approval marker. A heuristic correction, ordinary full review, minor drop,
+    It may be an existing fallback or a freshly reviewed correction. A heuristic correction, ordinary full review, minor drop,
     or absent full wording cannot pin a line. `first` remains the rejected wording's diagnostic class.
     """
     c = line.coverage
@@ -73,7 +74,7 @@ def _strings(raw: object) -> tuple[str, ...]:
     return tuple(dict.fromkeys(x.strip() for x in raw if isinstance(x, str) and x.strip())) if isinstance(raw, list) else ()
 
 
-def check_review(data: object, ids: Sequence[int]) -> tuple[dict[int, Coverage], dict[int, str]]:
+def check_review(data: object, ids: Sequence[int], *, strict_complete: bool = False) -> tuple[dict[int, Coverage], dict[int, str]]:
     """A review reply against the ids asked for: (a class for each id answered exactly once, why each other id has
     none). Ids nobody asked for are ignored. An E comes with its kind ("other" when the reply names none); the other
     classes carry none."""
@@ -96,6 +97,10 @@ def check_review(data: object, ids: Sequence[int]) -> tuple[dict[int, Coverage],
         if cls not in CLASSES:
             why[i] = f"class {cls!r} unknown"
             continue
+        if strict_complete and cls == "C" and (raw.get("missing") != [] or raw.get("added") != []
+                                                  or raw.get("error") != "none"):
+            why[i] = "complete verdict contradicts its findings"
+            continue
         error = (raw.get("error") if raw.get("error") in ERRORS else "other") if cls == "E" else None
         out[i] = Coverage(cls, _strings(raw.get("missing")), _strings(raw.get("added")), error)
     return out, why
@@ -109,20 +114,22 @@ def finding(c: Coverage) -> tuple[str, ...]:
     return (f"a review found a meaning error ({c.error}) in the earlier Telugu{added}",)
 
 
-def redo_class(en: str, before: Coverage, reviewed: Wording, new: Wording, tier: str = "full") -> Coverage:
-    """The class the checks give a re-translation's wording on `tier`, set against the line's own wording on that tier
-    (`reviewed`, the one the review classed when the re-translation has its tier). E when a negation, a question or a
-    number doesn't match the English, unless `reviewed` has the same mismatch and the review found no such error there:
-    a flag both carry is the heuristic missing the English, and says nothing of which wording is better. P, for a P
-    line, while it is no longer in aksharas than `reviewed` (the phrase can't be back). Else C. `first` keeps the
-    review's class of the wording it would replace."""
+def redo_class(en: str, before: Coverage, reviewed: Wording, new: Wording, tier: str = "full",
+               semantic: Coverage | None = None) -> Coverage | None:
+    """Combine the exact candidate's fresh semantic verdict with conservative deterministic rejection.
+
+    Missing semantic review never approves a candidate, regardless of its length. Existing shared heuristic
+    mismatches stay calibrated by the original review; a new/reconfirmed meaning error still vetoes acceptance.
+    `first` preserves the original verdict. An explicitly complete full correction is protected like a reviewed
+    full fallback, so a later timing fit cannot replace it with unreviewed shorter wording.
+    """
     was = meaning_flags(en, reviewed)
     flags = [k for k in meaning_flags(en, new) if k not in was or (before.cls == "E" and before.error == k)]
     if flags:
         return Coverage("E", error=flags[0], tier=tier, by="validators", first=before.cls)
-    if before.cls == "P" and count_units(new.spoken) <= count_units(reviewed.spoken):
-        return Coverage("P", before.missing, tier=tier, by="validators", first=before.cls)
-    return Coverage("C", tier=tier, by="validators", first=before.cls)
+    if semantic is not None and semantic.cls == "C" and (semantic.missing or semantic.added or semantic.error):
+        return None  # an internally contradictory verdict cannot certify a complete correction
+    return None if semantic is None else replace(semantic, tier=tier, by="review", first=before.cls)
 
 
 def rank(c: Coverage | None) -> int:

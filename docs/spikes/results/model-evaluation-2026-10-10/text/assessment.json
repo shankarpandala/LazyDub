@@ -1,0 +1,84 @@
+{
+  "scope": "Original authored six-line text screen, three generations and one blinded semantic review. Research only.",
+  "machine": {
+    "chip": "Apple M5 Pro",
+    "memory_bytes": 25769803776
+  },
+  "authentication": "Existing signed-in ChatGPT through production isolated Codex CLI; no API key",
+  "cli": "0.162.0-alpha.17.2",
+  "recommendation": {
+    "next_trial": "gpt-6-astra at medium effort for a bounded local-audio comparison",
+    "basis": "Both stronger models preserved explicit time bound and negative-confirmation phrasing. Astra had fewer requested invalid Latin maps and lower observed single-call latency than Sol in this run.",
+    "production_adoption": "Not justified by this small text-only screen. No production model change performed.",
+    "review_candidate": "gpt-6-astra high, assessed here only as one meaning judge; not independently calibrated accuracy."
+  },
+  "independent_text_inspection": {
+    "reviewer": "Separate app_review agent; no additional model calls; not a native human listener",
+    "items": [
+      {
+        "line": 4,
+        "arm": "luna",
+        "finding": "ఆరు గంటలకి రావొచ్చు suggests possible arrival at six; Sol/Astra ఆరింటికల్లా explicitly preserves by-six latest bound. Temporal scope loss or ambiguity, not loss of uncertainty."
+      },
+      {
+        "line": 2,
+        "arm": "luna",
+        "finding": "Direct ఇంకా డబ్బులు కట్టలేదా? preserves a negative question but less clearly the source negative-confirmation expectation; Sol/Astra retain కదా."
+      },
+      {
+        "line": 1,
+        "arm": "astra",
+        "finding": "రెండొందల is colloquial two hundred; number-heuristic missing-hundred flag is a false positive on this authored example."
+      },
+      {
+        "line": "all",
+        "finding": "Other core names, quantities, negation, uncertainty, idiom paraphrase, message recipient and after-meeting ordering retained in model text inspection."
+      },
+      {
+        "line": "all",
+        "finding": "Inspected Latin proposals do not replace unrelated words. Attached Telugu endings remain in Telugu after local map validation."
+      }
+    ]
+  },
+  "latin_plan": {
+    "luna": {
+      "requested": 11,
+      "retained": 9,
+      "rejected_attached_ending_entries": 2
+    },
+    "sol": {
+      "requested": 9,
+      "retained": 8,
+      "rejected_attached_ending_entries": 1
+    },
+    "astra": {
+      "requested": 7,
+      "retained": 7,
+      "rejected_attached_ending_entries": 0
+    },
+    "meaning": "Counts measure map compatibility only, not how the TTS pronounces each form."
+  },
+  "limits": [
+    "n=1 generation per configuration, fixed order Luna/Sol/Astra, uncontrolled provider cache and server load.",
+    "Generation used identical current production prompt/schema/brief with full-only wording, not the whole rendering pipeline or a shortened tier test.",
+    "One independent Astra-high request saw shuffled opaque IDs and both Telugu and planned Latin forms, without source-model labels; same-model self-preference/correlated errors remain possible.",
+    "Production REVIEW_SYSTEM explicitly evaluates meaning only, not style or pronunciation. Text inspection does not establish native acceptability, voice naturalness, TTS intelligibility or clone similarity.",
+    "The six original lines are deliberately diagnostic, not representative Telugu accuracy. No automatic adoption, corrective calls or actual audio."
+  ],
+  "verification": [
+    "Compiled harness",
+    "Dry run made zero model calls",
+    "Exactly four traced requests, no retries",
+    "All returned model IDs match requested models",
+    "All 18 generated full lines locally usable",
+    "All 18 blind verdicts returned exactly once",
+    "Script SHA matches saved run metadata"
+  ],
+  "reproduce": "engine/.venv/bin/python scripts/experiments/compare_text_models.py --run --out /tmp/maata-text-model-screen-fresh",
+  "files": {
+    "inputs": "inputs.json",
+    "raw_outputs_and_usage": "results.json",
+    "blinded_review_input": "blind-review-input.json",
+    "aggregate": "summary.json"
+  }
+}

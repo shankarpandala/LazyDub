@@ -1,0 +1,66 @@
+{
+  "original-correction-smoke/lines.jsonl": [
+    {
+      "key": "f940818f05cadeaf5bff",
+      "prompt_hash": "9550fc5e1ac9",
+      "model": "gpt-6-luna",
+      "approval_policy": "semantic-correction-v1:35cda2fe1fad",
+      "answered_by": "gpt-6-luna",
+      "brief": 1,
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": "P",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "line": {
+        "id": 1,
+        "full": {
+          "spoken": "రవి రేపు ఎర్ర పుస్తకం తిరిగి ఇస్తాడు.",
+          "english": []
+        },
+        "delivery": {
+          "emotion": "neutral",
+          "energy": "mid",
+          "question": false,
+          "emphasis": []
+        }
+      },
+      "at": 1791622856.356
+    },
+    {
+      "key": "a4357b19e097ae23eb92",
+      "prompt_hash": "9550fc5e1ac9",
+      "model": "gpt-6-luna",
+      "approval_policy": "semantic-correction-v1:35cda2fe1fad",
+      "answered_by": "gpt-6-luna",
+      "brief": 1,
+      "coverage": {
+        "class": "C",
+        "by": "review",
+        "tier": "full",
+        "first": "E",
+        "missing": [],
+        "added": [],
+        "error": null
+      },
+      "line": {
+        "id": 2,
+        "full": {
+          "spoken": "బ్యాటరీ ఆరు గంటలు ఉండొచ్చు, కానీ అంతసేపు ఉంటుందని గ్యారంటీ లేదు.",
+          "english": []
+        },
+        "delivery": {
+          "emotion": "neutral",
+          "energy": "mid",
+          "question": false,
+          "emphasis": []
+        }
+      },
+      "at": 1791622856.356
+    }
+  ]
+}

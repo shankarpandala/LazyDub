@@ -12,7 +12,8 @@ One `ClaudeTranslator` per video. Its calls:
   request with a `deadline` is also dropped once it passes; the job sets none);
 - review: the coverage review of a scene's chosen wordings (§4.6), on its own client (GPT-6 Luna by default),
   its own system prompt and schema; each line it classes P or E gets one re-translation from the English with
-  the missing words named, which the deterministic checks class (qa/coverage.py), and the better of the two is kept.
+  the missing words named, followed by one batched semantic review of the exact corrections. Deterministic checks
+  can reject corrections, never approve them; the better reviewed wording is kept.
 
 At most `concurrency` CLI processes run at once, the review's included, without any GPU lock. Cancelling a request (or
 a review) drops it if it is still queued and stops its process (SIGINT first) if it is in flight. Every validated line
@@ -39,7 +40,7 @@ from typing import Any, Coroutine
 
 from ..claude_cli import ClaudeCLIError, ClaudeReply
 from ..codex_cli import DEFAULT_EFFORT, DEFAULT_FALLBACK, DEFAULT_MODEL, CodexCLI
-from ..qa.coverage import (REDO, approved_full, check_review, check_review_fallbacks, coverage_from, coverage_json,
+from ..qa.coverage import (APPROVAL_POLICY, REDO, approved_full, check_review, check_review_fallbacks, coverage_from, coverage_json,
                            finding, rank, redo_class, source_allows_full_fallback)
 from ..qa.validators import check_line, check_reply, glossary_entries
 from ..text.akshara import count_telugu
@@ -212,6 +213,11 @@ class ClaudeTranslator:
                                                          effort=review_effort, binary=binary, trace=trace)
         self.model: str = self.cli.model
         self.prompt_hash = PROMPT_HASH
+        review_identity = [self.review_cli.model, getattr(self.review_cli, "fallback_model", None),
+                           review_effort if review_effort is not None else getattr(self.review_cli, "effort", None),
+                           REVIEW_HASH]
+        self.approval_policy = APPROVAL_POLICY + ":" + hashlib.sha256(
+            json.dumps(review_identity).encode()).hexdigest()[:12]
         self.style = "formal" if style == "formal" else "colloquial"
         self.effort, self.light_effort, self.review_effort = effort, light_effort, review_effort
         self.trace = trace
@@ -321,15 +327,15 @@ class ClaudeTranslator:
         call, and the ids its reply lacks to one more. In an initial review (`cache=None`), `fallbacks` names eligible
         existing full wordings to judge in the same call: only an explicit C after a selected P/E, still allowed by
         `fallback_check` when given, pins full and avoids correction. Otherwise P or E gets one re-translation from
-        its English
-        with the missing words named (an E line with what was wrong); the deterministic checks class that one, and it
-        replaces the line only with a better class. Every class is stored with its line in the line cache (a
+        its English with the missing words named (an E line with what was wrong). One further batched review judges
+        the exact corrected wordings, without another repair loop; deterministic checks retain their rejection
+        role. A correction replaces the line only with a better reviewed class. Every class is stored with its line (a
         re-translation only here, once judged); with `cache` (the review of the wordings voiced: OFFLINE-RENDER §2.10),
         only those of the ids in it (a wording that isn't the line's own, a rephrase, never goes there), each with the
         wording reviewed: a re-translation that replaces it is voiced first, and the render keeps it elsewhere.
-        The result holds the lines to use, each with its class (None where the review had no usable answer). A failure
-        the user must fix leaves the lines it reached unreviewed and comes back in `error`: a P or E line whose
-        re-translation never came back too. Nothing is stored for them, so a later showing reviews them."""
+        The result holds the lines to use, each with its class (None where the initial review had no usable answer).
+        A failed correction review keeps the original P/E and comes back in `error` for CLI failures. Unresolved
+        corrections are not stored, so a later run reviews them again."""
         # A voiced-wording review must never approve another wording without resynthesizing its audio. This
         # bounded fallback is only for the initial review; cache=None is the existing pre-voice contract.
         return await self._track(self._review(req, lines, chosen, cache, fallbacks=fallbacks,
@@ -355,6 +361,8 @@ class ClaudeTranslator:
         why: dict[int, str] = {}
         again: list[LineSpec] = []
         redo = SceneResult(req.scene, "retranslate")
+        correction_verdicts: dict[int, Coverage] = {}
+        correction_tiers: dict[int, str] = {}
         try:
             for _ in range(2):
                 pending = [s for s in todo if s.id not in verdicts]
@@ -390,41 +398,59 @@ class ClaudeTranslator:
                         for s in specs.values() if s.id not in {x.id for x in again}]
                 await self._ladder(replace(req, call="retranslate", lines=tuple(again)), again, done, redo,
                                    (self._system, self.brief.version))
+                correction_tiers = {i: c.tier if c.tier in redo.lines[i].tiers else "full"
+                                    for i, c in verdicts.items() if i in redo.lines}
+                candidates = [(specs[i], redo.lines[i].tiers[t]) for i, t in correction_tiers.items()
+                              if redo_class(specs[i].en, verdicts[i], lines[i].tiers[t],
+                                            redo.lines[i].tiers[t], t) is None]
+                if candidates:
+                    result.calls += 1
+                    # Same semantic contract, exact candidate TTS text, no existing-full shortcut and no recursion.
+                    reply = await self._ask("review", REVIEW_SYSTEM, review_message(req, candidates), REVIEW_SCHEMA,
+                                            self.review_effort, tags={"scene": req.scene, "lines": len(candidates),
+                                                                     "correction": True}, cli=self.review_cli)
+                    correction_verdicts, _ = check_review(reply.data, [s.id for s, _ in candidates], strict_complete=True)
         except ClaudeCLIError as err:
             result.error = err
         replaced = []
         # Record why a requested correction was kept or rejected, without recording source/candidate text.
-        # These describe the existing deterministic decision; "accepted" is not semantic approval.
+        # Accepted candidates have passed the new semantic review and deterministic rejection checks.
         correction_outcomes = {s.id: "no_valid_candidate" for s in again}
+        review_pending: set[int] = set()
         for i, c in verdicts.items():
             new = redo.lines.get(i)
             if c.cls in REDO and new is None and result.error is not None and i not in fallback_approved:
                 if i in correction_outcomes:
                     correction_outcomes[i] = "call_error"
-                continue  # its re-translation never came back: it is reviewed again next time
             effective = Coverage("C", tier="full", by="review", first=c.cls) if i in fallback_approved else c
             reviewed = _reviewed_maps(replace(lines[i], coverage=effective),
                                       effective.tier if effective.cls in ("C", "m") else None)
             line = reviewed
             if new is not None:  # like with like: the new wording on the tier the review classed, else both `full`s
                 t = c.tier if c.tier in new.tiers else "full"
-                ours = redo_class(specs[i].en, c, lines[i].tiers[t], new.tiers[t], t)
+                ours = redo_class(specs[i].en, c, lines[i].tiers[t], new.tiers[t], t,
+                                  correction_verdicts.get(i))
                 if rank(ours) < rank(c):
-                    line = replace(new, coverage=ours)
+                    line = _authorized_maps(replace(new, coverage=ours))
                     replaced.append(i)
                     correction_outcomes[i] = "accepted"
-                elif ours.cls == "E":
+                elif ours is None:
+                    correction_outcomes[i] = "review_error" if result.error is not None else "review_missing"
+                elif ours.cls == "E" and ours.by == "validators":
                     correction_outcomes[i] = "meaning_flag"
-                elif c.cls == "P" and ours.cls == "P":
-                    correction_outcomes[i] = "not_longer"
                 else:
                     correction_outcomes[i] = "not_better"
             result.lines[i] = line
+            if (correction_outcomes.get(i) in ("call_error", "review_error", "review_missing")
+                    or (result.error is not None and c.cls in REDO and i not in fallback_approved and i not in replaced)):
+                review_pending.add(i)
+                continue  # return the known original P/E, but leave it retryable in the persistent line cache
             if cache is None:
                 self._store(specs[i], line)
             elif i in cache:  # the wording reviewed, with its class: never a re-translation not yet voiced
                 self._store(specs[i], reviewed)
         unreviewed = sorted(s.id for s in todo if result.lines[s.id].coverage is None)
+        result.review_pending = tuple(sorted(review_pending | set(unreviewed)))
         for i in unreviewed:
             result.lines[i] = _reviewed_maps(result.lines[i])
             log.info("scene %s: line %s unreviewed: %s", req.scene, i, why.get(i, getattr(result.error, "kind", "")))
@@ -438,6 +464,8 @@ class ClaudeTranslator:
                     "fallback_recheck_failed": sorted(fallback_recheck_failed),
                     "unreviewed": unreviewed, "calls": result.calls, "wall_s": round(result.seconds, 2),
                     "model": self.review_cli.model, "review_hash": REVIEW_HASH,
+                    "approval_policy": self.approval_policy,
+                    "review_pending": list(result.review_pending),
                     "error": getattr(result.error, "kind", None)})
         return result
 
@@ -593,6 +621,7 @@ class ClaudeTranslator:
     def _store(self, spec: LineSpec, line: LineResult) -> None:
         """A validated line into the line cache, with its coverage class when it has one."""
         self._lines.put({"key": line_key(spec, self.style), "prompt_hash": PROMPT_HASH, "model": self.model,
+                         "approval_policy": self.approval_policy,
                          "answered_by": line.model, "brief": line.brief_version,
                          "coverage": coverage_json(line.coverage), "line": line_json(line), "at": round(time.time(), 3)})
 
@@ -604,7 +633,8 @@ class ClaudeTranslator:
         """The cached line for `spec`, if it still validates. A line made under brief v0 (the metadata alone: no
         speaker genders, address forms or glossary) is made again once a brief is in use; v1's serve v2 (§4.7).
         One explicitly compatible old prompt can supply wording only: it has no approval or Latin substitutions
-        until today's review runs. A current row always wins, even if corrupt, and the old file is never rewritten."""
+        until today's review runs. Approval also requires the current policy and reviewer identity. A current row
+        always wins, even if corrupt, and the old file is never rewritten."""
         key = line_key(spec, self.style)
         row = self._lines.rows.get(key)
         legacy = row is None
@@ -620,8 +650,12 @@ class ClaudeTranslator:
         if line is None:  # stored under looser checks than today's
             log.info("line cache entry for %s no longer validates: %s", spec.id, why)
             return None
+        approval_current = not legacy and row.get("approval_policy") == self.approval_policy
+        coverage = coverage_from(row.get("coverage")) if approval_current else None
+        if coverage is not None and coverage.cls in ("C", "m") and coverage.by != "review":
+            coverage = None  # validators can reject errors, but never certify semantic completeness
         line.cached, line.model, line.brief_version, line.coverage = (True, row.get("answered_by"), row.get("brief"),
-                                                                     None if legacy else coverage_from(row.get("coverage")))
+                                                                     coverage)
         return _authorized_maps(line)
 
     def _glossary(self) -> dict[str, str]:

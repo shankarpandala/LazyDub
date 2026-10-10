@@ -881,8 +881,11 @@ class Reviewing(MockClaude):
         reply = super().ask(system, prompt, schema, call, effort=effort, cancel=cancel, tags=tags)
         if call == "review":
             en = {x["id"]: x["en"] for x in json.loads(prompt)["lines"]}
+            te = {x["id"]: x["te"] for x in json.loads(prompt)["lines"]}
             for x in reply.data["lines"]:
                 cls, missing = next((v for k, v in self.classes.items() if en[x["id"]].startswith(k)), ("C", []))
+                if te[x["id"]].startswith("సరిగ్గా "):
+                    cls, missing = "C", []  # the explicit reviewer recognizes this fixture's exact correction
                 x.update({"class": cls, "missing": missing})
         elif call == "retranslate":
             for x in reply.data["lines"]:
@@ -940,8 +943,8 @@ async def test_a_line_the_review_finds_a_phrase_missing_from_is_retranslated_and
     redo = [c for c in clis[0].calls if c["call"] == "retranslate"]
     assert redo and redo[0]["message"]["lines"][0]["missing"] == ["exactly"] and redo[0]["effort"] == "low"
     unit = next(e for e in trace(job, "unit") if e["source"].startswith("Every line"))
-    assert "సరిగ్గా" in unit["telugu"].split()  # the re-translation says more: classed C by the checks, and voiced
-    assert unit["coverage"] == {"class": "C", "by": "validators", "tier": "full", "first": "P", "missing": [],
+    assert "సరిగ్గా" in unit["telugu"].split()  # explicitly re-reviewed and actually voiced
+    assert unit["coverage"] == {"class": "C", "by": "review", "tier": "full", "first": "P", "missing": [],
                                 "added": [], "error": None}
     others = [e for e in trace(job, "unit") if not e["source"].startswith("Every line")]
     assert others and all(e["coverage"]["class"] == "C" and "సరిగ్గా" not in e["telugu"].split() for e in others)

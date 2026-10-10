@@ -19,12 +19,14 @@
     return () => clearInterval(id);
   });
 
-  const steps = [
+  const steps = $derived([
     { icon: "wave", title: "Listens", body: "Finds who speaks when, and what they say, over the whole video." },
     { icon: "sparkle", title: "Translates", body: "Into the Telugu people speak every day, through your own Codex sign-in." },
-    { icon: "user", title: "Speaks", body: "In a clone of each speaker's voice, over the original music and sounds." },
+    { icon: "user", title: "Speaks", body: app.voiceMode === "native"
+      ? "Natural Telugu speech over the original music and sounds. Source voices are not cloned; the automatic voice can vary between lines."
+      : "In a clone of each speaker's voice, over the original music and sounds." },
     { icon: "film", title: "Saves", body: "A video file with Telugu audio and Telugu and English subtitles." },
-  ] as const;
+  ] as const);
 
   function submit(e?: Event) {
     e?.preventDefault();
@@ -59,7 +61,9 @@
 <section class="library">
   <div class="headline">
     <h1><span class="te grad-text word">మాట</span></h1>
-    <p class="tag">Any YouTube video, dubbed into Telugu in the speakers' own voices.</p>
+    <p class="tag">{app.voiceMode === "native"
+      ? "Any YouTube video, dubbed with natural Telugu speech."
+      : "Any YouTube video, dubbed into Telugu in the speakers' own voices."}</p>
     <p class="sub">Maata dubs the whole video on your Mac and saves it as a video file. Only transcript and translation text go to OpenAI through your own Codex CLI.</p>
   </div>
 

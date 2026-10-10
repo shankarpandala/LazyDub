@@ -1,0 +1,74 @@
+{
+  "scope": "original text screen only",
+  "limitations": [
+    "One generation per configuration; no throughput or significance claim",
+    "Only full wording requested/reviewed; no fit, planner or corrective ladder",
+    "Meaning reviewer does not judge style or pronunciation; no native-human or audio QA",
+    "One Astra reviewer can have correlated errors, including self-preference",
+    "Fixed arm order; provider cache/server load uncontrolled; other local research may run"
+  ],
+  "generation": [
+    {
+      "arm": "luna",
+      "model": "gpt-6-luna",
+      "effort": "low",
+      "status": "ok",
+      "wall_s": 8.43,
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 754,
+        "reasoning_output_tokens": 0
+      },
+      "validated": 6,
+      "rejected": {},
+      "meaning": {
+        "C": 5,
+        "P": 1
+      }
+    },
+    {
+      "arm": "sol",
+      "model": "gpt-6.1-sol",
+      "effort": "medium",
+      "status": "ok",
+      "wall_s": 38.157,
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 1027,
+        "reasoning_output_tokens": 297
+      },
+      "validated": 6,
+      "rejected": {},
+      "meaning": {
+        "C": 6
+      }
+    },
+    {
+      "arm": "astra",
+      "model": "gpt-6-astra",
+      "effort": "medium",
+      "status": "ok",
+      "wall_s": 25.654,
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 764,
+        "reasoning_output_tokens": 72
+      },
+      "validated": 6,
+      "rejected": {},
+      "meaning": {
+        "C": 6
+      }
+    }
+  ],
+  "review_status": "ok",
+  "review_wall_s": 29.253,
+  "actual_calls": 4,
+  "production_changed": false
+}

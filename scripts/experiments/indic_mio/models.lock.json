@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "scope": "Isolated original-text experiment only; production lock unchanged.",
+  "models": [
+    {
+      "id": "indic-mio",
+      "repo": "SPRINGLab/Indic-Mio",
+      "revision": "25feace00ca76c71c40b1e8d921fd3c2943c545e",
+      "license": "Apache-2.0",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 5148,
+          "git_oid": "63f18ba501e6861f2b036914c48decb02c053fa0"
+        },
+        {
+          "path": "added_tokens.json",
+          "size": 309597,
+          "git_oid": "215627091d5518fb8e88ee9b8de7fba274cd3464"
+        },
+        {
+          "path": "chat_template.jinja",
+          "size": 205,
+          "git_oid": "56899113d8afb85d00b93085f1e5db588032398e"
+        },
+        {
+          "path": "config.json",
+          "size": 1394,
+          "git_oid": "0825d9c0ae019712550bdab692abbe035c198fda"
+        },
+        {
+          "path": "generation_config.json",
+          "size": 183,
+          "git_oid": "533c27325e400844a21577d348ae9f76580aff86"
+        },
+        {
+          "path": "merges.txt",
+          "size": 1671853,
+          "git_oid": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+        },
+        {
+          "path": "model.safetensors",
+          "size": 1217825224,
+          "sha256": "065f42f7ab6148b66f43e9be0d01ac336343dfe16161350c37b71a87c3e1981b"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "size": 613,
+          "git_oid": "ac23c0aaa2434523c494330aeb79c58395378103"
+        },
+        {
+          "path": "tokenizer.json",
+          "size": 13817944,
+          "sha256": "abcde038b87ccd029a4523b0c5cec1da6d84b4f3d68b351495df086d63033f1f"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "size": 2272720,
+          "git_oid": "a71f2cceb5592818cb2ed4a2bcb82fc8df028373"
+        },
+        {
+          "path": "vocab.json",
+          "size": 2776833,
+          "git_oid": "4783fe10ac3adce15ac8f358ef5462739852c569"
+        }
+      ],
+      "total_bytes": 1238681714
+    },
+    {
+      "id": "miocodec-24k",
+      "repo": "Aratako/MioCodec-25Hz-24kHz",
+      "revision": "3a737f0de2c6324cb2fe40c1fbd1056c7add423d",
+      "license": "MIT",
+      "files": [
+        {
+          "path": "README.md",
+          "size": 7545,
+          "git_oid": "5850399b2d7b54b5ad9fa28a8c73f6c7b8f21ecd"
+        },
+        {
+          "path": "config.yaml",
+          "size": 2404,
+          "git_oid": "198fcaf54d9758b8a5eace3cfe0f88819a2c5ec1"
+        },
+        {
+          "path": "model.safetensors",
+          "size": 523087956,
+          "sha256": "60483759cde136451d53ff5a2f7e283c015758ab540de9037b5d4519366a7705"
+        }
+      ],
+      "total_bytes": 523097905
+    }
+  ]
+}

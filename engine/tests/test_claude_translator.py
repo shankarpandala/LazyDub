@@ -90,7 +90,9 @@ if msg.get("call") == "review":
     verdicts = json.loads(os.environ.get("FAKE_REVIEW", "{}"))
     out = []
     for line in msg["lines"]:
-        cls, missing, error = verdicts.get(str(line["id"]), ["C", [], "none"])
+        # Generic fake corrections are marked by words_for; focused tests script real semantic defects below.
+        verdict = ["C", [], "none"] if line["te"].startswith("మళ్ళీ") else verdicts.get(str(line["id"]), ["C", [], "none"])
+        cls, missing, error = verdict
         out.append({"id": line["id"], "class": cls, "missing": missing, "added": [], "error": error})
     finish({"lines": out[:-1] if mode == "drop_last" else out})
 
@@ -816,26 +818,27 @@ async def test_classes_are_stored_with_the_line_and_a_rewatch_reviews_nothing(fa
 async def test_p_and_e_lines_get_one_retranslation_from_the_english_with_the_missing_words_named(fake):
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["E", [], "negation"]}))
     tr, req, res, out = await reviewed(fake, ids=(1, 2, 3))
-    redo = fake.calls()[-1]
-    assert redo["msg"]["call"] == "retranslate" and len(fake.calls()) == 3
+    redo = fake.calls()[-2]
+    assert redo["msg"]["call"] == "retranslate" and len(fake.calls()) == 4
+    assert fake.calls()[-1]["msg"]["call"] == "review"
     assert redo["arg"]("--model") == MODEL and redo["config"]["model_reasoning_effort"] == '"low"' and "--fallback-model" not in redo["argv"]
     assert redo["system"] == sp.system_prompt(brief_v0(META))  # the scene prompt: never the Telugu
     by_id = {x["id"]: x for x in redo["msg"]["lines"]}
     assert set(by_id) == {1, 2} and by_id[1]["missing"] == ["over the hill"] and "problems" not in by_id[1]
     assert by_id[2]["missing"] == [] and "meaning error (negation)" in by_id[2]["problems"][0]
     assert [x["id"] for x in redo["msg"]["context_done"]] == [3]
-    # the re-translations say more and flag nothing: classed C by the checks, and kept
+    # the exact corrected wordings explicitly receive C in the additional semantic review
     for i, first in ((1, "P"), (2, "E")):
         assert out.lines[i].full.spoken.startswith("మళ్ళీ")
-        assert out.lines[i].coverage == Coverage("C", tier="full", by="validators", first=first)
+        assert out.lines[i].coverage == Coverage("C", tier="full", by="review", first=first)
     assert out.lines[3].coverage.cls == "C" and out.lines[3].full == res.lines[3].full
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
     assert stored[1]["line"]["full"]["spoken"].startswith("మళ్ళీ") and stored[1]["coverage"]["first"] == "P"
     (ev,) = [e for e in fake.events if e["event"] == "review"]
-    assert ev["retranslated"] == [1, 2] and ev["replaced"] == [1, 2] and ev["calls"] == 2
+    assert ev["retranslated"] == [1, 2] and ev["replaced"] == [1, 2] and ev["calls"] == 3
     assert ev["correction_outcomes"] == {1: "accepted", 2: "accepted"}
     again = await fake.make().translate(req)  # a re-watch serves the kept wordings with their classes
-    assert again.calls == 0 and again.lines[2].coverage.by == "validators"
+    assert again.calls == 0 and again.lines[2].coverage.by == "review"
 
 
 async def test_a_review_with_cache_stores_the_wording_reviewed_never_its_retranslation(fake):
@@ -849,7 +852,7 @@ async def test_a_review_with_cache_stores_the_wording_reviewed_never_its_retrans
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["E", [], "negation"]}))
     out = await tr.review(req, {i: replace(x, coverage=None) for i, x in res.lines.items()},
                           {i: "full" for i in res.lines}, cache={1, 3})
-    assert out.lines[1].full.spoken.startswith("మళ్ళీ") and out.lines[1].coverage.by == "validators"
+    assert out.lines[1].full.spoken.startswith("మళ్ళీ") and out.lines[1].coverage.by == "review"
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
     safe = replace(res.lines[1], tiers={t: replace(w, english=()) for t, w in res.lines[1].tiers.items()})
     assert stored[1]["line"] == ct.line_json(safe) and stored[1]["coverage"]["class"] == "P"
@@ -868,15 +871,15 @@ async def test_the_reviewed_wording_stays_unless_the_retranslation_classes_bette
     req = SceneRequest(1, lines)
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "full", 2: "full", 3: "full"})
-    # 1: no longer than before, so still P (a tie keeps the reviewed one); 2: the negation still isn't said, E again;
-    # 3: both wordings carry the same number flag that review did not class E, so the length guard retains P.
+    # 1 and 3: the fresh review still says P, so the original wins the tie.
+    # 2: the negation is still absent, so deterministic rejection prevents approval.
     assert [out.lines[i].coverage.cls for i in (1, 2, 3)] == ["P", "E", "P"]
     assert all(out.lines[i].coverage.by == "review" and out.lines[i].full == replace(res.lines[i].full, english=())
                for i in (1, 2, 3))
     assert all(r["coverage"]["by"] == "review" for r in rows(fake).values())  # the cache holds the reviewed ones again
     assert (await fake.make().translate(req)).lines[1].full == replace(res.lines[1].full, english=())
     (ev,) = [e for e in fake.events if e["event"] == "review"]
-    assert ev["correction_outcomes"] == {1: "not_longer", 2: "meaning_flag", 3: "not_longer"}
+    assert ev["correction_outcomes"] == {1: "not_better", 2: "meaning_flag", 3: "not_better"}
 
 
 async def test_a_line_reviewed_on_a_shorter_tier_keeps_that_tier_in_its_class(fake):
@@ -930,7 +933,8 @@ async def test_a_retranslation_that_fails_the_user_leaves_its_line_to_be_reviewe
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,session_limit")
     tr, req, res, out = await reviewed(fake)
-    assert out.error.kind == "usage_limit" and out.lines[1].coverage is None and out.lines[2].coverage.cls == "C"
+    assert out.error.kind == "usage_limit" and out.lines[1].coverage.cls == "P" and out.lines[2].coverage.cls == "C"
+    assert out.review_pending == (1,)
     assert {r["line"]["id"]: r["coverage"] for r in rows(fake).values()}[1] is None
     (ev,) = [e for e in fake.events if e["event"] == "review"]
     assert ev["correction_outcomes"] == {1: "call_error"}
@@ -952,7 +956,9 @@ async def test_partial_review_failure_does_not_report_an_unattempted_correction(
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
     fake.env.setenv("FAKE_MODE", "ok,drop_last,not_signed_in")
     tr, req, res, out = await reviewed(fake)
-    assert out.error.kind == "not_signed_in" and all(line.coverage is None for line in out.lines.values())
+    assert out.error.kind == "not_signed_in" and out.lines[1].coverage.cls == "P" and out.lines[2].coverage is None
+    assert out.review_pending == (1, 2)
+    assert all(r["coverage"] is None for r in rows(fake).values())
     (ev,) = [e for e in fake.events if e["event"] == "review"]
     assert ev["correction_outcomes"] == {} and ev["retranslated"] == []
 
@@ -1006,16 +1012,17 @@ async def test_a_retranslation_is_classed_on_the_tier_the_review_classed(fake):
     req = SceneRequest(1, specs((1,), want=("full", "concise")))
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
-    assert fake.calls()[-1]["msg"]["call"] == "retranslate"
+    assert fake.calls()[-1]["msg"]["call"] == "review"
+    assert fake.calls()[-1]["msg"]["lines"][0]["te"] == res.lines[1].tiers["concise"].spoken
     assert out.lines[1].coverage == Coverage("P", ("over the hill",), tier="concise")
     assert out.lines[1].tiers == {t: replace(w, english=()) for t, w in res.lines[1].tiers.items()}
     assert [e["replaced"] for e in fake.events if e["event"] == "review"] == [[]]
-    # a longer `concise` back: C on `concise`, and kept
+    # an explicitly reviewed C on the corrected `concise` is kept
     fake.env.setenv("FAKE_MODE", "ok")
     tr = fake.make(video="vid2")
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
-    assert out.lines[1].coverage == Coverage("C", tier="concise", by="validators", first="P")
+    assert out.lines[1].coverage == Coverage("C", tier="concise", by="review", first="P")
     assert out.lines[1].tiers["concise"].spoken == "మళ్ళీ కైట్ వాక్యం కము"
 
 
@@ -1027,21 +1034,21 @@ async def test_a_retranslation_without_the_reviewed_tier_is_classed_on_full_agai
     res = await tr.translate(req)
     out = await tr.review(req, res.lines, {1: "concise"})
     assert set(out.lines[1].tiers) == {"full"} and out.lines[1].full.spoken == "మళ్ళీ కైట్ వాక్యం కము ఇది."
-    assert out.lines[1].coverage == Coverage("C", tier="full", by="validators", first="P")
+    assert out.lines[1].coverage == Coverage("C", tier="full", by="review", first="P")
 
 
-async def test_a_retranslation_is_cached_only_once_the_review_has_judged_it(fake):
-    """Line 2's re-translation is left out of the first reply and asked for again, which hits a usage limit: line 1's,
-    back already, is judged, kept and stored; line 2 keeps its first wording, unclassed, and so does its cache row."""
+async def test_partial_corrections_before_usage_failure_cannot_gain_heuristic_approval(fake):
+    """A partial correction exists, but the usage failure prevents its semantic check. Neither candidate is approved."""
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"], "2": ["P", ["higher"], "none"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,drop_last,session_limit")
     tr, req, res, out = await reviewed(fake)
     assert out.error.kind == "usage_limit" and len(fake.calls()) == 4
-    assert out.lines[1].coverage == Coverage("C", tier="full", by="validators", first="P")
-    assert out.lines[2].coverage is None and out.lines[2].full == res.lines[2].full
+    assert all(line.coverage.cls == "P" for line in out.lines.values())
+    assert out.review_pending == (1, 2)
+    assert all(out.lines[i].full == replace(res.lines[i].full, english=()) for i in (1, 2))
     stored = {r["line"]["id"]: r for r in rows(fake).values()}
-    assert stored[1]["line"]["full"]["spoken"].startswith("మళ్ళీ") and stored[1]["coverage"]["class"] == "C"
-    assert stored[2]["line"]["full"] == ct.line_json(res.lines[2])["full"] and stored[2]["coverage"] is None
+    assert all(stored[i]["coverage"] is None for i in (1, 2))
+    assert all(stored[i]["line"]["full"] == ct.line_json(res.lines[i])["full"] for i in (1, 2))
 
 
 async def test_a_review_cancelled_during_its_retranslation_leaves_the_cache_as_it_was(fake):
@@ -1064,10 +1071,10 @@ async def test_a_retranslation_asked_again_still_carries_the_review_finding(fake
     fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["E", [], "negation"]}))
     fake.env.setenv("FAKE_MODE", "ok,ok,drop_last,ok")
     tr, req, res, out = await reviewed(fake, ids=(1,))
-    first, again = (c["msg"]["lines"][0] for c in fake.calls()[2:])
+    first, again = (c["msg"]["lines"][0] for c in fake.calls() if c["msg"]["call"] == "retranslate")
     assert "meaning error (negation)" in first["problems"][0]
     assert again["problems"] == first["problems"] + ["missing from the reply"]
-    assert out.lines[1].coverage.by == "validators"
+    assert out.lines[1].coverage.by == "review"
 
 
 class Refit(MockClaude):
@@ -1194,7 +1201,7 @@ async def test_explicit_complete_full_reuses_existing_wording_in_same_review(tmp
     {**FULL_C, "missing": ["maybe"]}, {**FULL_C, "error": "number"}])
 async def test_unusable_full_verdict_retains_existing_correction_path(tmp_path, monkeypatch, fallback):
     _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, fallback=fallback)
-    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
     assert not approved_full(result.lines[1]) and result.lines[1].coverage.cls == "P"
 
 
@@ -1202,7 +1209,7 @@ async def test_unusable_full_verdict_retains_existing_correction_path(tmp_path, 
 async def test_unoffered_or_voiced_full_verdict_cannot_skip_correction(tmp_path, monkeypatch, kw):
     _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, **kw)
     assert "fallback" not in calls[0][1]["lines"][0]
-    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
     assert not approved_full(result.lines[1])
 
 
@@ -1220,7 +1227,7 @@ async def test_modal_source_never_shortcuts_redo_even_when_reviewer_claims_full_
     _, _, _, calls, result = await full_fallback_case(
         tmp_path, monkeypatch, en="The kite may climb slowly over the green hill.", full=full)
     assert "fallback" not in calls[0][1]["lines"][0]
-    assert [call for call, _ in calls] == ["review", "retranslate"]
+    assert [call for call, _ in calls] == ["review", "retranslate", "review"]
     assert not approved_full(result.lines[1])
 
 
@@ -1235,7 +1242,7 @@ async def test_full_fallback_rechecks_live_eligibility_before_skipping_redo(tmp_
         return False
 
     _, _, _, calls, result = await full_fallback_case(tmp_path, monkeypatch, recheck=changed)
-    assert checked == [1] and [call for call, _ in calls] == ["review", "retranslate"]
+    assert checked == [1] and [call for call, _ in calls] == ["review", "retranslate", "review"]
     assert result.lines[1].coverage.cls == "P" and not approved_full(result.lines[1])
 
 
@@ -1254,7 +1261,7 @@ async def test_full_approval_does_not_depend_on_another_lines_correction_succeed
     monkeypatch.setattr(tr, "_ask", ask)
     result = await tr.review(req, original, {1: "very_concise", 2: "very_concise"}, fallbacks={1})
     assert result.error.kind == "usage_limit" and approved_full(result.lines[1])
-    assert result.lines[2].coverage is None and approved_full(tr.cached(KITE))
+    assert result.lines[2].coverage.cls == "P" and approved_full(tr.cached(KITE))
 
 
 @pytest.mark.parametrize("fit_fails", [False, True])
@@ -1337,7 +1344,8 @@ def test_corrupt_current_row_cannot_resurrect_older_wording_or_approval(tmp_path
 def test_current_wording_and_approval_win_even_if_legacy_row_was_appended_later(tmp_path):
     _, row, path = legacy_wording_row(tmp_path)
     current_line = LineResult(1, {"full": Wording(LONG)})
-    current = {**row, "prompt_hash": sp.PROMPT_HASH, "line": ct.line_json(current_line)}
+    current = {**row, "prompt_hash": sp.PROMPT_HASH, "approval_policy": ClaudeTranslator(tmp_path, "identity", Brief(1, META), cli=MockClaude()).approval_policy,
+               "line": ct.line_json(current_line)}
     path.write_text(json.dumps(current) + "\n" + json.dumps(row) + "\n")
     tr = ClaudeTranslator(tmp_path, "migration", Brief(1, META), cli=MockClaude())
     cached = tr.cached(KITE)
@@ -1403,3 +1411,150 @@ async def test_the_mock_can_be_slow_and_cancelled(tmp_path):
     with pytest.raises(asyncio.CancelledError):
         await task
     assert time.monotonic() - t0 < 2
+
+
+async def correction_case(tmp_path, monkeypatch, *, en="The kite crossed the hill.",
+                          before="గాలిపటం ఇప్పుడు ఇక్కడ చాలా నెమ్మదిగా పైకి వెళ్తుంది.",
+                          candidate="గాలిపటం కొండ దాటింది.", verdict="C", failure=None):
+    """Original controls pass through real validation/cache/selection; only the external provider is scripted."""
+    tr = ClaudeTranslator(tmp_path, "correction", brief_v0(META), cli=MockClaude())
+    spec = replace(KITE, en=en, want=("full",))
+    req = SceneRequest(1, (spec,))
+    original = LineResult(1, {"full": Wording(before)}, brief_version=0, model="mock")
+    new = LineResult(1, {"full": Wording(candidate)}, brief_version=0, model="mock")
+    tr._store(spec, original)
+    calls = []
+
+    async def ask(call, system, prompt, schema, *args, **kwargs):
+        msg = json.loads(prompt)
+        calls.append((call, msg, kwargs.get("tags")))
+        if call == "retranslate":
+            data = {"lines": [ct.line_json(new)]}
+        elif len(calls) == 1:
+            data = {"lines": [{"id": 1, "class": "P", "missing": ["original missing detail"],
+                                "added": [], "error": "none"}]}
+        else:
+            assert call == "review" and kwargs["tags"]["correction"] is True
+            assert msg["lines"][0]["te"] == candidate
+            assert msg["lines"][0]["tts"] == candidate
+            assert "fallback" not in msg["lines"][0]
+            if failure in ("bad_output", "usage_limit", "not_signed_in"):
+                raise ClaudeCLIError(failure, "scripted correction review failure")
+            row = {"id": 1, "class": verdict, "missing": [] if verdict == "C" else ["may"],
+                   "added": [], "error": "none"}
+            if failure == "contradictory_error":
+                row["error"] = "negation"
+            elif failure == "contradictory_missing":
+                row["missing"] = ["may"]
+            elif failure == "contradictory_added":
+                row["added"] = ["always"]
+            data = {"lines": [] if failure == "missing" else [row, row] if failure == "duplicate" else [row]}
+        return ClaudeReply("", data, 0.0, model="mock")
+
+    monkeypatch.setattr(tr, "_ask", ask)
+    out = await tr.review(req, {1: original}, {1: "full"})
+    return tr, spec, original, calls, out
+
+
+async def test_shorter_correct_candidate_requires_and_receives_fresh_semantic_approval(tmp_path, monkeypatch):
+    tr, spec, original, calls, out = await correction_case(tmp_path, monkeypatch)
+    got = out.lines[1]
+    assert len(got.full.spoken) < len(original.full.spoken)
+    assert got.coverage == Coverage("C", tier="full", by="review", first="P")
+    assert approved_full(got)  # subsequent timing fits cannot discard this explicitly reviewed correction
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]
+    assert out.calls == 3 and out.error is None and out.review_pending == ()
+    fresh = ClaudeTranslator(tmp_path, "correction", brief_v0(META), cli=MockClaude())
+    assert fresh.cached(spec).coverage == got.coverage
+    row = next(iter(fresh._lines.rows.values()))
+    assert row["approval_policy"] == tr.approval_policy
+    assert (await fresh.review(SceneRequest(1, (spec,)), {1: fresh.cached(spec)}, {1: "full"})).calls == 0
+
+
+async def test_longer_candidate_losing_uncertainty_is_not_approved_by_length(tmp_path, monkeypatch):
+    tr, spec, original, calls, out = await correction_case(
+        tmp_path, monkeypatch, en="The replacement may cost another fifty rupees.",
+        before="యాభై రూపాయలు అవుతుంది.", candidate="మార్చడానికి ఇంకో యాభై రూపాయలు అవుతుంది.", verdict="P")
+    assert len(calls[-1][1]["lines"][0]["te"]) > len(original.full.spoken)
+    assert out.lines[1].full == original.full and out.lines[1].coverage.cls == "P"
+    assert tr.cached(spec).coverage.cls == "P"
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]  # no recursive repair
+
+
+@pytest.mark.parametrize("failure", ["missing", "duplicate", "bad_output", "usage_limit", "not_signed_in",
+                                     "contradictory_error", "contradictory_missing", "contradictory_added"])
+async def test_unknown_correction_review_never_approves_or_persists_candidate(tmp_path, monkeypatch, failure):
+    tr, spec, original, calls, out = await correction_case(tmp_path, monkeypatch, failure=failure)
+    assert out.lines[1].full == original.full and out.lines[1].coverage.cls == "P"
+    assert out.review_pending == (1,)
+    assert tr.cached(spec).coverage is None  # pending review remains retryable across restart
+    assert tr.cached(spec).full == original.full
+    assert [call for call, _, _ in calls] == ["review", "retranslate", "review"]
+    assert (out.error.kind if out.error else None) == (failure if failure in ("bad_output", "usage_limit", "not_signed_in") else None)
+
+
+@pytest.mark.parametrize("policy", [None, "heuristic-v0", "current"])
+@pytest.mark.parametrize("by", ["validators", "review"])
+def test_cached_approval_requires_current_policy_but_reuses_wording(tmp_path, policy, by):
+    tr = ClaudeTranslator(tmp_path, "policy", brief_v0(META), cli=MockClaude())
+    original = LineResult(1, {"full": Wording("కైట్ కొండ మీదుగా వెళ్తుంది.", ((0, "kite"),))},
+                          coverage=Coverage("C", tier="full", by=by, first="P"), brief_version=0)
+    tr._store(KITE, original)
+    path = tmp_path / "policy" / "lines.jsonl"
+    row = json.loads(path.read_text())
+    if policy is None:
+        row.pop("approval_policy")
+    else:
+        row["approval_policy"] = tr.approval_policy if policy == "current" else policy
+    path.write_text(json.dumps(row, ensure_ascii=False) + "\n")
+    before = path.read_bytes()
+    fresh = ClaudeTranslator(tmp_path, "policy", brief_v0(META), cli=MockClaude())
+    cached = fresh.cached(KITE)
+    assert cached.full.spoken == original.full.spoken and cached.cached
+    assert cached.coverage == (original.coverage if policy == "current" and by == "review" else None)
+    assert cached.full.english == (original.full.english if policy == "current" and by == "review" else ())
+    assert path.read_bytes() == before  # inspection never rewrites user cache or completed artifacts
+
+
+@pytest.mark.parametrize("change", ["review_model", "review_effort", "review_hash", "client_effort"])
+def test_changed_reviewer_identity_invalidates_approval_not_generation(tmp_path, monkeypatch, change):
+    cli = MockClaude()
+    cli.effort = "low"
+    original = ClaudeTranslator(tmp_path, "policy-change", brief_v0(META), cli=cli, review_effort=None)
+    line = LineResult(1, {"full": Wording("కైట్ కొండ దాటింది.", ((0, "kite"),))},
+                      coverage=Coverage("C", tier="full", by="review"), brief_version=0)
+    original._store(KITE, line)
+    reviewer = MockClaude()
+    reviewer.effort = "low"
+    kwargs = {"review_cli": reviewer, "review_effort": None}
+    if change == "review_model":
+        reviewer.model = "different-review-model"
+    elif change == "review_effort":
+        kwargs["review_effort"] = "medium"
+    elif change == "client_effort":
+        reviewer.effort = "medium"
+    else:
+        monkeypatch.setattr(ct, "REVIEW_HASH", "different-review-prompt")
+    changed = ClaudeTranslator(tmp_path, "policy-change", brief_v0(META), cli=cli, **kwargs)
+    assert changed.prompt_hash == original.prompt_hash and changed.model == original.model
+    assert changed.approval_policy != original.approval_policy
+    cached = changed.cached(KITE)
+    assert cached.cached and cached.full.spoken == line.full.spoken
+    assert cached.coverage is None and cached.full.english == ()
+
+
+async def test_cancellation_during_correction_review_never_caches_its_candidate(fake):
+    fake.env.setenv("FAKE_REVIEW", json.dumps({"1": ["P", ["over the hill"], "none"]}))
+    fake.env.setenv("FAKE_MODE", "ok,ok,ok,slow")
+    tr = fake.make()
+    req = SceneRequest(1, specs((1,)))
+    initial = await tr.translate(req)
+    pending = asyncio.create_task(tr.review(req, initial.lines, {1: "full"}))
+    await fake.started(4)
+    assert fake.calls()[-1]["msg"]["call"] == "review"
+    assert fake.calls()[-1]["msg"]["lines"][0]["te"].startswith("మళ్ళీ")
+    assert tr.cancel(lambda r: r.scene == 1) == 1
+    with pytest.raises(asyncio.CancelledError):
+        await pending
+    cached = tr.cached(req.lines[0])
+    assert cached.coverage is None and cached.full.spoken == initial.lines[1].full.spoken

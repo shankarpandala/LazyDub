@@ -61,6 +61,7 @@ from . import mix, separate, subtitles
 from .backends.base import (COARSE_STEP, SR_ANALYSIS, Backend, Cancelled, Coverage, LineResult, LineSpec,
                             SceneRequest, VideoMeta, Wording)
 from .backends.claude_translator import LADDER, brief_v0, line_json, line_key
+from .backends.omnivoice import OmniVoiceError
 from .claude_cli import ClaudeCLIError
 from .dubber import (BAND, BRIEF_TRIES, CALIBRATION_TE, CHUNK, CHUNK_PAD, CONTEXT_AFTER, CONTEXT_BEFORE, CONTEXT_SPAN,
                      REF_MIN, SCENE_MAX_UNITS, Dubber, Said, UnitState, VoiceCost, VoiceState, _cancelling,
@@ -68,7 +69,7 @@ from .dubber import (BAND, BRIEF_TRIES, CALIBRATION_TE, CHUNK, CHUNK_PAD, CONTEX
 from .gpu import GpuScheduler
 from .models import load_lock
 from .qa import take as take_qa
-from .qa.coverage import CLASSES, approved_full, coverage_from, coverage_json, voiced_class
+from .qa.coverage import APPROVAL_POLICY, CLASSES, approved_full, coverage_from, coverage_json, voiced_class
 from .qa.validators import check_line
 from .resolve import VIDEO_FORMAT, ResolveError, ResolvedVideo, Resolver, audio_start, decode_audio_to, decode_stereo
 from .settings import default_output_dir
@@ -354,6 +355,9 @@ class RenderJob(Dubber):
         What is done stays on disk; `run()` continues from it. Safe from any thread."""
         self._pauses += 1
         self._stop.set()
+        cancel = getattr(self.b.tts, "cancel", None)
+        if cancel is not None:
+            cancel()
 
     async def run(self) -> str:
         """Run every stage in turn, each from disk where its inputs are unchanged. Returns the job's status: done,
@@ -386,12 +390,13 @@ class RenderJob(Dubber):
             try:
                 if self._whole_output() is None:  # (a whole video's MP4 needs it again only if the lines change)
                     self._separator_ready()
+                    self._tts_ready()
                 for group in ORDER:
                     await self._all(self._stage(key) for key in group)
             except _Paused:
                 self.doc["status"] = "paused"
                 log.info("render %s paused in %s", self.video_id, self.doc["stage"])
-            except (RenderError, ResolveError) as e:
+            except (RenderError, ResolveError, OmniVoiceError) as e:
                 log.warning("render %s failed in %s: %s", self.video_id, self.doc["stage"], e)
                 self.doc.update(status="failed", error=str(e))
             except asyncio.CancelledError:
@@ -447,6 +452,9 @@ class RenderJob(Dubber):
 
     def _on_cancel(self) -> None:
         self._stop.set()  # the model call being waited out (pyannote) stops at its next check
+        cancel = getattr(self.b.tts, "cancel", None)
+        if cancel is not None:
+            cancel()
 
     async def _all(self, stages: Iterable[Coroutine[Any, Any, None]]) -> None:
         """Run `stages` (stages, or translation lanes) side by side and return once every one has stopped. A pause stops
@@ -631,8 +639,17 @@ class RenderJob(Dubber):
     async def _on_gpu(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> tuple[Any, float]:
         if self._stop.is_set():
             raise _Paused  # a pause stops GPU work at the next call (§2.1)
+        @functools.wraps(fn)
+        def admitted(*a: Any, **kw: Any) -> Any:
+            # Admission may have waited behind another stage. A pause during that wait must not launch a worker.
+            if self._stop.is_set():
+                raise _Paused
+            bind = getattr(self.b.tts, "bind_cancel_event", None)
+            if bind is not None:
+                bind(self._stop)
+            return fn(*a, **kw)
         queued_at = time.perf_counter()
-        out, seconds = await super()._on_gpu(fn, *args, **kwargs)
+        out, seconds = await super()._on_gpu(admitted, *args, **kwargs)
         self._gpu_work(fn, seconds, queued_at)
         return out, seconds
 
@@ -930,12 +947,14 @@ class RenderJob(Dubber):
         # From the calibrations alone, then the takes' paces: a run after a pause on the same job counts none twice.
         self.estimator = DurationEstimator()
         tts = self.b.tts
-        inputs = {"audio": self._fp, "tts": type(tts).__name__, "model": _model_rev(self.b.name, "tts"),
+        inputs = {"audio": self._fp, "tts": type(tts).__name__, "model": self._tts_revision(),
                   "cfg": getattr(tts, "cfg_weight", None), "exaggeration": getattr(tts, "exaggeration", None),
                   "cfmSteps": getattr(tts, "cfm_steps", None), "ttsScript": self.tts_script,
                   "calibration": _digest([[w.spoken, [list(e) for e in w.english]] for w in CALIBRATION_TE]),
                   "calibrationTts": _digest([self._tts_text(w) for w in CALIBRATION_TE]),
                   "version": VOICE_VERSION}
+        if hasattr(tts, "cache_identity"):
+            inputs["synthesis"] = tts.cache_identity
         prev = _read_json(path)
         prior = prev.get("inputs") if prev else None
         prior = prior if isinstance(prior, dict) else {}
@@ -949,6 +968,9 @@ class RenderJob(Dubber):
             entry.setdefault("calibrationTts", legacy_tts)  # per voice: a pause can leave only some recalibrated
         reg = self.registry
         order = sorted(reg.speakers, key=lambda sid: (-reg.speakers[sid].talk_seconds, sid))
+        if getattr(tts, "native_voice", False):
+            await self._native_voices(order, entries, inputs, path)
+            return
         began = False
         for n, sid in enumerate(order):
             self._progress("voices", n, len(order))
@@ -983,6 +1005,61 @@ class RenderJob(Dubber):
                                                            _read_rows(self.render_dir / "fixups.jsonl"))))
         st = self.doc["stages"]["voices"]
         st["done"] = st["total"] = len(order)
+
+    async def _native_voices(self, order: list[str], entries: dict, inputs: dict, path: Path) -> None:
+        """Automatic Telugu speech without source-speaker conditioning (ADR-028).
+
+        English references are deliberately unused. Calibration, take validation and the timing planner are shared
+        with the clone path; provenance states `native`, never `cloned`. Reuse calibration only for the exact model,
+        reference and actual TTS text. The shared automatic policy needs one pace calibration, not one per detected speaker.
+        """
+        if self._stop.is_set():
+            raise _Paused
+        cost = VoiceCost()
+        voice = await self._preset("native", cost)
+        key = self._voice_key("native", voice, "native:" + _digest(self.b.tts.cache_identity))
+        previous = next((e for e in entries.values() if e.get("how") == "native"
+                         and e.get("calibrationTts") == inputs["calibrationTts"]
+                         and e.get("calibration")), None)
+        kept: list[tuple[str, float, object]] = []
+        audio = None
+        if previous is None and order:
+            await self._begin("voices")
+            t0 = time.perf_counter()
+            await self._calibrate("native", key, voice, cost, self._gpu_priority(), keep=kept)
+            self.calibrate_s += time.perf_counter() - t0
+            if not kept:
+                raise RenderError("The Telugu voice could not produce usable calibration speech. Check the voice setup before retrying.")
+            audio, _ = await self._on_gpu(self.b.tts.vocode, kept[0][2], 1.0, cost=cost)
+            pairs = [[spoken, seconds] for spoken, seconds, _ in kept]
+        else:
+            pairs = previous["calibration"] if previous else []
+            if pairs:
+                self.estimator.calibrate(key, [(spoken, seconds) for spoken, seconds in pairs])
+        if order and audio is None and any(not (self.render_dir / "voices" / f"{sid}.npy").is_file() for sid in order):
+            audio, _ = await self._on_gpu(self.b.tts.synthesize, self._tts_text(CALIBRATION_TE[0]), voice, "te", cost=cost)
+        saved = {}
+        for n, sid in enumerate(order):
+            if self._stop.is_set():
+                raise _Paused
+            v = self.voices.setdefault(sid, VoiceState())
+            v.voice, v.kind, v.ref_seconds, v.status, v.key = voice, VoiceKind.NATIVE, 0.0, "native", key
+            v.use_preset = False  # legacy clone/stock switches cannot change this mode
+            sample = self.render_dir / "voices" / f"{sid}.npy"
+            if audio is not None:
+                sample.parent.mkdir(exist_ok=True)
+                _save_pcm(sample, np.asarray(audio, np.float32))
+            saved[sid] = {"how": "native", "refSeconds": 0.0, "calibration": pairs,
+                          "calibrationTts": inputs["calibrationTts"], "sample": sample.is_file(),
+                          "key": {"voice": key.voice, "cfg": key.cfg, "exaggeration": key.exaggeration,
+                                  "reference": key.reference},
+                          "pace": round(self.estimator.rate(key), 3), "overhead": round(self.estimator.overhead(key), 3)}
+            self._progress("voices", n + 1, len(order))
+        _write_json(path, {"inputs": inputs, "speakers": saved})
+        await self.notify({"type": "voice_ready", "videoId": self.video_id})
+        self._load_takes(*await asyncio.to_thread(lambda: (_read_rows(self.render_dir / "takes.jsonl"),
+                                                         _read_rows(self.render_dir / "fixups.jsonl"))))
+        self.doc["stages"]["voices"]["done"] = self.doc["stages"]["voices"]["total"] = len(order)
 
     async def _make_voice(self, sid: str) -> dict:
         """Build a speaker's voice (`_voice_spans`, `_voice_from`) and calibrate it, with the voice key's reference
@@ -1443,7 +1520,8 @@ class RenderJob(Dubber):
                         continue
                     try:
                         restored += await self._voice_line(st)
-                    except (_Paused, RenderError):  # a take the disk can't keep fails the job, which a resume continues
+                    except (_Paused, Cancelled, RenderError, OmniVoiceError):
+                        # Worker failures must remain retryable; a pause or an unusable take must not skip speech.
                         raise
                     except Exception:
                         log.exception("unit %d failed", st.unit.id)
@@ -1562,6 +1640,7 @@ class RenderJob(Dubber):
             "coverage": coverage_json(c) if voiced_class(c, st.tier) in CLASSES else None,
             "tts": _tts_hash(texts), "voice": voice, "synthesis": self._take_inputs(n),
             "durationPrompt": PROMPT_HASH,
+            "approvalPolicy": self._approval_policy(),
             "takes": [{"key": self._take_key(text, voice, n), "spoken": w.spoken, "seconds": secs,
                        "pauses": [list(p) for p in pauses], "pace": pace, "failed": failed}
                       for text, w, secs, pauses, pace, failed in zip(texts, said.wordings, said.seconds, said.pauses,
@@ -1633,6 +1712,7 @@ class RenderJob(Dubber):
         from its file. Still too long, it is flagged, and (in a wording of its own) queued for its scene's rephrase
         again, whose answer fixups.jsonl has."""
         if (voiced_class(line.coverage, tier) not in CLASSES and row.get("durationPrompt") == PROMPT_HASH
+                and row.get("approvalPolicy") == self._approval_policy()
                 and isinstance(row.get("coverage"), dict)):
             line = replace(line, coverage=coverage_from(row["coverage"]))  # the line cache's is another occurrence's
         # Identical audio from an older text/review policy is reusable, but its semantic approval is not. Preserve
@@ -1829,16 +1909,18 @@ class RenderJob(Dubber):
         for st, key in ask:
             line = res.lines.get(st.unit.id)
             if line is not None and line.coverage is not None:
-                self._put_fixup(st, key, "review", line)
+                if st.unit.id not in res.review_pending:
+                    self._put_fixup(st, key, "review", line)
                 await self._reviewed(st, line, key)
-        return res.error is not None
+        return res.error is not None or bool(res.review_pending)
 
     async def _reviewed(self, st: UnitState, line: LineResult, key: str) -> None:
-        """A voiced wording's class. When a re-translation replaced the wording (a P or E, classed by the validators), it
+        """A voiced wording's class. When a reviewed re-translation replaced the wording (a P or E), it
         is voiced once more and, if its take passes, voiced in its place; else the wording voiced keeps the review's
         class."""
         c = line.coverage
-        if c.by == "validators" and c.tier in line.tiers:
+        correction = c.by == "validators" or (c.by == "review" and c.first in ("P", "E"))
+        if correction and c.tier in line.tiers:
             if await self._fixup(st, line, c.tier, "retranslate", key):
                 return
             c = Coverage(c.first or c.cls, tier=st.tier)
@@ -2056,10 +2138,11 @@ class RenderJob(Dubber):
         for sid, sp in sorted(reg.speakers.items(), key=lambda x: x[1].first_at):
             v = self.voices.get(sid, VoiceState())
             cloned = v.kind is VoiceKind.CLONED and v.voice is not None and not v.use_preset
+            native = v.kind is VoiceKind.NATIVE and v.voice is not None
             speakers.append({"id": sid, "label": sp.label, "talkSeconds": round(sp.talk_seconds, 2),
-                             "voice": "cloned" if cloned else "preset", "referenceSeconds": round(v.ref_seconds, 1),
+                             "voice": "native" if native else "cloned" if cloned else "preset", "referenceSeconds": round(v.ref_seconds, 1),
                              "pace": round(self.estimator.rate(self._key(sid)), 2),
-                             "sample": cloned and (self.render_dir / "voices" / f"{sid}.npy").is_file()})
+                             "sample": (cloned or native) and (self.render_dir / "voices" / f"{sid}.npy").is_file()})
         plans = [self.final[st.unit.id] for st in self._final_lines if st.unit.id in self.pcm]
         d = self.doc
         return {"version": 2, "videoId": self.video_id, "title": d["title"], "channel": d["channel"],
@@ -2170,6 +2253,12 @@ class RenderJob(Dubber):
             if sep is not None:
                 sep.release()  # (quick: the model's arrays and MLX's cache; no separator call is running now)
         self._separated.set()
+
+    def _tts_ready(self) -> None:
+        missing = getattr(self.b.tts, "missing", None)
+        if missing is not None and (absent := missing()):
+            raise RenderError("OmniVoice setup is incomplete. Run scripts/setup-omnivoice.sh before dubbing. "
+                              + "; ".join(absent))
 
     def _separator_ready(self) -> None:
         """Fail saying how to fetch them when the separator's model files aren't in the models folder (one filled
@@ -2606,16 +2695,22 @@ class RenderJob(Dubber):
         """The takes a synthesis gives: `n` where the TTS batches them, else one."""
         return n if hasattr(self.b.tts, "synthesize_takes") else 1
 
+    def _tts_revision(self) -> str | None:
+        return getattr(self.b.tts, "model_revision", None) or _model_rev(self.b.name, "tts")
+
     def _take_inputs(self, n: int) -> dict:
         """Cheap synthesis identity for both files and rows: no model loading or weight hashing. The model revision
         comes from the process-cached lock manifest. The storage kind separates mel takes from sample-only backends;
         wrapper subclasses with the same backend/model and protocol remain compatible. Script is included so the
         estimator never learns Latin-input timings when this run synthesizes Telugu-script text, or vice versa."""
         tts = self.b.tts
-        return {"backend": self.b.name, "model": _model_rev(self.b.name, "tts"), "device": self.b.device,
+        inputs = {"backend": self.b.name, "model": self._tts_revision(), "device": self.b.device,
                 "t3Dtype": str(getattr(tts, "_t3_dtype", None)), "sampleRate": tts.sample_rate,
                 "format": "mel" if hasattr(tts, "synthesize_mel") else "pcm", "batch": self._batch(n),
                 "cfmSteps": getattr(tts, "cfm_steps", None), "ttsScript": self.tts_script, "version": TAKES_VERSION}
+        if hasattr(tts, "cache_identity"):
+            inputs["adapter"] = tts.cache_identity
+        return inputs
 
     def _take_key(self, text: str, voice: list, n: int) -> str:
         """A take file's key (§2.1): text, voice and the complete synthesis identity. The same wording said with the
@@ -2682,16 +2777,22 @@ class RenderJob(Dubber):
     def _settled_key(self, sc: Scene) -> str:
         """A scene's `settled` row in fixups.jsonl: its lines (line key and onset) and what answered its fix-ups."""
         return _key20(["settled", [[self._line_key(st), round(st.unit.start, 3)] for st in sc.lines],
-                       self.tr.prompt_hash, self.tr.model, REVIEW_HASH])
+                       self.tr.prompt_hash, self.tr.model, REVIEW_HASH, self._approval_policy()])
+
+    def _approval_policy(self) -> str:
+        """Approval provenance is independent of wording and PCM compatibility."""
+        return getattr(self.tr, "approval_policy", APPROVAL_POLICY)
 
     def _fixup_key(self, kind: str, line: str, spoken: str) -> str:
         """A fixups.jsonl row's key (§2.10): what it is, the line key, the wording it is about and what answered it (the
         translator's prompt and model; the review's prompt too)."""
-        return _key20([kind, line, spoken, self.tr.prompt_hash, self.tr.model, REVIEW_HASH if kind == "review" else None])
+        return _key20([kind, line, spoken, self.tr.prompt_hash, self.tr.model,
+                       REVIEW_HASH if kind == "review" else None, self._approval_policy()])
 
     def _put_fixup(self, st: UnitState, key: str, kind: str, line: LineResult) -> None:
         row = {"key": key, "kind": kind, "line": self._line_key(st), "answer": line_json(line),
                "model": self.tr.model, "prompt_hash": self.tr.prompt_hash,
+               "approval_policy": self._approval_policy(),
                "coverage": coverage_json(line.coverage), "at": round(time.time(), 3)}
         with _disk("the fix-ups"):
             _append_row(self.render_dir / "fixups.jsonl", row)
@@ -2707,7 +2808,13 @@ class RenderJob(Dubber):
             return None
         line, _ = check_line(row["answer"], self._line_spec(st, ()))
         if line is not None:
-            line.coverage = coverage_from(row.get("coverage"))
+            if row.get("approval_policy") == self._approval_policy():
+                line.coverage = coverage_from(row.get("coverage"))
+            else:
+                # Reuse checked wording, but neither heuristic completeness nor unreviewed Latin substitutions.
+                # Identical audio may still restore; _review_voiced must then approve its actual wording afresh.
+                line.coverage = None
+                line.tiers = {tier: Wording(wording.spoken) for tier, wording in line.tiers.items()}
         return line
 
     async def _gpu_now(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> tuple[Any, float]:
@@ -2764,8 +2871,8 @@ class RenderJob(Dubber):
         """The voice the voices stage made for the speaker (§2.6): their clone, else their preset. Never a clone made on
         a line's path."""
         v = self.voices.setdefault(sid, VoiceState())
-        if v.kind is VoiceKind.CLONED and v.voice is not None and not v.use_preset:
-            return v.voice, VoiceKind.CLONED, self._key(sid)
+        if v.kind in (VoiceKind.CLONED, VoiceKind.NATIVE) and v.voice is not None and not v.use_preset:
+            return v.voice, v.kind, self._key(sid)
         name = _preset_name(sid)
         return await self._preset(name, cost), VoiceKind.PRESET, self._voice_key(name, None)
 
@@ -3076,7 +3183,8 @@ def _disk(what: str) -> Iterator[None]:
 
 def _voice_kind(row: dict) -> str:
     """How a take row's line was voiced: "preset" or "cloned" (`_voice_row`)."""
-    return "preset" if str(row["voice"][3]).endswith(":preset") else "cloned"
+    ref = str(row["voice"][3])
+    return "native" if ref.startswith("native:") else "preset" if ref.endswith(":preset") else "cloned"
 
 
 def _pcm_frames(path: Path) -> int | None:

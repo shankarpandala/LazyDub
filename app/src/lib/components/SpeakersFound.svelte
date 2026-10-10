@@ -16,6 +16,8 @@
   } = $props();
 
   const text = $derived(foundText(found));
+  const nativeVoice = $derived(app.voiceMode === "native");
+  const previousVoice = $derived(found.voiceCompatible === false || (nativeVoice && found.voiceMode === "cloned"));
   const voicesReady = $derived(job?.stages.some((s) => s.key === "voices" && s.state === "done") ?? false);
   let fixing = $state(false);
   let count = $state<"auto" | number>("auto");
@@ -53,12 +55,17 @@
     <h3>{text.title}</h3>
     <span class="muted">{found.mode === "hint" ? "the count you chose" : "counted over the whole video"}</span>
   </header>
+  {#if nativeVoice}
+    <p class="muted">{previousVoice
+      ? "This saved dub uses its previous voice. New dubs use natural Telugu speech without cloning source voices; the automatic voice can vary between lines."
+      : "Natural Telugu speech without cloning source voices. The automatic voice can vary between lines."}</p>
+  {/if}
   {#each text.merges as m (m)}<p class="merge"><Icon name="check" size={12} /> {m}</p>{/each}
 
   <ul class="speakers">
     {#each found.speakers as s (s.id)}
       {@const hue = speakerHue(s.id)}
-      {@const stock = presets.includes(s.id)}
+      {@const stock = !nativeVoice && presets.includes(s.id)}
       <li style={`--h:${hue}`} class:stock>
         <div class="row">
           <div class="avatar" aria-hidden="true"><span>{s.label.replace("Speaker ", "")}</span></div>
@@ -73,21 +80,25 @@
             </div>
           </div>
           <div class="acts">
-            {#if voicesReady && !stock}
+            {#if voicesReady && !stock && !previousVoice}
               <button class="btn" aria-pressed={hear.playing === s.id} onclick={() => listen(s.id)} disabled={hear.waiting === s.id}>
                 <Icon name={hear.playing === s.id ? "stop" : "volume"} size={13} />
                 {hear.waiting === s.id ? "Loading…" : hear.playing === s.id ? "Stop" : "Hear voice"}
               </button>
             {/if}
-            <button class="switch" role="switch" aria-checked={stock} aria-label={`Stock voice for ${s.label}`}
+            {#if nativeVoice}
+              <span class="muted">{previousVoice ? "Previous voice" : "Natural Telugu speech"}</span>
+            {:else}
+              <button class="switch" role="switch" aria-checked={stock} aria-label={`Stock voice for ${s.label}`}
                     title={stock ? "Uses a stock Telugu voice" : "Uses a clone of their voice"}
                     onclick={() => { confirmVoice = s.id; pendingOn = !stock; }}>
               <span class="track"><span class="thumb"></span></span>
               <span class="sl">Stock voice</span>
-            </button>
+              </button>
+            {/if}
           </div>
         </div>
-        {#if confirmVoice === s.id}
+        {#if !nativeVoice && confirmVoice === s.id}
           <div class="confirm" role="alertdialog" aria-labelledby={`v-${s.id}`}>
             <p class="c-title" id={`v-${s.id}`}>{pendingOn ? `Use a stock Telugu voice for ${s.label}?` : `Use ${s.label}'s own voice again?`}</p>
             <p class="c-body">{voiceSwitchCost(job, s.label)}</p>

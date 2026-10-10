@@ -860,8 +860,70 @@ async def test_a_paused_job_holding_a_big_video_survives_another_job_ending(eng,
     a = job_json(eng, VID_A)
     assert not a["expired"] and big.stat().st_size == 6_000_000_000
     assert (eng.cache_dir / VID_A / "render" / "pcm").is_dir() and (eng.cache_dir / VID_A / "render" / "takes").is_dir()
-    assert job_json(eng, VID_B)["expired"]  # the done whole job went instead (still over the cap)
+    assert not job_json(eng, VID_B)["expired"]  # paused bytes cannot evict a small completed job either
+    assert (eng.cache_dir / VID_B / "render" / "takes").is_dir()
     assert Path(job_json(eng, VID_B)["output"]["path"]).is_file()  # never the output folder
+
+
+def _retention_fixture(cache: Path, vid: str, *, status="done", updated=2_000_000_000.0,
+                       stop=None, expired=False, size=1024) -> Path:
+    root = cache / vid / "render"
+    (root / "takes").mkdir(parents=True)
+    with (root / "takes" / "original.npz").open("wb") as f:
+        f.truncate(size)  # sparse fixtures exercise byte accounting without large writes
+    (root / "job.json").write_text(json.dumps({"status": status, "updatedAt": updated, "expired": expired,
+                                               "settings": {"stopAt": stop}, "stages": {}}))
+    return root
+
+
+@pytest.mark.parametrize("kind", ["paused", "interrupted", "waiting", "failed", "new", "running", "queued",
+                                  "preview", "kept"])
+def test_retention_cap_counts_only_eligible_job_directories(tmp_path, kind):
+    cache = tmp_path / "cache"
+    complete = _retention_fixture(cache, VID_A)
+    protected = _retention_fixture(cache, VID_B, status="done" if kind in ("preview", "kept") else kind,
+                                   stop=60.0 if kind == "preview" else None, size=100_000)
+    unmanaged = cache / "model-evaluation" / "models" / "weights.bin"
+    unmanaged.parent.mkdir(parents=True)
+    with unmanaged.open("wb") as f:
+        f.truncate(1_000_000_000)
+    monitoring = cache / "monitoring"
+    monitoring.mkdir()
+    (monitoring / "trace.jsonl").write_bytes(b"x" * 10_000)
+    before = {p: p.read_bytes() for p in (complete / "job.json", protected / "job.json")}
+    keep = {VID_B} if kind == "kept" else ()
+    assert retain(cache, keep, 2_000_000_001.0, cap=4096) == []
+    assert all(p.read_bytes() == data for p, data in before.items())
+    assert (complete / "takes" / "original.npz").is_file()
+    assert (protected / "takes" / "original.npz").stat().st_size == 100_000
+    assert unmanaged.stat().st_size == 1_000_000_000
+
+
+def test_retention_cap_still_reclaims_oldest_eligible_and_expired_leftovers(tmp_path):
+    from maata_engine.server import _bytes
+
+    cache = tmp_path / "cache"
+    oldest = _retention_fixture(cache, VID_A, updated=2_000_000_000.0, expired=True, size=8000)
+    older = _retention_fixture(cache, VID_B, updated=2_000_000_001.0, size=8000)
+    newest = _retention_fixture(cache, VID_C, updated=2_000_000_002.0, size=8000)
+    paused = _retention_fixture(cache, VID_D, status="paused", size=100_000)
+    # One payload must go. The expired job's newly accumulated take goes first, then the older completed job.
+    cap = sum(_bytes(root.parent) for root in (oldest, older, newest)) - 8000 + 128
+    assert retain(cache, (), 2_000_000_003.0, cap=cap) == [VID_A]
+    assert not (oldest / "takes").exists()
+    assert (older / "takes").is_dir() and (newest / "takes").is_dir()
+    cap = sum(_bytes(root.parent) for root in (oldest, older, newest)) - 8000 + 128
+    assert retain(cache, (), 2_000_000_003.0, cap=cap) == [VID_B]
+    assert not (older / "takes").exists() and (newest / "takes").is_dir()
+    assert (paused / "takes").is_dir()
+
+
+def test_retention_age_policy_still_applies_to_paused_work(tmp_path):
+    cache = tmp_path / "cache"
+    paused = _retention_fixture(cache, VID_A, status="paused", updated=2_000_000_000.0 - 15 * 86400)
+    assert retain(cache, (), 2_000_000_000.0, cap=1_000_000) == [VID_A]
+    assert not (paused / "takes").exists()
+    assert json.loads((paused / "job.json").read_text())["expired"]
 
 
 async def test_remove_deletes_the_jobs_unfinished_mp4_too(eng, tmp_path):
@@ -1059,3 +1121,33 @@ async def test_the_output_says_whether_it_has_the_background_sound(eng):
         await w.send(type="prepare", url=URL_B, stopAt=60)
         out = (await w.until(done(VID_B)))["output"]
     assert out["bed"] is False and out["warning"] == mp4.NO_BED
+
+
+async def test_old_clone_preview_cannot_be_served_as_selected_native_voice(tmp_path):
+    from maata_engine.server import Client
+    eng = Engine("mock", tmp_path / "models", tmp_path / "cache", None, "tok", demo=True)
+    tts = eng.backend.tts
+    tts.native_voice = True
+    tts.model_revision = "omnivoice-test"
+    tts.cache_identity = {"reference": "approved-B"}
+    root = eng.cache_dir / VID_A / "render"
+    root.mkdir(parents=True)
+    path = root / "voices.json"
+    old = {"inputs": {"model": "chatterbox-old"}, "speakers": {"S1": {"how": "single-clip"}}}
+    path.write_text(json.dumps(old))
+    provenance = eng._voice_provenance({"videoId": VID_A})
+    assert provenance["voiceMode"] == "cloned" and provenance["voiceCompatible"] is False
+    messages, frames = [], []
+    async def send_json(m):
+        messages.append(m)
+    async def send_bytes(m):
+        frames.append(m)
+    await eng._voice_sample(Client(send_json, send_bytes), VID_A, "S1")
+    assert not frames and "earlier voice model" in messages[-1]["message"]
+    assert json.loads(path.read_text()) == old
+    current = {"inputs": {"model": tts.model_revision, "synthesis": tts.cache_identity},
+               "speakers": {"S1": {"how": "native"}}}
+    path.write_text(json.dumps(current))
+    assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is True
+    tts.cache_identity = {"reference": "different-B"}
+    assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is False

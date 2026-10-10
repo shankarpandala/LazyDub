@@ -368,7 +368,7 @@ class Dubber:
         """The estimator's key for the voice a speaker's lines are voiced with now, as `_voice_for` picks it: their clone,
         else their preset (keyed by its name, so speakers who share a preset share its pace)."""
         v = self.voices.get(sid)
-        if v is not None and v.kind is VoiceKind.CLONED and v.voice is not None and v.key is not None and not v.use_preset:
+        if v is not None and v.kind in (VoiceKind.CLONED, VoiceKind.NATIVE) and v.voice is not None and v.key is not None and not v.use_preset:
             return v.key
         return self._voice_key(_preset_name(sid), None)
 

@@ -309,6 +309,9 @@ class Engine:
             task.cancel()
             await asyncio.wait([task])
         self._keep_awake(False)
+        release = getattr(self.backend.tts, "release", None)
+        if release is not None:
+            await asyncio.to_thread(release)
         self.stopped.set()
 
     def quit(self) -> None:
@@ -351,6 +354,14 @@ class Engine:
     async def _job_event(self, msg: dict) -> None:
         """What a job says goes to every window: its progress (`render`, with its place in the queue), the speakers it
         found and Claude's state."""
+        if msg.get("type") == "voice_ready":
+            video_dir = self._video_dir(msg["videoId"])
+            found = found_on_disk(video_dir, self.job.doc if self.job is not None else None) if video_dir else None
+            if found is None:
+                return
+            msg = found
+        if msg.get("type") == "speakers_found":
+            msg = self._voice_provenance(msg)
         if msg.get("type") == "render":
             msg = {**msg, "position": self._position(msg["videoId"])}
         elif msg.get("type") == "speakers_found" and msg.get("fresh"):
@@ -431,8 +442,23 @@ class Engine:
             if self.job is not None and self.job.video_id == path.parent.parent.name:
                 doc = self.job.doc
             if (msg := found_on_disk(path.parent.parent, doc)) is not None:
-                found.append(msg)
+                found.append(self._voice_provenance(msg))
         return found
+
+    def _voice_provenance(self, msg: dict) -> dict:
+        """An old dub keeps its old preview; never label it with a newly selected model's voice."""
+        video_dir = self._video_dir(msg["videoId"])
+        saved = _read_json(video_dir / "render" / "voices.json") if video_dir else None
+        saved = saved or {}
+        entries = list((saved.get("speakers") or {}).values())
+        native = bool(entries) and all(e.get("how") == "native" for e in entries)
+        tts = self.backend.tts
+        compatible = native == bool(getattr(tts, "native_voice", False))
+        if getattr(tts, "native_voice", False):
+            inputs = saved.get("inputs") or {}
+            compatible = compatible and inputs.get("model") == getattr(tts, "model_revision", None) \
+                         and inputs.get("synthesis") == tts.cache_identity
+        return {**msg, "voiceMode": "native" if native else "cloned", "voiceCompatible": compatible}
 
     async def _send_found(self, c: Client) -> None:
         """After `hello`, the speaker checks a new window needs (the job view's Wrong count?, Hear voice and stock-voice
@@ -613,6 +639,10 @@ class Engine:
 
     async def _voice_sample(self, c: Client, vid: str, speaker: str) -> None:
         video_dir = self._video_dir(vid)
+        if video_dir is not None and not self._voice_provenance({"videoId": vid})["voiceCompatible"]:
+            await c.send_json({"type": "error", "message": "This saved voice sample belongs to an earlier voice model. The saved dub is unchanged.",
+                               "retryable": False})
+            return
         if video_dir is None or not await voice_sample(video_dir / "render", speaker, self.backend.tts.sample_rate,
                                                        c.send_bytes):
             log.info("no Hear voice sample for %s of %s", speaker, vid)
@@ -630,6 +660,8 @@ class Engine:
 
         client = Client(sj, sb)
         await sj({"type": "hello", "backend": self.backend.name, "device": self.backend.device, "demo": self.demo or self.backend.name == "mock",
+                  "voiceMode": "native" if getattr(self.backend.tts, "native_voice", False) else "cloned",
+                  "ttsModel": "OmniVoice" if getattr(self.backend.tts, "native_voice", False) else "Chatterbox Telugu",
                   "claude": await self.claude_hello(), "renders": await asyncio.to_thread(self._renders),
                   "render": {**self.job.snapshot(), "position": self._position(self.job.video_id)}
                   if self.job is not None else None, "settings": self.settings})
@@ -656,6 +688,10 @@ class Engine:
                     self._task(self._rerun(client, vid, lambda s, k=k: replace(
                         s, speakers=None if k in (None, "auto") else int(k))))
                 elif kind == "set_voice":
+                    if getattr(self.backend.tts, "native_voice", False):
+                        await sj({"type": "error", "message": "OmniVoice generates natural Telugu speech without cloning source voices.",
+                                  "retryable": False})
+                        continue
                     sid, on = str(msg.get("speaker", "")), bool(msg.get("usePreset"))
                     self._task(self._rerun(client, vid, lambda s, sid=sid, on=on: replace(
                         s, presets=tuple(set(s.presets) | {sid}) if on else tuple(set(s.presets) - {sid}))))
@@ -676,11 +712,12 @@ class Engine:
 def retain(cache_dir: Path, keep: Collection[str], now: float, days: float = RETAIN_DAYS, cap: float = CACHE_CAP
            ) -> list[str]:
     """Retention (SPEC §8, §13, M6; OFFLINE-RENDER §4): renders last updated (`updatedAt`) over `days` ago lose their
-    voice data and source media (`expire`); then, while the cache holds more than `cap` bytes, done whole-video jobs (their
-    MP4 is written) lose theirs, least recently updated first, and expired jobs any of it they hold again. A job waiting
-    to be continued (paused, interrupted, waiting, or a done preview) never counts toward the cap: losing its takes would
-    cost hours of speech synthesis; it follows the age rule only. Never those in `keep` (the running one and the
-    engine's queue), nor one job.json says is queued: they are about to run (§4). The output folder is never touched.
+    voice data and source media (`expire`); then, while eligible job directories hold more than `cap` bytes, done
+    whole-video jobs (their MP4 is written) lose theirs, least recently updated first, and expired jobs any of it they
+    hold again. A job waiting to be continued (paused, interrupted, waiting, or a done preview) never counts toward the
+    cap: losing its takes would cost hours of speech synthesis; it follows the age rule only. Jobs in `keep` (the running
+    one and the engine's queue), or marked queued, are never expired: they are about to run (§4). The output folder is
+    never touched.
     Returns the video ids expired."""
     renders = []
     for path in cache_dir.glob("*/render/job.json"):
@@ -693,12 +730,16 @@ def retain(cache_dir: Path, keep: Collection[str], now: float, days: float = RET
     gone = [vid for at, vid, doc in renders if not doc.get("expired") and now - at > days * 86400.0]
     for vid in gone:
         expire(cache_dir / vid, next(doc for _, v, doc in renders if v == vid))
-    size = _bytes(cache_dir)
-    for _, vid, doc in renders:
+    # Account for exactly the jobs this cap may reclaim. Paused work, kept/queued jobs and unrelated runtime/model
+    # folders cannot consume this allowance and indirectly evict every completed dub.
+    capped = [(at, vid, doc) for at, vid, doc in renders
+              if doc.get("expired") or (doc.get("status") == "done"
+                                        and (doc.get("settings") or {}).get("stopAt") is None)]
+    size = sum(_bytes(cache_dir / vid) for _, vid, _ in capped)
+    for _, vid, doc in capped:
         if size <= cap:
             break
-        whole = doc.get("status") == "done" and (doc.get("settings") or {}).get("stopAt") is None
-        if vid in gone or not (whole or doc.get("expired")):
+        if vid in gone:
             continue
         before = bool(doc.get("expired"))
         freed = expire(cache_dir / vid, doc)

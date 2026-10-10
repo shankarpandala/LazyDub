@@ -1,6 +1,6 @@
 import type {
   ClaudeHealth, ClaudeProblem, ClientMessage, DubOptions, EngineMessage, EngineSettings, JobItem, Render, SpeakersFound,
-  VideoInfo,
+  TtsModel, VideoInfo, VoiceMode,
 } from "./types";
 import { PRIVACY_KEY, healthProblem } from "./claude";
 import { jobOptions, newDubOptions } from "./settings";
@@ -45,6 +45,8 @@ export class AppState {
   backend = $state("");
   device = $state("");
   demo = $state(false);
+  voiceMode = $state<VoiceMode>("cloned");
+  ttsModel = $state<TtsModel>("Chatterbox Telugu");
   /** The Codex CLI as the engine found it on connect; null for the demo. Internal names preserve the wire protocol. */
   claude = $state<ClaudeHealth | null>(null);
   /** What holds translation back now, and when the engine said so (ms): the banner's countdown runs from then. */
@@ -108,6 +110,8 @@ export class AppState {
     switch (m.type) {
       case "hello":
         this.backend = m.backend; this.device = m.device; this.demo = m.demo;
+        this.voiceMode = m.voiceMode ?? "cloned";
+        this.ttsModel = m.ttsModel ?? "Chatterbox Telugu";
         this.setClaude(m.claude, now);
         this.jobs = m.renders ?? [];
         this.renders = m.render ? { [m.render.videoId]: m.render } : {};
@@ -280,6 +284,7 @@ export class AppState {
 
   /** A speaker voiced with a stock voice instead of their clone, or back. Shown at once; the engine re-runs from there. */
   setVoice(videoId: string, speaker: string, usePreset: boolean, send: Send): void {
+    if (this.voiceMode === "native") return;
     send({ type: "set_voice", videoId, speaker, usePreset });
     this.jobs = this.jobs.map((j) => {
       if (j.videoId !== videoId) return j;

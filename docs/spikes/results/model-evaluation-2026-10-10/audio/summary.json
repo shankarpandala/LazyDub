@@ -1,0 +1,321 @@
+{
+  "version": 1,
+  "date": "2026-10-10",
+  "hardware": "M5 Pro 24GB",
+  "scope": "Three original Telugu phrases, one take per model; local component screen only",
+  "results_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/results.json",
+  "results_sha256": "4e6298ca7c503b5ad7b1c8ebcac14ffc4804a7f39287c809726f57710416e994",
+  "network": "Model fetch only through maata_engine.models.fetch_model; every synthesis, watermark and ASR process sandbox-exec deny network*; offline HF flags; no remote audio.",
+  "models": {
+    "chatterbox": {
+      "device": "mps",
+      "versions": {
+        "torch": "2.14.0",
+        "torchaudio": "2.11.0",
+        "transformers": "5.2.0"
+      },
+      "repo": "shankarpandala/chatterbox-telugu",
+      "revision": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+      "mode": "builtin conds.pt; native reference provenance unknown",
+      "cfm_steps": 10,
+      "t3_dtype": "bfloat16",
+      "cfg_weight": 0.5,
+      "exaggeration": 0.5,
+      "load_seconds": 11.834621125017293,
+      "after_load_memory": {
+        "process_max_rss_bytes": 4787535872,
+        "mps_current_bytes": 2204071168,
+        "mps_driver_bytes": 4253745152
+      },
+      "sample_rate": 24000,
+      "status": "complete",
+      "final_memory": {
+        "process_max_rss_bytes": 4787535872,
+        "mps_current_bytes": 2246628096,
+        "mps_driver_bytes": 4369416192
+      },
+      "generation_timing_scope": "synthesis plus existing PerTh",
+      "load_timing_scope": "model construction plus MPS synchronization; excludes imports, process startup and hash verification; local file cache warmed by verification",
+      "samples": [
+        {
+          "id": "conversation",
+          "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను.",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-conversation-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-conversation-raw.wav",
+          "raw_sha256": "0d0e27b86cdbd621de6916badf460de32afa5a1e64ad081d4b10048c7f1e1871",
+          "generation_seconds": 2.010101334017236,
+          "duration_seconds": 2.52,
+          "rtf": 0.7976592595306491,
+          "codec_decode_seconds": null,
+          "watermark": {
+            "action": "preserved production Chatterbox PerTh",
+            "package": "1.1.0",
+            "raw_probability": 0.0009648585692048073,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "a58c55f1d0ac7264a82aeba23264186cfa80afcd42cc1231b6406ec0822681c7",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " నమస్కారం మిరేలా ఉనరు నినం బాగునాం.",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-conversation-asr.json",
+            "seconds": 0.9575187909649685,
+            "normalized_character_errors": 12,
+            "expected_characters": 36,
+            "cer": 0.3333333333333333,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1889304576
+            }
+          }
+        },
+        {
+          "id": "names_numbers",
+          "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్‌లో రెండు ఫైళ్లు పంపుతాడు.",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-names_numbers-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-names_numbers-raw.wav",
+          "raw_sha256": "46f7281ab3bfa15a6adbc2f83245d94fcd0ebaf13bbce070c345e61553516fe7",
+          "generation_seconds": 1.7356362089631148,
+          "duration_seconds": 2.92,
+          "rtf": 0.5943959619736695,
+          "codec_decode_seconds": null,
+          "watermark": {
+            "action": "preserved production Chatterbox PerTh",
+            "package": "1.1.0",
+            "raw_probability": 2.6357360184192657e-05,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "40cd3f5579ec07edabaeb343cabac68a6c3dce8629e98b1152a637922c959ee6",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " డావిదయ పూది పూది ం తొమిడి గండి లక వాట్సాప్ లో రిండి వంపతాడు.",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-names_numbers-asr.json",
+            "seconds": 0.5437730000121519,
+            "normalized_character_errors": 26,
+            "expected_characters": 54,
+            "cer": 0.48148148148148145,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1892646912
+            }
+          }
+        },
+        {
+          "id": "expressive",
+          "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-expressive-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-expressive-raw.wav",
+          "raw_sha256": "9ed744ce6f45e0259b0207c7ef2a704a97dc4a7c7b742dd914862b91794cb05a",
+          "generation_seconds": 1.7146956670330837,
+          "duration_seconds": 3.04,
+          "rtf": 0.5640446273135143,
+          "codec_decode_seconds": null,
+          "watermark": {
+            "action": "preserved production Chatterbox PerTh",
+            "package": "1.1.0",
+            "raw_probability": 0.0020446479320526123,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "011dda6b0ca3e0ba0676a2fb928219f214640e68cb0bb11c902bc94bda9d4dd7",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " ని జంగానా ఇంతా మంచి వార్తనాకి ప్డిచి వతనారా",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/chatterbox-expressive-asr.json",
+            "seconds": 0.4802787499502301,
+            "normalized_character_errors": 12,
+            "expected_characters": 43,
+            "cer": 0.27906976744186046,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1895153664
+            }
+          }
+        }
+      ],
+      "weighted_asr_cer": 0.37593984962406013,
+      "all_watermarks_detected": true,
+      "all_waveforms_finite_non_silent": true
+    },
+    "omnivoice": {
+      "device": "mps",
+      "versions": {
+        "torch": "2.8.0",
+        "torchaudio": "2.8.0",
+        "transformers": "5.3.0"
+      },
+      "generation_timing_scope": "synthesis only; PerTh applied in separate QA stage",
+      "repo": "k2-fsa/OmniVoice",
+      "revision": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+      "source_commit": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+      "mode": "auto (no reference or voice-design instruction)",
+      "steps": 32,
+      "codec_device": "cpu",
+      "dtype": "float16",
+      "duration": "estimated by upstream",
+      "postprocess": "upstream defaults",
+      "load_seconds": 0.7808619160205126,
+      "after_load_memory": {
+        "process_max_rss_bytes": 3206922240,
+        "mps_current_bytes": 1225155328,
+        "mps_driver_bytes": 1235697664
+      },
+      "sample_rate": 24000,
+      "status": "complete",
+      "final_memory": {
+        "process_max_rss_bytes": 3206922240,
+        "mps_current_bytes": 1225155328,
+        "mps_driver_bytes": 2504605696
+      },
+      "load_timing_scope": "model construction plus MPS synchronization; excludes imports, process startup and hash verification; local file cache warmed by verification",
+      "samples": [
+        {
+          "id": "conversation",
+          "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను.",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-conversation-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-conversation-raw.wav",
+          "raw_sha256": "9e6ab4e1566c10ef4ee7984a8e2d7ff072d0f69b0a2a09de245dcecc895752e8",
+          "generation_seconds": 4.5528479579952545,
+          "duration_seconds": 2.92,
+          "rtf": 1.5591945061627583,
+          "codec_decode_seconds": 0.10963466699467972,
+          "watermark": {
+            "action": "applied existing local PerTh to OmniVoice output",
+            "package": "1.1.0",
+            "raw_probability": 0.0,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "a2383b7c67dd5fdba913e26e83be74a2f51e672cc3b21f5e367e44e05511c71a",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " నమస్కారం మేరి యలా ఉన్నారు నేను బాబునాను",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-conversation-asr.json",
+            "seconds": 0.9839738750015385,
+            "normalized_character_errors": 6,
+            "expected_characters": 36,
+            "cer": 0.16666666666666666,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1892679680
+            }
+          }
+        },
+        {
+          "id": "names_numbers",
+          "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్‌లో రెండు ఫైళ్లు పంపుతాడు.",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-names_numbers-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-names_numbers-raw.wav",
+          "raw_sha256": "0c62ee94eb8be3fbf2197b1c31dbf34a2022da6fd6955d8a9c28253ca72ff6ac",
+          "generation_seconds": 2.832220459007658,
+          "duration_seconds": 4.2,
+          "rtf": 0.6743382045256329,
+          "codec_decode_seconds": 0.13297833397518843,
+          "watermark": {
+            "action": "applied existing local PerTh to OmniVoice output",
+            "package": "1.1.0",
+            "raw_probability": 0.0,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "386b6f4d178b777f7bec7b10847b2c4aeafe63ebbc685f30167a3f824f030a15",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " రవిరేపు ఉదేయం తుమిది గంటలకు, వాట్సాప్ లో రెండు పంపుతాడు.",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-names_numbers-asr.json",
+            "seconds": 0.5427781249745749,
+            "normalized_character_errors": 10,
+            "expected_characters": 54,
+            "cer": 0.18518518518518517,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1905115136
+            }
+          }
+        },
+        {
+          "id": "expressive",
+          "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!",
+          "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-expressive-marked.wav",
+          "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-expressive-raw.wav",
+          "raw_sha256": "9e5ad995c593d7015eca15a4ba4603b4247ecabf0ab53fae22a8cc5c1952e9d5",
+          "generation_seconds": 2.452257666969672,
+          "duration_seconds": 3.28,
+          "rtf": 0.7476395326127049,
+          "codec_decode_seconds": 0.09243474999675527,
+          "watermark": {
+            "action": "applied existing local PerTh to OmniVoice output",
+            "package": "1.1.0",
+            "raw_probability": 0.17262868583202362,
+            "marked_probability": 1.0,
+            "threshold": 0.5,
+            "marked_sha256": "f61697d75b2fddc743207cfa033c0c0934921e6e815fead5fa20f7125094bdff",
+            "detected": true
+          },
+          "roundtrip": {
+            "model": "mlx-community/whisper-large-v3-turbo",
+            "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+            "forced_language": "te",
+            "text": " నిజంగానా ఇంతా మంచివార్తా నాకు ఇప్డే చెపుదునారా",
+            "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/omnivoice-expressive-asr.json",
+            "seconds": 0.5143655830179341,
+            "normalized_character_errors": 8,
+            "expected_characters": 43,
+            "cer": 0.18604651162790697,
+            "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+            "memory": {
+              "process_max_rss_bytes": 1905721344
+            }
+          }
+        }
+      ],
+      "weighted_asr_cer": 0.18045112781954886,
+      "all_watermarks_detected": true,
+      "all_waveforms_finite_non_silent": true
+    }
+  },
+  "limitations": [
+    "No native listening judgment has been made.",
+    "OmniVoice auto voice has no reference; native accent is unverified.",
+    "Chatterbox uses builtin conds.pt; native reference provenance is unknown.",
+    "Different sentences are first/warm calls, not repeated speed trials.",
+    "Whisper roundtrip errors are diagnostic, not proof of pronunciation or naturalness.",
+    "The original names_numbers fixture contains U+200C in వాట్సాప్‌లో; both models receive it unchanged. Production normalizes/rejects joiners, so that phrase is not an exact production-text comparison."
+  ],
+  "text_diagnostic": {
+    "scope": "Original phrases only. Independent read of local forced-Telugu ASR outputs, not a listening judgment.",
+    "conversation": "Both transcripts retain greeting, question, first-person reply, but have syllable/spelling changes.",
+    "names_numbers": "Neither ASR output has a recognizable files noun. OmniVoice output retains recognizable Ravi, tomorrow, morning, nine, WhatsApp, two, send; baseline output is substantially garbled. This does not disambiguate TTS omission from ASR failure.",
+    "expressive": "Both outputs retain the question and broad sentence, with syllable/ending errors. Prosody cannot be evaluated from the transcript.",
+    "repetition": "Baseline names_numbers ASR repeats a garbled syllable/word; listening is needed to establish whether audio repeats.",
+    "ending": "ASR returns an ending for each clip, but several endings are misspelled; waveform tails have no numerical truncation proof. No claim that all intended word endings were pronounced."
+  },
+  "decision": "Audition required. No production model/default change justified by automated diagnostics alone.",
+  "next_adapter_constraints": [
+    "Separate persistent worker can preserve engine Transformers5.2 environment.",
+    "Stable speaker identity is untested: these are auto-voice samples, not validated native reference cloning.",
+    "Long-video batching, cancellation, duration alignment and accepted pronunciation still need acceptance before any production adapter."
+  ],
+  "independent_harness_review": {
+    "reviewer": "inference_review",
+    "privacy": "No concrete privacy routing issue found in read-only runner inspection; external sandbox command required as documented.",
+    "finding": "U+200C fixture caveat recorded; original trial retained without rerun.",
+    "memory": "RSS is process high-water; MPS numbers are point-in-time allocations, not unified peak."
+  }
+}

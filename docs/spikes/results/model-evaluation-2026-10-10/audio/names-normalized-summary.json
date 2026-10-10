@@ -1,0 +1,249 @@
+{
+  "version": 1,
+  "scope": "Exactly two additional authorized syntheses; production-normalized names_numbers, matched original seed20261011; original six auditions preserved.",
+  "results_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/results.json",
+  "results_sha256": "f6f4bf8cb1a9c390f421b9f74c0e5f3584e7efd7809feef6813a2be1dac5f6c4",
+  "trial_provenance": {
+    "authorship": "Original text authored for this local audition; no downloaded media.",
+    "reason": "Bounded matched pair after discovering original fixture shaping joiner differs from production-normalized text.",
+    "original_text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్‌లో రెండు ఫైళ్లు పంపుతాడు.",
+    "normalized_text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+    "normalizer": "maata_engine.qa.validators.wording",
+    "repair_flags": [
+      "ZWNJ/ZWJ normalized"
+    ],
+    "removed_codepoints": [
+      "U+200C"
+    ],
+    "original_seed_preserved": 20261011,
+    "original_results": "../results.json",
+    "new_calls_authorized": 2,
+    "timing_limit": "Each new model call is first-call; prior names_numbers was warm. Do not infer speed from their difference."
+  },
+  "runs": {
+    "omnivoice": {
+      "device": "mps",
+      "python": "3.12.11 (main, Aug 18 2025, 19:02:39) [Clang 20.1.4 ]",
+      "versions": {
+        "torch": "2.8.0",
+        "torchaudio": "2.8.0",
+        "transformers": "5.3.0"
+      },
+      "load_timing_scope": "model construction plus MPS synchronization; excludes imports, process startup and hash verification; local file cache warmed by verification",
+      "generation_timing_scope": "synthesis only; PerTh applied in separate QA stage",
+      "repo": "k2-fsa/OmniVoice",
+      "revision": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+      "source_commit": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+      "mode": "auto (no reference or voice-design instruction)",
+      "steps": 32,
+      "codec_device": "cpu",
+      "dtype": "float16",
+      "duration": "estimated by upstream",
+      "postprocess": "upstream defaults",
+      "load_seconds": 0.6874669170356356,
+      "after_load_memory": {
+        "process_max_rss_bytes": 3205742592,
+        "mps_current_bytes": 1225155328,
+        "mps_driver_bytes": 1235697664
+      },
+      "sample_rate": 24000,
+      "status": "complete",
+      "final_memory": {
+        "process_max_rss_bytes": 3205742592,
+        "mps_current_bytes": 1225155328,
+        "mps_driver_bytes": 2420195328
+      }
+    },
+    "chatterbox": {
+      "device": "mps",
+      "python": "3.12.11 (main, Aug 18 2025, 19:02:39) [Clang 20.1.4 ]",
+      "versions": {
+        "torch": "2.14.0",
+        "torchaudio": "2.11.0",
+        "transformers": "5.2.0"
+      },
+      "load_timing_scope": "model construction plus MPS synchronization; excludes imports, process startup and hash verification; local file cache warmed by verification",
+      "generation_timing_scope": "synthesis plus existing PerTh",
+      "repo": "shankarpandala/chatterbox-telugu",
+      "revision": "d4341468c1738ea669ef096baccecc68cc8ba9f3",
+      "mode": "builtin conds.pt; native reference provenance unknown",
+      "cfm_steps": 10,
+      "t3_dtype": "bfloat16",
+      "cfg_weight": 0.5,
+      "exaggeration": 0.5,
+      "load_seconds": 8.604219750035554,
+      "after_load_memory": {
+        "process_max_rss_bytes": 5027692544,
+        "mps_current_bytes": 2204071168,
+        "mps_driver_bytes": 4253745152
+      },
+      "sample_rate": 24000,
+      "status": "complete",
+      "final_memory": {
+        "process_max_rss_bytes": 5027692544,
+        "mps_current_bytes": 2246628096,
+        "mps_driver_bytes": 4367450112
+      }
+    }
+  },
+  "samples": [
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+      "seed": 20261011,
+      "model": "omnivoice",
+      "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/omnivoice-names_numbers-raw.wav",
+      "raw_sha256": "6ef73de001747edb07f3b0b7c5f6eebf3247bb3082760b2fbd244cb16b86b8a7",
+      "marked_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/omnivoice-names_numbers-marked.wav",
+      "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/omnivoice-names_numbers-marked.wav",
+      "sample_rate": 24000,
+      "generation_seconds": 2.6248287920025177,
+      "duration_seconds": 4.04,
+      "rtf": 0.6497100970303261,
+      "call": "first",
+      "codec_decode_seconds": 0.12320058298064396,
+      "waveform": {
+        "frames": 96960,
+        "peak": 0.5,
+        "rms": 0.06914047099397819,
+        "nonfinite": 0,
+        "last_100ms_rms": 0.0,
+        "trailing_below_1pct_peak_s": 0.17008333333333334,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "memory": {
+        "process_max_rss_bytes": 3205742592,
+        "mps_current_bytes": 1225155328,
+        "mps_driver_bytes": 2420195328
+      },
+      "watermark_apply_seconds": 0.08533008303493261,
+      "watermark": {
+        "action": "applied existing local PerTh to OmniVoice output",
+        "package": "1.1.0",
+        "raw_probability": 0.0,
+        "marked_probability": 1.0,
+        "threshold": 0.5,
+        "marked_sha256": "f92d6b75b5096e00c76d1472dc0a63ec02a1368378835b52305348a594a2f843",
+        "detected": true
+      },
+      "marked_waveform": {
+        "frames": 96960,
+        "peak": 0.5024945735931396,
+        "rms": 0.07340414566534216,
+        "nonfinite": 0,
+        "last_100ms_rms": 8.245323085982943e-07,
+        "trailing_below_1pct_peak_s": 0.17016666666666666,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " రవిరేపు ఉదేయం తొమిది గంటలకు వాట్సాప్ లో రొండు ఫైల్లు పంపుతాడు",
+        "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/omnivoice-names_numbers-asr.json",
+        "seconds": 1.0867058750009164,
+        "normalized_character_errors": 5,
+        "expected_characters": 54,
+        "cer": 0.09259259259259259,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1894006784
+        }
+      }
+    },
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+      "seed": 20261011,
+      "model": "chatterbox",
+      "raw_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/chatterbox-names_numbers-raw.wav",
+      "raw_sha256": "e1273c3f5ad0f8f0054dc95d8586846e890527bc35c9150894fe100a6dcd7726",
+      "marked_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/chatterbox-names_numbers-marked.wav",
+      "path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/chatterbox-names_numbers-marked.wav",
+      "sample_rate": 24000,
+      "generation_seconds": 2.153603082988411,
+      "duration_seconds": 2.92,
+      "rtf": 0.7375353023932916,
+      "call": "first",
+      "codec_decode_seconds": null,
+      "waveform": {
+        "frames": 70080,
+        "peak": 0.9306640625,
+        "rms": 0.1551006572723747,
+        "nonfinite": 0,
+        "last_100ms_rms": 0.008773316641028218,
+        "trailing_below_1pct_peak_s": 0.08475,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "memory": {
+        "process_max_rss_bytes": 5027692544,
+        "mps_current_bytes": 2246628096,
+        "mps_driver_bytes": 4367450112
+      },
+      "watermark": {
+        "action": "preserved production Chatterbox PerTh",
+        "package": "1.1.0",
+        "raw_probability": 2.6357360184192657e-05,
+        "marked_probability": 1.0,
+        "threshold": 0.5,
+        "marked_sha256": "0859068a3755988113a15459cde5128bfab96588a3fee9fea71cf24d54bfa6ac",
+        "detected": true
+      },
+      "marked_waveform": {
+        "frames": 70080,
+        "peak": 0.9306640625,
+        "rms": 0.1551006572723747,
+        "nonfinite": 0,
+        "last_100ms_rms": 0.008773316641028218,
+        "trailing_below_1pct_peak_s": 0.08475,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " డావిదయ పూది పూది ం తొమిడి గండి లక వాట్సాప్ లో రిండి వంపతాడు.",
+        "raw_result_path": "/Users/shankarpandala/Library/Caches/Maata/model-evaluation-2026-10-10/audio/names-normalized/chatterbox-names_numbers-asr.json",
+        "seconds": 0.5491135829943232,
+        "normalized_character_errors": 26,
+        "expected_characters": 54,
+        "cer": 0.48148148148148145,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1896988672
+        }
+      }
+    }
+  ],
+  "comparison": [
+    {
+      "model": "omnivoice",
+      "same_seed": true,
+      "same_raw_audio_sha256": false,
+      "original_cer": 0.18518518518518517,
+      "normalized_cer": 0.09259259259259259,
+      "original_asr": " రవిరేపు ఉదేయం తుమిది గంటలకు, వాట్సాప్ లో రెండు పంపుతాడు.",
+      "normalized_asr": " రవిరేపు ఉదేయం తొమిది గంటలకు వాట్సాప్ లో రొండు ఫైల్లు పంపుతాడు",
+      "normalized_asr_has_recognizable_files": true
+    },
+    {
+      "model": "chatterbox",
+      "same_seed": true,
+      "same_raw_audio_sha256": false,
+      "original_cer": 0.48148148148148145,
+      "normalized_cer": 0.48148148148148145,
+      "original_asr": " డావిదయ పూది పూది ం తొమిడి గండి లక వాట్సాప్ లో రిండి వంపతాడు.",
+      "normalized_asr": " డావిదయ పూది పూది ం తొమిడి గండి లక వాట్సాప్ లో రిండి వంపతాడు.",
+      "normalized_asr_has_recognizable_files": false
+    }
+  ],
+  "diagnostic": "With the shaping joiner removed by production wording(), OmniVoice roundtrip has a recognizable files noun (ఫైల్లు), while Chatterbox remains garbled and lacks it. All requested semantic items are recognizable in the normalized OmniVoice ASR, though there are syllable/spelling errors. This small deterministic-input comparison supports joiner sensitivity; it is not a native listening verdict or a general model ranking.",
+  "limitations": [
+    "No native listening judgment has been made.",
+    "OmniVoice auto voice has no reference; native accent is unverified.",
+    "Chatterbox uses builtin conds.pt; native reference provenance is unknown.",
+    "Whisper roundtrip errors are diagnostic, not proof of pronunciation or naturalness.",
+    "Exactly one normalized phrase per model, original seed preserved; not repeated trials.",
+    "New names_numbers calls are first-call rather than the old warm-call; do not infer speed change from normalization."
+  ]
+}

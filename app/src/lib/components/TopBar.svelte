@@ -31,7 +31,7 @@
     }
   }
   const backendLabel = $derived(
-    app.demo ? "Demo engine" : app.backend === "apple" ? "Apple Silicon · MLX" : app.backend === "cuda" ? "NVIDIA · CUDA" : "Connecting…",
+    app.demo ? "Demo engine" : app.backend === "apple" ? `Apple Silicon · ${app.ttsModel}` : app.backend === "cuda" ? "NVIDIA · CUDA" : "Connecting…",
   );
   // The Library has its own big paste field.
   const showField = $derived(app.view !== "library");
@@ -67,12 +67,12 @@
   {/if}
 
   <div class="right" data-tauri-drag-region>
-    <div class="badge" title="The Telugu voices are AI-generated from the original speakers">
+    <div class="badge" title={app.voiceMode === "native" ? "AI-generated natural Telugu speech. Source voices are not cloned; the automatic voice can vary between lines." : "The Telugu voices are AI-generated from the original speakers"}>
       <Icon name="sparkle" size={13} />
       <span>AI dub</span>
       <span class="te sep">తెలుగు</span>
     </div>
-    <div class="engine" class:live={app.connection === "open"} title={app.device ? `Engine on ${app.device}` : ""}>
+    <div class="engine" class:live={app.connection === "open"} title={app.device ? `${app.ttsModel} · Engine on ${app.device}` : ""}>
       <span class="dot"></span>
       <Icon name="cpu" size={14} />
       <span>{app.connection === "closed" ? "Reconnecting…" : backendLabel}</span>

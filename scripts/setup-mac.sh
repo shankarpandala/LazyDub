@@ -30,6 +30,9 @@ bold "→ Engine (Python, MLX + MPS; chatterbox-telugu's patched Chatterbox is p
 bold "→ Models (pinned by commit + sha256; resumable)"
 ( cd engine && uv run maata-bench fetch --backend apple ) || die "Model download failed (see above). Re-run to resume."
 
+bold "→ OmniVoice (separate pinned runtime and Telugu voice)"
+./scripts/setup-omnivoice.sh || die "OmniVoice setup failed (see above). Re-run to resume."
+
 bold "→ Codex CLI (translation)"
 maata_codex_bin="$(engine/.venv/bin/python -c 'from maata_engine.codex_cli import find_binary; print(find_binary() or "")')"
 if [[ -n "$maata_codex_bin" && -x "$maata_codex_bin" ]]; then

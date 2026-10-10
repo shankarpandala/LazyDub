@@ -1,0 +1,1689 @@
+{
+  "created_utc": "2026-10-10T08:42:06.214601+00:00",
+  "scope": "original text screen only",
+  "git_sha": "932c4cf26c7302288663293f2e46aff9b4b076b4",
+  "script_sha256": "c8380792cac29ac36c4b08fa1a107fb341804f9a173a5bffebd424fee9f13b15",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "arms": [
+    {
+      "model_requested": "gpt-6-luna",
+      "effort": "low",
+      "calls_permitted": 1,
+      "retries": 0,
+      "status": "ok",
+      "model_returned": "gpt-6-luna",
+      "data": {
+        "lines": [
+          {
+            "id": 1,
+            "full": {
+              "spoken": "మీన, విజయవాడకి బస్ టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+              "english": [
+                {
+                  "word": "బస్",
+                  "occurrence": 0,
+                  "en": "bus"
+                },
+                {
+                  "word": "టికెట్లు",
+                  "occurrence": 0,
+                  "en": "tickets"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 2,
+            "full": {
+              "spoken": "ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "surprised",
+              "energy": "mid",
+              "question": true
+            }
+          },
+          {
+            "id": 3,
+            "full": {
+              "spoken": "లేదు, బుకింగ్ పేజీని ఫోన్లో సేవ్ చేశా అంతే.",
+              "english": [
+                {
+                  "word": "బుకింగ్",
+                  "occurrence": 0,
+                  "en": "booking"
+                },
+                {
+                  "word": "పేజీని",
+                  "occurrence": 0,
+                  "en": "page"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 4,
+            "full": {
+              "spoken": "మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ డ్రైవర్ ఇంకా కన్ఫర్మ్ చేయలేదు.",
+              "english": [
+                {
+                  "word": "డ్రైవర్",
+                  "occurrence": 0,
+                  "en": "driver"
+                },
+                {
+                  "word": "కన్ఫర్మ్",
+                  "occurrence": 0,
+                  "en": "confirm"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 5,
+            "full": {
+              "spoken": "ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ చెక్ చేయాలి.",
+              "english": [
+                {
+                  "word": "చెక్",
+                  "occurrence": 0,
+                  "en": "check"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 6,
+            "full": {
+              "spoken": "అయితే లింక్ వాట్సాప్ లో పంపు, మీటింగ్ అయ్యాక చెక్ చేస్తా.",
+              "english": [
+                {
+                  "word": "లింక్",
+                  "occurrence": 0,
+                  "en": "link"
+                },
+                {
+                  "word": "వాట్సాప్",
+                  "occurrence": 0,
+                  "en": "WhatsApp"
+                },
+                {
+                  "word": "మీటింగ్",
+                  "occurrence": 0,
+                  "en": "meeting"
+                },
+                {
+                  "word": "చెక్",
+                  "occurrence": 0,
+                  "en": "check"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          }
+        ],
+        "glossary_additions": [
+          {
+            "term": "Vijayawada",
+            "spoken": "విజయవాడ"
+          },
+          {
+            "term": "WhatsApp",
+            "spoken": "వాట్సాప్",
+            "keep_english": true
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 754,
+        "reasoning_output_tokens": 0
+      },
+      "cli_seconds": 8.419987667002715,
+      "startup_s": 0.06418691598810256,
+      "wall_s": 8.43,
+      "trace": [
+        {
+          "event": "claude",
+          "provider": "codex",
+          "call": "scene",
+          "attempt": 1,
+          "requested": "gpt-6-luna",
+          "model": "gpt-6-luna",
+          "effort": "low",
+          "wall_s": 8.42,
+          "startup_s": 0.064,
+          "input_tokens": 10687,
+          "cache_read_tokens": 0,
+          "cache_creation_tokens": 0,
+          "cache_1h_tokens": 0,
+          "output_tokens": 754,
+          "reasoning_output_tokens": 0,
+          "rate_limit": null,
+          "error": null
+        }
+      ],
+      "raw": [
+        {
+          "returncode": 0,
+          "stdout_events": [
+            {
+              "type": "thread.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_0",
+                "type": "error",
+                "message": "Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable `features.code_mode_host` and install `codex-code-mode-host`."
+              }
+            },
+            {
+              "type": "turn.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_1",
+                "type": "agent_message",
+                "text": "{\"lines\":[{\"id\":1,\"full\":{\"spoken\":\"మీన, విజయవాడకి బస్ టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\",\"english\":[{\"word\":\"బస్\",\"occurrence\":0,\"en\":\"bus\"},{\"word\":\"టికెట్లు\",\"occurrence\":0,\"en\":\"tickets\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":2,\"full\":{\"spoken\":\"ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"surprised\",\"energy\":\"mid\",\"question\":true,\"emphasis\":null}},{\"id\":3,\"full\":{\"spoken\":\"లేదు, బుకింగ్ పేజీని ఫోన్లో సేవ్ చేశా అంతే.\",\"english\":[{\"word\":\"బుకింగ్\",\"occurrence\":0,\"en\":\"booking\"},{\"word\":\"పేజీని\",\"occurrence\":0,\"en\":\"page\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":4,\"full\":{\"spoken\":\"మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ డ్రైవర్ ఇంకా కన్ఫర్మ్ చేయలేదు.\",\"english\":[{\"word\":\"డ్రైవర్\",\"occurrence\":0,\"en\":\"driver\"},{\"word\":\"కన్ఫర్మ్\",\"occurrence\":0,\"en\":\"confirm\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":5,\"full\":{\"spoken\":\"ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ చెక్ చేయాలి.\",\"english\":[{\"word\":\"చెక్\",\"occurrence\":0,\"en\":\"check\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":6,\"full\":{\"spoken\":\"అయితే లింక్ వాట్సాప్ లో పంపు, మీటింగ్ అయ్యాక చెక్ చేస్తా.\",\"english\":[{\"word\":\"లింక్\",\"occurrence\":0,\"en\":\"link\"},{\"word\":\"వాట్సాప్\",\"occurrence\":0,\"en\":\"WhatsApp\"},{\"word\":\"మీటింగ్\",\"occurrence\":0,\"en\":\"meeting\"},{\"word\":\"చెక్\",\"occurrence\":0,\"en\":\"check\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}}],\"glossary_additions\":[{\"term\":\"Vijayawada\",\"spoken\":\"విజయవాడ\",\"keep_english\":null},{\"term\":\"WhatsApp\",\"spoken\":\"వాట్సాప్\",\"keep_english\":true}]}"
+              }
+            },
+            {
+              "type": "turn.completed",
+              "usage": {
+                "input_tokens": 10687,
+                "cached_input_tokens": 0,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 754,
+                "reasoning_output_tokens": 0
+              }
+            }
+          ],
+          "stderr": ""
+        }
+      ],
+      "arm": "luna",
+      "rejected": {},
+      "unexpected": [],
+      "validated": [
+        {
+          "id": 1,
+          "full": {
+            "spoken": "మీన, విజయవాడకి బస్ టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+            "english": [
+              {
+                "word": "బస్",
+                "occurrence": 0,
+                "en": "bus"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [
+            "full english: word 3 keeps its Telugu ending"
+          ],
+          "tts_telugu": "మీన, విజయవాడకి బస్ టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+          "tts_latin_proposal": "మీన, విజయవాడకి bus టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+          "units": 32.5
+        },
+        {
+          "id": 2,
+          "full": {
+            "spoken": "ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "surprised",
+            "energy": "mid",
+            "question": true,
+            "emphasis": []
+          },
+          "flags": [
+            "negation: 1 in the English, 0 in the Telugu"
+          ],
+          "tts_telugu": "ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?",
+          "tts_latin_proposal": "ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?",
+          "units": 13.0
+        },
+        {
+          "id": 3,
+          "full": {
+            "spoken": "లేదు, బుకింగ్ పేజీని ఫోన్లో సేవ్ చేశా అంతే.",
+            "english": [
+              {
+                "word": "బుకింగ్",
+                "occurrence": 0,
+                "en": "booking"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [
+            "full english: word 2 keeps its Telugu ending"
+          ],
+          "tts_telugu": "లేదు, బుకింగ్ పేజీని ఫోన్లో సేవ్ చేశా అంతే.",
+          "tts_latin_proposal": "లేదు, booking పేజీని ఫోన్లో సేవ్ చేశా అంతే.",
+          "units": 15.0
+        },
+        {
+          "id": 4,
+          "full": {
+            "spoken": "మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ డ్రైవర్ ఇంకా కన్ఫర్మ్ చేయలేదు.",
+            "english": [
+              {
+                "word": "డ్రైవర్",
+                "occurrence": 0,
+                "en": "driver"
+              },
+              {
+                "word": "కన్ఫర్మ్",
+                "occurrence": 0,
+                "en": "confirm"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ డ్రైవర్ ఇంకా కన్ఫర్మ్ చేయలేదు.",
+          "tts_latin_proposal": "మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ driver ఇంకా confirm చేయలేదు.",
+          "units": 25.0
+        },
+        {
+          "id": 5,
+          "full": {
+            "spoken": "ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ చెక్ చేయాలి.",
+            "english": [
+              {
+                "word": "చెక్",
+                "occurrence": 0,
+                "en": "check"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ చెక్ చేయాలి.",
+          "tts_latin_proposal": "ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ check చేయాలి.",
+          "units": 19.5
+        },
+        {
+          "id": 6,
+          "full": {
+            "spoken": "అయితే లింక్ వాట్సాప్ లో పంపు, మీటింగ్ అయ్యాక చెక్ చేస్తా.",
+            "english": [
+              {
+                "word": "లింక్",
+                "occurrence": 0,
+                "en": "link"
+              },
+              {
+                "word": "వాట్సాప్",
+                "occurrence": 0,
+                "en": "WhatsApp"
+              },
+              {
+                "word": "మీటింగ్",
+                "occurrence": 0,
+                "en": "meeting"
+              },
+              {
+                "word": "చెక్",
+                "occurrence": 0,
+                "en": "check"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "అయితే లింక్ వాట్సాప్ లో పంపు, మీటింగ్ అయ్యాక చెక్ చేస్తా.",
+          "tts_latin_proposal": "అయితే link WhatsApp లో పంపు, meeting అయ్యాక check చేస్తా.",
+          "units": 19.0
+        }
+      ]
+    },
+    {
+      "model_requested": "gpt-6.1-sol",
+      "effort": "medium",
+      "calls_permitted": 1,
+      "retries": 0,
+      "status": "ok",
+      "model_returned": "gpt-6.1-sol",
+      "data": {
+        "lines": [
+          {
+            "id": 1,
+            "full": {
+              "spoken": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+              "english": [
+                {
+                  "word": "టికెట్లు",
+                  "occurrence": 0,
+                  "en": "tickets"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 2,
+            "full": {
+              "spoken": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "surprised",
+              "energy": "mid",
+              "question": true
+            }
+          },
+          {
+            "id": 3,
+            "full": {
+              "spoken": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశా అంతే.",
+              "english": [
+                {
+                  "word": "బుకింగ్",
+                  "occurrence": 0,
+                  "en": "booking"
+                },
+                {
+                  "word": "పేజీ",
+                  "occurrence": 0,
+                  "en": "page"
+                },
+                {
+                  "word": "సేవ్",
+                  "occurrence": 0,
+                  "en": "save"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 4,
+            "full": {
+              "spoken": "మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+              "english": [
+                {
+                  "word": "డ్రైవర్",
+                  "occurrence": 0,
+                  "en": "driver"
+                },
+                {
+                  "word": "కన్ఫర్మ్",
+                  "occurrence": 0,
+                  "en": "confirm"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 5,
+            "full": {
+              "spoken": "ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "serious",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 6,
+            "full": {
+              "spoken": "అయితే నాకు వాట్సాప్ లో లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+              "english": [
+                {
+                  "word": "వాట్సాప్",
+                  "occurrence": 0,
+                  "en": "WhatsApp"
+                },
+                {
+                  "word": "లింక్",
+                  "occurrence": 0,
+                  "en": "link"
+                },
+                {
+                  "word": "మీటింగ్",
+                  "occurrence": 0,
+                  "en": "meeting"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          }
+        ],
+        "glossary_additions": [
+          {
+            "term": "Meena",
+            "spoken": "మీనా",
+            "keep_english": false
+          },
+          {
+            "term": "Vijayawada",
+            "spoken": "విజయవాడ",
+            "keep_english": false
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 1027,
+        "reasoning_output_tokens": 297
+      },
+      "cli_seconds": 38.14140724996105,
+      "startup_s": 0.06255791604053229,
+      "wall_s": 38.157,
+      "trace": [
+        {
+          "event": "claude",
+          "provider": "codex",
+          "call": "scene",
+          "attempt": 1,
+          "requested": "gpt-6.1-sol",
+          "model": "gpt-6.1-sol",
+          "effort": "medium",
+          "wall_s": 38.141,
+          "startup_s": 0.063,
+          "input_tokens": 10687,
+          "cache_read_tokens": 0,
+          "cache_creation_tokens": 0,
+          "cache_1h_tokens": 0,
+          "output_tokens": 1027,
+          "reasoning_output_tokens": 297,
+          "rate_limit": null,
+          "error": null
+        }
+      ],
+      "raw": [
+        {
+          "returncode": 0,
+          "stdout_events": [
+            {
+              "type": "thread.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_0",
+                "type": "error",
+                "message": "Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable `features.code_mode_host` and install `codex-code-mode-host`."
+              }
+            },
+            {
+              "type": "turn.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_1",
+                "type": "agent_message",
+                "text": "{\"lines\":[{\"id\":1,\"full\":{\"spoken\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\",\"english\":[{\"word\":\"టికెట్లు\",\"occurrence\":0,\"en\":\"tickets\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":2,\"full\":{\"spoken\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"surprised\",\"energy\":\"mid\",\"question\":true,\"emphasis\":null}},{\"id\":3,\"full\":{\"spoken\":\"లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశా అంతే.\",\"english\":[{\"word\":\"బుకింగ్\",\"occurrence\":0,\"en\":\"booking\"},{\"word\":\"పేజీ\",\"occurrence\":0,\"en\":\"page\"},{\"word\":\"సేవ్\",\"occurrence\":0,\"en\":\"save\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":4,\"full\":{\"spoken\":\"మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.\",\"english\":[{\"word\":\"డ్రైవర్\",\"occurrence\":0,\"en\":\"driver\"},{\"word\":\"కన్ఫర్మ్\",\"occurrence\":0,\"en\":\"confirm\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":5,\"full\":{\"spoken\":\"ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"serious\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":6,\"full\":{\"spoken\":\"అయితే నాకు వాట్సాప్ లో లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.\",\"english\":[{\"word\":\"వాట్సాప్\",\"occurrence\":0,\"en\":\"WhatsApp\"},{\"word\":\"లింక్\",\"occurrence\":0,\"en\":\"link\"},{\"word\":\"మీటింగ్\",\"occurrence\":0,\"en\":\"meeting\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}}],\"glossary_additions\":[{\"term\":\"Meena\",\"spoken\":\"మీనా\",\"keep_english\":false},{\"term\":\"Vijayawada\",\"spoken\":\"విజయవాడ\",\"keep_english\":false}]}"
+              }
+            },
+            {
+              "type": "turn.completed",
+              "usage": {
+                "input_tokens": 10687,
+                "cached_input_tokens": 0,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 1027,
+                "reasoning_output_tokens": 297
+              }
+            }
+          ],
+          "stderr": ""
+        }
+      ],
+      "arm": "sol",
+      "rejected": {},
+      "unexpected": [],
+      "validated": [
+        {
+          "id": 1,
+          "full": {
+            "spoken": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [
+            "full english: word 3 keeps its Telugu ending"
+          ],
+          "tts_telugu": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+          "tts_latin_proposal": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.",
+          "units": 32.0
+        },
+        {
+          "id": 2,
+          "full": {
+            "spoken": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "surprised",
+            "energy": "mid",
+            "question": true,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+          "tts_latin_proposal": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+          "units": 15.0
+        },
+        {
+          "id": 3,
+          "full": {
+            "spoken": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశా అంతే.",
+            "english": [
+              {
+                "word": "బుకింగ్",
+                "occurrence": 0,
+                "en": "booking"
+              },
+              {
+                "word": "పేజీ",
+                "occurrence": 0,
+                "en": "page"
+              },
+              {
+                "word": "సేవ్",
+                "occurrence": 0,
+                "en": "save"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశా అంతే.",
+          "tts_latin_proposal": "లేదు, నా ఫోన్లో booking page save చేశా అంతే.",
+          "units": 15.0
+        },
+        {
+          "id": 4,
+          "full": {
+            "spoken": "మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+            "english": [
+              {
+                "word": "డ్రైవర్",
+                "occurrence": 0,
+                "en": "driver"
+              },
+              {
+                "word": "కన్ఫర్మ్",
+                "occurrence": 0,
+                "en": "confirm"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+          "tts_latin_proposal": "మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ driver ఇంకా అది confirm చేయలేదు.",
+          "units": 26.0
+        },
+        {
+          "id": 5,
+          "full": {
+            "spoken": "ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.",
+          "tts_latin_proposal": "ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.",
+          "units": 25.0
+        },
+        {
+          "id": 6,
+          "full": {
+            "spoken": "అయితే నాకు వాట్సాప్ లో లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+            "english": [
+              {
+                "word": "వాట్సాప్",
+                "occurrence": 0,
+                "en": "WhatsApp"
+              },
+              {
+                "word": "లింక్",
+                "occurrence": 0,
+                "en": "link"
+              },
+              {
+                "word": "మీటింగ్",
+                "occurrence": 0,
+                "en": "meeting"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "అయితే నాకు వాట్సాప్ లో లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+          "tts_latin_proposal": "అయితే నాకు WhatsApp లో link పంపు, meeting అయ్యాక చూస్తా.",
+          "units": 19.5
+        }
+      ]
+    },
+    {
+      "model_requested": "gpt-6-astra",
+      "effort": "medium",
+      "calls_permitted": 1,
+      "retries": 0,
+      "status": "ok",
+      "model_returned": "gpt-6-astra",
+      "data": {
+        "lines": [
+          {
+            "id": 1,
+            "full": {
+              "spoken": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 2,
+            "full": {
+              "spoken": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "surprised",
+              "energy": "high",
+              "question": true
+            }
+          },
+          {
+            "id": 3,
+            "full": {
+              "spoken": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశానంతే.",
+              "english": [
+                {
+                  "word": "బుకింగ్",
+                  "occurrence": 0,
+                  "en": "booking"
+                },
+                {
+                  "word": "పేజీ",
+                  "occurrence": 0,
+                  "en": "page"
+                },
+                {
+                  "word": "సేవ్",
+                  "occurrence": 0,
+                  "en": "save"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 4,
+            "full": {
+              "spoken": "మంచిది, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+              "english": [
+                {
+                  "word": "డ్రైవర్",
+                  "occurrence": 0,
+                  "en": "driver"
+                },
+                {
+                  "word": "కన్ఫర్మ్",
+                  "occurrence": 0,
+                  "en": "confirm"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 5,
+            "full": {
+              "spoken": "ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.",
+              "english": []
+            },
+            "delivery": {
+              "emotion": "serious",
+              "energy": "mid"
+            }
+          },
+          {
+            "id": 6,
+            "full": {
+              "spoken": "అయితే వాట్సాప్లో నాకు లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+              "english": [
+                {
+                  "word": "లింక్",
+                  "occurrence": 0,
+                  "en": "link"
+                },
+                {
+                  "word": "మీటింగ్",
+                  "occurrence": 0,
+                  "en": "meeting"
+                }
+              ]
+            },
+            "delivery": {
+              "emotion": "neutral",
+              "energy": "mid"
+            }
+          }
+        ],
+        "glossary_additions": [
+          {
+            "term": "Meena",
+            "spoken": "మీనా",
+            "keep_english": false
+          },
+          {
+            "term": "Vijayawada",
+            "spoken": "విజయవాడ",
+            "keep_english": false
+          }
+        ]
+      },
+      "usage": {
+        "input_tokens": 10687,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 764,
+        "reasoning_output_tokens": 72
+      },
+      "cli_seconds": 25.63758149999194,
+      "startup_s": 0.06479154201224446,
+      "wall_s": 25.654,
+      "trace": [
+        {
+          "event": "claude",
+          "provider": "codex",
+          "call": "scene",
+          "attempt": 1,
+          "requested": "gpt-6-astra",
+          "model": "gpt-6-astra",
+          "effort": "medium",
+          "wall_s": 25.638,
+          "startup_s": 0.065,
+          "input_tokens": 10687,
+          "cache_read_tokens": 0,
+          "cache_creation_tokens": 0,
+          "cache_1h_tokens": 0,
+          "output_tokens": 764,
+          "reasoning_output_tokens": 72,
+          "rate_limit": null,
+          "error": null
+        }
+      ],
+      "raw": [
+        {
+          "returncode": 0,
+          "stdout_events": [
+            {
+              "type": "thread.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_0",
+                "type": "error",
+                "message": "Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable `features.code_mode_host` and install `codex-code-mode-host`."
+              }
+            },
+            {
+              "type": "turn.started"
+            },
+            {
+              "type": "item.completed",
+              "item": {
+                "id": "item_1",
+                "type": "agent_message",
+                "text": "{\"lines\":[{\"id\":1,\"full\":{\"spoken\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":2,\"full\":{\"spoken\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"surprised\",\"energy\":\"high\",\"question\":true,\"emphasis\":null}},{\"id\":3,\"full\":{\"spoken\":\"లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశానంతే.\",\"english\":[{\"word\":\"బుకింగ్\",\"occurrence\":0,\"en\":\"booking\"},{\"word\":\"పేజీ\",\"occurrence\":0,\"en\":\"page\"},{\"word\":\"సేవ్\",\"occurrence\":0,\"en\":\"save\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":4,\"full\":{\"spoken\":\"మంచిది, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.\",\"english\":[{\"word\":\"డ్రైవర్\",\"occurrence\":0,\"en\":\"driver\"},{\"word\":\"కన్ఫర్మ్\",\"occurrence\":0,\"en\":\"confirm\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":5,\"full\":{\"spoken\":\"ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.\",\"english\":[]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"serious\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}},{\"id\":6,\"full\":{\"spoken\":\"అయితే వాట్సాప్లో నాకు లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.\",\"english\":[{\"word\":\"లింక్\",\"occurrence\":0,\"en\":\"link\"},{\"word\":\"మీటింగ్\",\"occurrence\":0,\"en\":\"meeting\"}]},\"fuller\":null,\"concise\":null,\"very_concise\":null,\"pieces\":null,\"moved\":null,\"unfinished\":null,\"delivery\":{\"emotion\":\"neutral\",\"energy\":\"mid\",\"question\":null,\"emphasis\":null}}],\"glossary_additions\":[{\"term\":\"Meena\",\"spoken\":\"మీనా\",\"keep_english\":false},{\"term\":\"Vijayawada\",\"spoken\":\"విజయవాడ\",\"keep_english\":false}]}"
+              }
+            },
+            {
+              "type": "turn.completed",
+              "usage": {
+                "input_tokens": 10687,
+                "cached_input_tokens": 0,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 764,
+                "reasoning_output_tokens": 72
+              }
+            }
+          ],
+          "stderr": ""
+        }
+      ],
+      "arm": "astra",
+      "rejected": {},
+      "unexpected": [],
+      "validated": [
+        {
+          "id": 1,
+          "full": {
+            "spoken": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [
+            "numbers not said: hundred"
+          ],
+          "tts_telugu": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.",
+          "tts_latin_proposal": "మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.",
+          "units": 31.0
+        },
+        {
+          "id": 2,
+          "full": {
+            "spoken": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "surprised",
+            "energy": "high",
+            "question": true,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+          "tts_latin_proposal": "ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?",
+          "units": 15.0
+        },
+        {
+          "id": 3,
+          "full": {
+            "spoken": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశానంతే.",
+            "english": [
+              {
+                "word": "బుకింగ్",
+                "occurrence": 0,
+                "en": "booking"
+              },
+              {
+                "word": "పేజీ",
+                "occurrence": 0,
+                "en": "page"
+              },
+              {
+                "word": "సేవ్",
+                "occurrence": 0,
+                "en": "save"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశానంతే.",
+          "tts_latin_proposal": "లేదు, నా ఫోన్లో booking page save చేశానంతే.",
+          "units": 15.0
+        },
+        {
+          "id": 4,
+          "full": {
+            "spoken": "మంచిది, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+            "english": [
+              {
+                "word": "డ్రైవర్",
+                "occurrence": 0,
+                "en": "driver"
+              },
+              {
+                "word": "కన్ఫర్మ్",
+                "occurrence": 0,
+                "en": "confirm"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "మంచిది, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.",
+          "tts_latin_proposal": "మంచిది, ఆరింటికల్లా రావచ్చు, కానీ driver ఇంకా అది confirm చేయలేదు.",
+          "units": 26.0
+        },
+        {
+          "id": 5,
+          "full": {
+            "spoken": "ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.",
+            "english": []
+          },
+          "delivery": {
+            "emotion": "serious",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.",
+          "tts_latin_proposal": "ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.",
+          "units": 24.0
+        },
+        {
+          "id": 6,
+          "full": {
+            "spoken": "అయితే వాట్సాప్లో నాకు లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+            "english": [
+              {
+                "word": "లింక్",
+                "occurrence": 0,
+                "en": "link"
+              },
+              {
+                "word": "మీటింగ్",
+                "occurrence": 0,
+                "en": "meeting"
+              }
+            ]
+          },
+          "delivery": {
+            "emotion": "neutral",
+            "energy": "mid",
+            "question": false,
+            "emphasis": []
+          },
+          "flags": [],
+          "tts_telugu": "అయితే వాట్సాప్లో నాకు లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.",
+          "tts_latin_proposal": "అయితే వాట్సాప్లో నాకు link పంపు, meeting అయ్యాక చూస్తా.",
+          "units": 19.0
+        }
+      ]
+    }
+  ],
+  "status": "complete",
+  "limitations": [
+    "One generation per configuration; no throughput or significance claim",
+    "Only full wording requested/reviewed; no fit, planner or corrective ladder",
+    "Meaning reviewer does not judge style or pronunciation; no native-human or audio QA",
+    "One Astra reviewer can have correlated errors, including self-preference",
+    "Fixed arm order; provider cache/server load uncontrolled; other local research may run"
+  ],
+  "review": {
+    "model_requested": "gpt-6-astra",
+    "effort": "high",
+    "calls_permitted": 1,
+    "retries": 0,
+    "status": "ok",
+    "model_returned": "gpt-6-astra",
+    "data": {
+      "lines": [
+        {
+          "id": 9407,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 5827,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 6367,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 8222,
+          "class": "P",
+          "missing": [
+            "by"
+          ],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 3791,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 4148,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 6654,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 5764,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 5899,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 2771,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 2515,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 1960,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 2394,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 5362,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 6220,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 7451,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 5843,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        },
+        {
+          "id": 1948,
+          "class": "C",
+          "missing": [],
+          "added": [],
+          "error": "none",
+          "fallback": null
+        }
+      ]
+    },
+    "usage": {
+      "input_tokens": 6844,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 785,
+      "reasoning_output_tokens": 352
+    },
+    "cli_seconds": 29.23536770802457,
+    "startup_s": 0.06457020802190527,
+    "wall_s": 29.253,
+    "trace": [
+      {
+        "event": "claude",
+        "provider": "codex",
+        "call": "review",
+        "attempt": 1,
+        "requested": "gpt-6-astra",
+        "model": "gpt-6-astra",
+        "effort": "high",
+        "wall_s": 29.235,
+        "startup_s": 0.065,
+        "input_tokens": 6844,
+        "cache_read_tokens": 0,
+        "cache_creation_tokens": 0,
+        "cache_1h_tokens": 0,
+        "output_tokens": 785,
+        "reasoning_output_tokens": 352,
+        "rate_limit": null,
+        "error": null
+      }
+    ],
+    "raw": [
+      {
+        "returncode": 0,
+        "stdout_events": [
+          {
+            "type": "thread.started"
+          },
+          {
+            "type": "item.completed",
+            "item": {
+              "id": "item_0",
+              "type": "error",
+              "message": "Code Mode is unavailable because code-mode host is disabled. Code mode will fail closed; enable `features.code_mode_host` and install `codex-code-mode-host`."
+            }
+          },
+          {
+            "type": "turn.started"
+          },
+          {
+            "type": "item.completed",
+            "item": {
+              "id": "item_1",
+              "type": "agent_message",
+              "text": "{\"lines\":[{\"id\":9407,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":5827,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":6367,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":8222,\"class\":\"P\",\"missing\":[\"by\"],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":3791,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":4148,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":6654,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":5764,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":5899,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2771,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2515,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":1960,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":2394,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":5362,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":6220,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":7451,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":5843,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null},{\"id\":1948,\"class\":\"C\",\"missing\":[],\"added\":[],\"error\":\"none\",\"fallback\":null}]}"
+            }
+          },
+          {
+            "type": "turn.completed",
+            "usage": {
+              "input_tokens": 6844,
+              "cached_input_tokens": 0,
+              "cache_write_input_tokens": 0,
+              "output_tokens": 785,
+              "reasoning_output_tokens": 352
+            }
+          }
+        ],
+        "stderr": ""
+      }
+    ],
+    "key_not_sent_to_model": {
+      "9407": {
+        "arm": "luna",
+        "line": 3,
+        "tier": "full"
+      },
+      "5827": {
+        "arm": "luna",
+        "line": 1,
+        "tier": "full"
+      },
+      "6367": {
+        "arm": "astra",
+        "line": 5,
+        "tier": "full"
+      },
+      "8222": {
+        "arm": "luna",
+        "line": 4,
+        "tier": "full"
+      },
+      "3791": {
+        "arm": "sol",
+        "line": 5,
+        "tier": "full"
+      },
+      "4148": {
+        "arm": "astra",
+        "line": 4,
+        "tier": "full"
+      },
+      "6654": {
+        "arm": "sol",
+        "line": 3,
+        "tier": "full"
+      },
+      "5764": {
+        "arm": "astra",
+        "line": 1,
+        "tier": "full"
+      },
+      "5899": {
+        "arm": "sol",
+        "line": 4,
+        "tier": "full"
+      },
+      "2771": {
+        "arm": "astra",
+        "line": 3,
+        "tier": "full"
+      },
+      "2515": {
+        "arm": "sol",
+        "line": 1,
+        "tier": "full"
+      },
+      "1960": {
+        "arm": "luna",
+        "line": 6,
+        "tier": "full"
+      },
+      "2394": {
+        "arm": "luna",
+        "line": 5,
+        "tier": "full"
+      },
+      "5362": {
+        "arm": "astra",
+        "line": 2,
+        "tier": "full"
+      },
+      "6220": {
+        "arm": "astra",
+        "line": 6,
+        "tier": "full"
+      },
+      "7451": {
+        "arm": "luna",
+        "line": 2,
+        "tier": "full"
+      },
+      "5843": {
+        "arm": "sol",
+        "line": 2,
+        "tier": "full"
+      },
+      "1948": {
+        "arm": "sol",
+        "line": 6,
+        "tier": "full"
+      }
+    },
+    "missing_or_invalid": {},
+    "verdicts": [
+      {
+        "arm": "luna",
+        "line": 3,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "luna",
+        "line": 1,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 5,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "luna",
+        "line": 4,
+        "tier": "full",
+        "coverage": {
+          "class": "P",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [
+            "by"
+          ],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 5,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 4,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 3,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 1,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 4,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 3,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 1,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "luna",
+        "line": 6,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "luna",
+        "line": 5,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 2,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "astra",
+        "line": 6,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "luna",
+        "line": 2,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 2,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      },
+      {
+        "arm": "sol",
+        "line": 6,
+        "tier": "full",
+        "coverage": {
+          "class": "C",
+          "by": "review",
+          "tier": null,
+          "first": null,
+          "missing": [],
+          "added": [],
+          "error": null
+        }
+      }
+    ]
+  }
+}

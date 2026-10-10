@@ -25,9 +25,10 @@ import pytest
 
 from maata_engine import dubber, render
 from maata_engine.backends import mock
-from maata_engine.backends.base import COARSE_STEP, Backend, Cancelled, Coverage, LineResult, Transcript, Wording
+from maata_engine.backends.base import COARSE_STEP, Backend, Cancelled, Coverage, LineResult, SceneResult, Transcript, Wording
 from maata_engine.backends.claude_translator import ClaudeTranslator
 from maata_engine.backends.mock import MockClaude, MockDiarizer, MockSceneTranslator, MockTranscriber, MockTTS
+from maata_engine.backends.omnivoice import OmniVoiceError
 from maata_engine.claude_cli import ClaudeCLIError
 from maata_engine.dubber import CALIBRATION_TE, Dubber
 from maata_engine.render import STAGES, RenderJob, RenderSettings, _read_rows
@@ -1583,7 +1584,7 @@ async def test_cancel_during_the_dub_then_resume_voices_only_the_lines_without_r
     assert all(st.take is not None for st in again.units.values())
 
 
-@pytest.mark.parametrize("change", ["cfm", "batch", "version", "backend", "model", "device", "dtype", "sample_rate", "script", "legacy"])
+@pytest.mark.parametrize("change", ["cfm", "batch", "version", "backend", "model", "adapter", "device", "dtype", "sample_rate", "script", "legacy"])
 async def test_changed_synthesis_identity_invalidates_take_rows_and_estimator_replay(tmp_path, monkeypatch, change):
     """A quality/backend change must not report a cache hit or learn durations from the previous synthesis. These
     rows come from the real render path, including its effective batch policy and per-voice identities."""
@@ -1605,6 +1606,9 @@ async def test_changed_synthesis_identity_invalidates_take_rows_and_estimator_re
         job.b.name = "another-backend"
     elif change == "model":
         monkeypatch.setattr(render, "_model_rev", lambda backend, role: "another-model-revision")
+    elif change == "adapter":
+        tts.model_revision = "selected-model"
+        tts.cache_identity = {"reference": "another-reference", "steps": 32}
     elif change == "device":
         job.b.device = "another-device"
     elif change == "dtype":
@@ -1773,6 +1777,43 @@ async def test_unusable_synthesis_stops_the_job_without_caching_or_skipping_the_
     monkeypatch.setattr(Dubber, "_said_take", original)
     assert await job.run() == "done"
     assert take_rows(tmp_path) and not job.skipped
+
+
+@pytest.mark.parametrize("failure, status", [
+    (OmniVoiceError("OmniVoice synthesis exceeded its timeout."), "failed"),
+    (OmniVoiceError("OmniVoice returned empty, nonfinite or silent audio."), "failed"),
+    (Cancelled("OmniVoice synthesis cancelled."), "paused"),
+])
+async def test_isolated_tts_failure_in_voice_loop_is_retryable_not_skipped(tmp_path, monkeypatch, failure, status):
+    """Exercise the production loop, GPU call and stage handler, not a stubbed `_voice_line` or `_said_take`."""
+    tts = MockTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0))
+    synthesize = tts.synthesize
+    attempts = []
+    fail = True
+
+    def interrupted(text, voice, language="te", max_seconds=None):
+        if fail and job._dubbing:  # previews remain usable; the first actual line fails in the worker thread
+            attempts.append(text)
+            if isinstance(failure, Cancelled):
+                job.pause()
+            raise failure
+        return synthesize(text, voice, language, max_seconds)
+
+    monkeypatch.setattr(tts, "synthesize", interrupted)
+    assert await job.run() == status
+    assert len(attempts) == 1 and job.skipped == {} and not take_rows(tmp_path)
+    assert not list((job.render_dir / "takes").glob("*.npz"))
+    stage = job.doc["stages"]["voice_lines"]
+    assert stage["state"] == ("failed" if status == "failed" else "todo")
+    assert stage["attempts"] == (1 if status == "failed" else 0)
+    assert job.doc["error"] == (str(failure) if status == "failed" else None)
+    assert job.doc["output"] is None
+
+    fail = False  # a working worker on resume voices the still-pending line instead of preserving a speech gap
+    assert await job.run() == "done"
+    assert take_rows(tmp_path) and job.skipped == {}
+    assert all(st.take is not None for sc in job._range() for st in sc.lines if job._voiced_here(st))
 
 
 class PausingMockTTS(MockTTS):
@@ -2227,11 +2268,11 @@ async def test_every_voiced_wording_is_reviewed(tmp_path, monkeypatch):
     reviewed = [(x["id"], x["te"]) for c in cli.calls if c["call"] == "review" for x in c["message"]["lines"]]
     rows = take_rows(tmp_path)
     fixed = [r for r in rows if r["wording"] in render.FIXUP_WORDINGS]
-    for r in fixed:  # each fix-up wording was reviewed on the wording voiced, but a re-translation never again
+    for r in fixed:  # both rephrases and accepted corrective candidates receive semantic review
         te = r["takes"][0]["spoken"]
-        assert ((r["unit"], te) in reviewed) == (r["wording"] == "rephrase")
+        assert (r["unit"], te) in reviewed
     retranslated = [st for st in voiced if st.take["wording"] == "retranslate"]
-    assert retranslated and all(st.line.coverage.by == "validators" for st in retranslated)
+    assert retranslated and all(st.line.coverage.by == "review" for st in retranslated)
     assert all(st.line.coverage.cls == "C" and st.line.coverage.first == "P" for st in retranslated)
     shorter = [st.take for st in voiced if st.take["wording"] == "very_concise"]  # a tier the scene review didn't class
     assert shorter and all((r["unit"], r["takes"][0]["spoken"]) in reviewed for r in shorter)
@@ -2254,8 +2295,10 @@ class VoicedReviewP(ShortenableClaude):
             for x, asked in zip(reply.data["lines"], msg["lines"]):
                 x["full"]["spoken"] = asked["failing"] + " కల కల"
         if call == "review" and self.job.scenes[msg["scene"] - 1].reviewed:
+            said = {x["id"]: x["te"] for x in msg["lines"]}
             for x in reply.data["lines"]:
-                x.update({"class": "P", "missing": ["today"]})
+                if not said[x["id"]].endswith("ఫెయిల్"):
+                    x.update({"class": "P", "missing": ["today"]})
         if call == "retranslate":
             for x in reply.data["lines"]:
                 for tier in ("full", "concise", "very_concise"):
@@ -2686,25 +2729,90 @@ async def test_paused_short_take_cannot_override_approved_full_and_full_pcm_surv
 
 
 @pytest.mark.parametrize("provenance", [None, "ccfdc4088a39", "b17b25dc4e91", "current"])
+@pytest.mark.parametrize("approval_policy", [None, "legacy-length-check", "current"])
 @pytest.mark.parametrize("current_class", [None, "other_tier"])
-async def test_restored_audio_does_not_resurrect_old_policy_coverage(tmp_path, provenance, current_class):
+async def test_restored_audio_does_not_resurrect_old_policy_coverage(tmp_path, provenance, approval_policy, current_class):
     """No synthesis: a failed initial review or review of another tier cannot inherit an old audio row's C."""
     job, st, _ = approved_full_job(tmp_path, approved=False)
     coverage = Coverage("C", tier="concise") if current_class == "other_tier" else None
     st.line = replace(st.line, coverage=coverage)
     row = {"wording": "full", "coverage": render.coverage_json(Coverage("C", tier="full")), "fixups": 0,
            "takes": [{"key": "same-audio", "seconds": 4.0, "pauses": [], "pace": 4.0, "failed": None}],
-           "durationPrompt": render.PROMPT_HASH if provenance == "current" else provenance}
+           "durationPrompt": render.PROMPT_HASH if provenance == "current" else provenance,
+           "approvalPolicy": job._approval_policy() if approval_policy == "current" else approval_policy}
     job._restore(st, row, st.line, "full", [st.line.full])
     assert st.take is row and st.tier == "full" and st.take_s == 4.0  # the exact audio row stays reusable
-    if provenance == "current":
+    current = provenance == "current" and approval_policy == "current"
+    if current:
         assert st.line.coverage == Coverage("C", tier="full")
     else:
         assert st.line.coverage == coverage
         assert render.voiced_class(st.line.coverage, st.tier) in ("unreviewed", "other_tier")
     assert not await job._review_voiced(render.Scene(1, [st], 0, reviewed=True))
-    assert [c["call"] for c in job.tr.cli.calls] == ([] if provenance == "current" else ["review"])
+    assert [c["call"] for c in job.tr.cli.calls] == ([] if current else ["review"])
     assert st.line.coverage == Coverage("C", tier="full")
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+async def test_semantically_approved_correction_never_certifies_unchanged_old_audio(tmp_path, monkeypatch, accepted):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    original = st.line
+    candidate = LineResult(0, {"full": Wording("కొత్త పూర్తి సమాధానం.")},
+                           coverage=Coverage("C", tier="full", first="P"))
+    calls = []
+
+    async def voice_fix(state, line, tier, kind, key):
+        calls.append((state, line, tier, kind, key))
+        if accepted:
+            state.line, state.tier = line, tier  # the production _voice_fix keeps this only after a usable take
+        return accepted
+
+    monkeypatch.setattr(job, "_fixup", voice_fix)
+    await job._reviewed(st, candidate, "reviewed-correction")
+    assert len(calls) == 1 and calls[0][1:] == (candidate, "full", "retranslate", "reviewed-correction")
+    if accepted:
+        assert st.line is candidate and st.line.coverage.cls == "C"
+    else:
+        assert st.line.tiers == original.tiers and st.line.coverage == Coverage("P", tier="concise")
+
+
+@pytest.mark.parametrize("error", [None, "not_signed_in"])
+async def test_unresolved_voiced_correction_does_not_persist_a_completed_review(tmp_path, monkeypatch, error):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    assert not await job._voice_line(st)
+    st.line = replace(st.line, coverage=None)
+
+    async def pending_review(req, lines, chosen, **kwargs):
+        return SceneResult(1, "review", lines={0: replace(st.line, coverage=Coverage("P", tier=st.tier))},
+                                  error=ClaudeCLIError(error, "original test") if error else None,
+                                  review_pending=(0,))
+
+    monkeypatch.setattr(job.tr, "review", pending_review)
+    assert await job._review_voiced(render.Scene(1, [st], 0, reviewed=True))
+    assert st.line.coverage.cls == "P"  # known diagnostic, never silently promoted
+    assert not any(row.get("kind") == "review" for row in job._fixup_rows.values())
+    assert not (job.render_dir / "fixups.jsonl").exists()  # resume can request the unfinished review again
+
+
+def test_old_fixup_approval_reuses_wording_without_coverage_or_latin_maps(tmp_path):
+    job, st, _ = approved_full_job(tmp_path, approved=False)
+    scene = render.Scene(1, [st], 0, reviewed=True)
+    wording = Wording("ఈ ఫోన్ బాగుంది.", ((1, "phone"),))
+    fixed = LineResult(0, {"full": wording}, coverage=Coverage("C", tier="full", by="validators", first="P"))
+    key = job._fixup_key("review", job._line_key(st), st.line.full.spoken)
+    job._put_fixup(st, key, "review", fixed)
+    row = job._fixup_rows[key]
+    assert job._fixup_line(st, row).coverage == fixed.coverage
+    before = job._settled_key(scene)
+    job.tr.approval_policy = "next-semantic-policy"
+    assert job._settled_key(scene) != before
+    assert job._fixup_key("review", job._line_key(st), st.line.full.spoken) != key
+    for policy in (None, "legacy-length-check", row["approval_policy"]):
+        restored = job._fixup_line(st, {**row, "approval_policy": policy})
+        assert restored is not None and restored.full.spoken == wording.spoken
+        assert restored.full.english == () and restored.coverage is None
+    # Filtering provenance leaves the stored wording/approval intact for audit, and never touches an output.
+    assert row["coverage"]["by"] == "validators"
 
 
 async def test_a_line_restored_from_its_take_row_asks_for_no_fit(tmp_path, monkeypatch):
@@ -3280,3 +3388,92 @@ async def test_with_no_separator_the_estimate_the_time_left_and_the_eta_count_no
         job = job_for(tmp_path / name, b)
         job.doc["duration"] = 600.0
         assert job._eta("separate", time.monotonic()) == pytest.approx(want)
+
+
+class NativeTTS(MelTTS):
+    """Native narrator stand-in: source voice building would be an implementation bug."""
+    native_voice = True
+    model_revision = "native-test-model"
+    cache_identity = {"model": model_revision, "reference": "selected-B", "steps": 32}
+
+    def prepare_voice(self, *args):
+        pytest.fail("Native mode must not condition on English source audio")
+
+    def prepare_voice_parts(self, *args):
+        pytest.fail("Native mode must not condition on English source audio")
+
+
+async def test_native_narrator_calibrates_once_and_restores_without_source_clone(tmp_path):
+    tts = NativeTTS()
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, presets=("S1",)))
+    assert await job.run() == "done"
+    assert tts.built == 0 and tts.takes == len(CALIBRATION_TE)
+    assert len({job._key(sid) for sid in job.voices}) == 1
+    assert all(v.kind is VoiceKind.NATIVE and v.status == "native" and not v.use_preset for v in job.voices.values())
+    manifest = json.loads((job.render_dir / "manifest.json").read_text())
+    assert {s["voice"] for s in manifest["speakers"]} == {"native"}
+    assert all(s["referenceSeconds"] == 0 and s["sample"] for s in manifest["speakers"])
+    stored = json.loads((job.render_dir / "voices.json").read_text())
+    assert stored["inputs"]["model"] == tts.model_revision
+    assert stored["inputs"]["synthesis"] == tts.cache_identity
+    assert all(render._voice_kind(row) == "native" for row in take_rows(tmp_path))
+    before = {p.name: p.read_bytes() for p in (job.render_dir / "voices").glob("*.npy")}
+    b.tts = again_tts = NativeTTS()
+    again = job_for(tmp_path, b)
+    assert await again.run() == "done"
+    assert again_tts.built == again_tts.takes == 0 and not again_tts.batches
+    assert json.loads((job.render_dir / "voices.json").read_text()) == stored
+    assert {p.name: p.read_bytes() for p in (job.render_dir / "voices").glob("*.npy")} == before
+
+
+async def test_native_reference_change_recalibrates_and_misses_old_take_cache(tmp_path):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0))
+    assert await job.run() == "done"
+    old_keys = {job._key(sid) for sid in job.voices}
+    old_rows = take_rows(tmp_path)
+    tts.cache_identity = {**tts.cache_identity, "reference": "changed-reference"}
+    await job._voices()
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert not old_keys.intersection(job._key(sid) for sid in job.voices)
+    assert all(not list(job._rows_for(st)) for st in job.units.values())
+    assert old_rows  # old audio remains on disk; it is not relabelled as the new voice
+
+
+def test_pause_and_task_cancellation_signal_isolated_tts(tmp_path):
+    tts = NativeTTS()
+    cancelled = []
+    tts.cancel = lambda: cancelled.append(True)
+    job = job_for(tmp_path, backend(tts=tts))
+    job.pause()
+    job._on_cancel()
+    assert job.stopping and len(cancelled) == 2
+
+
+async def test_pausing_while_waiting_for_gpu_does_not_start_model_work(tmp_path):
+    job = job_for(tmp_path, backend())
+    ran = []
+    await job.gpu.acquire(1)
+    task = asyncio.create_task(job._on_gpu(lambda: ran.append(True)))
+    async def admitted_to_queue():
+        while not job.gpu.waiting:
+            await asyncio.sleep(0)
+    await asyncio.wait_for(admitted_to_queue(), 2)
+    job.pause()
+    job.gpu.release()
+    with pytest.raises(render._Paused):
+        await task
+    assert ran == [] and not job.gpu.owned
+
+
+async def test_missing_native_runtime_fails_before_preprocessing_with_setup_message(tmp_path):
+    tts = NativeTTS()
+    tts.missing = lambda: ["isolated Python runtime"]
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b)
+    assert await job.run() == "failed"
+    assert "setup-omnivoice.sh" in job.doc["error"]
+    assert "isolated Python runtime" in job.doc["error"]
+    assert b.transcriber.calls == b.diarizer.calls == tts.built == tts.takes == 0
+    assert not (job.render_dir / "audio16k.f32").exists()

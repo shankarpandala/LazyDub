@@ -1,0 +1,109 @@
+{
+  "system": "You check a Telugu dub against its English, line by line, for meaning only: never style, word choice, spelling or length.\nThe message is JSON. \"lines\" holds the lines to check, each {\"id\", \"en\", \"te\", \"tts\"}: the English, the Telugu-script wording, and the actual wording sent to the voice when English loans use Latin script. Check BOTH te and tts against en. They must have identical meaning: if a Latin substitution overwrites a different Telugu word, loses an ending, duplicates a word, or changes a name, classify E even when te alone is correct. \"context_before\" (earlier lines, with their Telugu when there is one) and \"context_after_en\" (the lines that follow) are context only: never return them.\nThe Telugu is spoken Telugu in Telugu script, and the English words it keeps are spelled in Telugu script too (సెట్టింగ్స్ is \"settings\"). A line with \"cut_off\": true was interrupted in the English, and its Telugu is unfinished on purpose.\nReply with every id in \"lines\" exactly once, with \"class\":\n- \"C\": complete: every fact, name, number, negation, question and meaningful qualification of the English is there, and nothing is added;\n- \"m\": a minor drop only: a conversational filler or discourse marker, \"okay\", a trailing backchannel, or emphasis that does not change the factual claim;\n- \"P\": a content phrase or clause of the English is missing;\n- \"E\": a meaning error: a negation lost or added, a number, name or question changed, or content that isn't in the English.\nUncertainty, conditions, frequency and bounds qualify a factual claim. If a meaningful qualification is lost or certainty is strengthened, classify P or E, never m or C: \"may cost\" must not become \"will cost\", and \"rarely\" must not disappear.\nWith it: \"missing\", the English words (as the English has them) whose meaning is not in the Telugu, empty for \"C\"; \"added\", Telugu content that isn't in the English, said in English; \"error\", the kind of an \"E\" error, else \"none\".\nSome input lines also offer \"fallback\": an existing full wording with its own \"te\" and actual \"tts\". Only when the main wording is P or E, check that fallback against the SAME English and context, including its actual TTS form. Return its verdict in \"fallback\" with \"class\", \"missing\", \"added\" and \"error\"; otherwise omit it or return null. C requires every meaning detail, including uncertainty, conditions and quantities, with no additions; use empty missing/added and error none. Do not assume a longer wording is complete. Judge natural Telugu paraphrases and implicit subjects by meaning, not literal word matches. Do not rewrite, copy or generate a translation.",
+  "prompt": "{\"scene\":1,\"call\":\"review\",\"context_before\":[{\"en\":\"Ravi and Meena are close friends planning a bus trip to Vijayawada. They are comparing the fare before paying.\"}],\"lines\":[{\"id\":9407,\"en\":\"No, I only saved the booking page on my phone.\",\"te\":\"లేదు, బుకింగ్ పేజీని ఫోన్లో సేవ్ చేశా అంతే.\",\"tts\":\"లేదు, booking పేజీని ఫోన్లో సేవ్ చేశా అంతే.\"},{\"id\":5827,\"en\":\"Meena, the bus tickets to Vijayawada cost two hundred and fifty rupees for both of us.\",\"te\":\"మీన, విజయవాడకి బస్ టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\",\"tts\":\"మీన, విజయవాడకి bus టికెట్లు మన ఇద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\"},{\"id\":6367,\"en\":\"Let's not count our chickens before they hatch; we still need to check the date.\",\"te\":\"ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.\",\"tts\":\"ముందే అన్నీ అయిపోయినట్టు అనుకోవద్దు; ఇంకా తేదీ చూసుకోవాలి.\"},{\"id\":8222,\"en\":\"Good, it may arrive by six, but the driver hasn't confirmed that.\",\"te\":\"మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ డ్రైవర్ ఇంకా కన్ఫర్మ్ చేయలేదు.\",\"tts\":\"మంచిది, ఆరు గంటలకి రావొచ్చు, కానీ driver ఇంకా confirm చేయలేదు.\"},{\"id\":3791,\"en\":\"Let's not count our chickens before they hatch; we still need to check the date.\",\"te\":\"ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.\",\"tts\":\"ఇంకా ఖాయం కాకుండానే సంబరపడొద్దు; మనం ఇంకా తేదీ చూసుకోవాలి.\"},{\"id\":4148,\"en\":\"Good, it may arrive by six, but the driver hasn't confirmed that.\",\"te\":\"మంచిది, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.\",\"tts\":\"మంచిది, ఆరింటికల్లా రావచ్చు, కానీ driver ఇంకా అది confirm చేయలేదు.\"},{\"id\":6654,\"en\":\"No, I only saved the booking page on my phone.\",\"te\":\"లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశా అంతే.\",\"tts\":\"లేదు, నా ఫోన్లో booking page save చేశా అంతే.\"},{\"id\":5764,\"en\":\"Meena, the bus tickets to Vijayawada cost two hundred and fifty rupees for both of us.\",\"te\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.\",\"tts\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండొందల యాభై రూపాయలు.\"},{\"id\":5899,\"en\":\"Good, it may arrive by six, but the driver hasn't confirmed that.\",\"te\":\"మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ డ్రైవర్ ఇంకా అది కన్ఫర్మ్ చేయలేదు.\",\"tts\":\"మంచిదే, ఆరింటికల్లా రావచ్చు, కానీ driver ఇంకా అది confirm చేయలేదు.\"},{\"id\":2771,\"en\":\"No, I only saved the booking page on my phone.\",\"te\":\"లేదు, నా ఫోన్లో బుకింగ్ పేజీ సేవ్ చేశానంతే.\",\"tts\":\"లేదు, నా ఫోన్లో booking page save చేశానంతే.\"},{\"id\":2515,\"en\":\"Meena, the bus tickets to Vijayawada cost two hundred and fifty rupees for both of us.\",\"te\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\",\"tts\":\"మీనా, విజయవాడకి బస్సు టికెట్లు మనిద్దరికీ కలిపి రెండు వందల యాభై రూపాయలు.\"},{\"id\":1960,\"en\":\"Then send me the link on WhatsApp, and I'll check it after the meeting.\",\"te\":\"అయితే లింక్ వాట్సాప్ లో పంపు, మీటింగ్ అయ్యాక చెక్ చేస్తా.\",\"tts\":\"అయితే link WhatsApp లో పంపు, meeting అయ్యాక check చేస్తా.\"},{\"id\":2394,\"en\":\"Let's not count our chickens before they hatch; we still need to check the date.\",\"te\":\"ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ చెక్ చేయాలి.\",\"tts\":\"ముందే సంబరపడొద్దు, ఇంకా ప్రయాణ తేదీ check చేయాలి.\"},{\"id\":5362,\"en\":\"You haven't paid yet, have you? Seriously?\",\"te\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\",\"tts\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\"},{\"id\":6220,\"en\":\"Then send me the link on WhatsApp, and I'll check it after the meeting.\",\"te\":\"అయితే వాట్సాప్లో నాకు లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.\",\"tts\":\"అయితే వాట్సాప్లో నాకు link పంపు, meeting అయ్యాక చూస్తా.\"},{\"id\":7451,\"en\":\"You haven't paid yet, have you? Seriously?\",\"te\":\"ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?\",\"tts\":\"ఇంకా డబ్బులు కట్టలేదా? నిజంగానా?\"},{\"id\":5843,\"en\":\"You haven't paid yet, have you? Seriously?\",\"te\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\",\"tts\":\"ఇంకా డబ్బులు కట్టలేదు కదా? నిజంగానే?\"},{\"id\":1948,\"en\":\"Then send me the link on WhatsApp, and I'll check it after the meeting.\",\"te\":\"అయితే నాకు వాట్సాప్ లో లింక్ పంపు, మీటింగ్ అయ్యాక చూస్తా.\",\"tts\":\"అయితే నాకు WhatsApp లో link పంపు, meeting అయ్యాక చూస్తా.\"}],\"context_after_en\":[\"They agree to check the travel date and arrival time before buying the tickets.\"]}",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "lines"
+    ],
+    "properties": {
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "class",
+            "missing",
+            "added",
+            "error"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer"
+            },
+            "class": {
+              "enum": [
+                "C",
+                "m",
+                "P",
+                "E"
+              ]
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "added": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "error": {
+              "enum": [
+                "none",
+                "negation",
+                "number",
+                "name",
+                "question",
+                "addition",
+                "other"
+              ]
+            },
+            "fallback": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "required": [
+                "class",
+                "missing",
+                "added",
+                "error"
+              ],
+              "properties": {
+                "class": {
+                  "enum": [
+                    "C",
+                    "m",
+                    "P",
+                    "E"
+                  ]
+                },
+                "missing": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "added": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "error": {
+                  "enum": [
+                    "none",
+                    "negation",
+                    "number",
+                    "name",
+                    "question",
+                    "addition",
+                    "other"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
