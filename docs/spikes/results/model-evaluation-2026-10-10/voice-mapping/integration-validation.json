@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-10",
+  "engine_collected_current": 1458,
+  "validation_in_batches": [
+    {
+      "suite": "engine except render/speakers/server",
+      "passed": 1153,
+      "seconds": 250.01
+    },
+    {
+      "suite": "speakers+render",
+      "passed": 241,
+      "seconds": 295.12,
+      "source_note": "Before preview donor-snapshot fix; late regression covered separately."
+    },
+    {
+      "suite": "native/profile render cases after donor fix",
+      "passed": 8,
+      "seconds": 17.34
+    },
+    {
+      "suite": "server full prior to terminal-event guard",
+      "passed": 59,
+      "failed": 1,
+      "seconds": 118.3,
+      "failure": "Existing settings shape assertion lacked new voiceProfiles. Updated expectation and passed focused rerun."
+    },
+    {
+      "suite": "server final affected/profile/terminal/settings cases",
+      "passed": 14,
+      "seconds": 58.53
+    },
+    {
+      "suite": "server corrected settings and preview cases",
+      "passed": 4,
+      "seconds": 11.47
+    }
+  ],
+  "counts_note": "Focused passes overlap earlier batches; do not sum as unique tests or claim one final-source full-suite execution.",
+  "ui": {
+    "passed": 83,
+    "svelte_errors": 0,
+    "svelte_warnings": 0
+  },
+  "native_build": {
+    "success": true,
+    "release_seconds": 36.02,
+    "command": "PATH=/opt/homebrew/bin:$PATH CARGO_NET_OFFLINE=true npm run tauri build -- --bundles app"
+  },
+  "native_restart_verified": true,
+  "audio_sample_count": 6,
+  "audio_listening": "User accepted both profile matches and all words audible.",
+  "implementation_sha256": {
+    "app/src/lib/components/Job.svelte": "a625d89cc8e3fdc1433016bb64c1341206327f219d8443b3319c0152351c2701",
+    "app/src/lib/components/SpeakersFound.svelte": "ed24c0c5d0b7d0bae1f606564607b063b7cb20ccc37626ad3f62e109cd7e4334",
+    "app/src/lib/components/TopBar.svelte": "f7b3ebb8da658cd3fb0af2d3ad5e9ce7dad41c1ff4e0174edf10c877d5d9ac23",
+    "app/src/lib/components/voice-mode.test.ts": "6d2b070016ced1d5ee45caec401daf43aea17f1307f911c41b9ea6b5592abbea",
+    "app/src/lib/hear.svelte.ts": "95d874dc836fb04d944f89e6e79960f9d592b29ebfee0ff8dcb9da4cad410015",
+    "app/src/lib/hear.test.ts": "e53cbb341cfa4d3ce57f6d5709088d9f8b9ec1b0cd94f7aa6ba5c14dbe16c5bc",
+    "app/src/lib/state.svelte.ts": "e2015336b49c338ad68ffa5171b6928f37465b63e16c17ebf96ff7647d46ddd8",
+    "app/src/lib/state.test.ts": "294a6b4203a50f9e19a83fcffa8c8a7f821d7b01abe779a0e8df1cc974ffba8b",
+    "app/src/lib/types.ts": "36600840e3993ba1fea2978fbffe71f72bc75bed954757586e2487a9920cf1c3",
+    "app/src/lib/voices.test.ts": "a7502dee6c13dd2cc5ba4d17edf816ada183407204dd738d652924eba8d04c1e",
+    "app/src/lib/voices.ts": "98bbf0d2e6ea35b6a55ec45f699fb3d41a141d215295f0c8d30b40012d03fb8b",
+    "engine/src/maata_engine/backends/_omnivoice_worker.py": "fdf220f36bbbd18fbc40f7d487d5672fa18bc38f34c08745376b2269d28c29ca",
+    "engine/src/maata_engine/backends/omnivoice.py": "2b8579847b5aa3f226c8a84451664e6cadd4a2dd7eab1d17163390d0362824de",
+    "engine/src/maata_engine/dubber.py": "936ab0de9b40a372e98429fe1b99dac90a5330658da7fce0711b4ff563afba82",
+    "engine/src/maata_engine/render.py": "b364c0d8bb6d23d413bd7daddf2a047d33ed11bf5f7b631de7a7565191fec7ac",
+    "engine/src/maata_engine/server.py": "ba5bee0e2814dc6bb0b2fae70527dbac4b0aea5101c6d965f18f8f352ba6ae5a",
+    "engine/src/maata_engine/speakers.py": "f1a68990cee2985aba566f096cd46c13b294fb023c5de766412b27c3d6ef3820",
+    "engine/tests/test_engine_ws.py": "91ecb9b34345b751e2da55db8af77c2024a665c6589c1721c0c8731d09db213d",
+    "engine/tests/test_omnivoice.py": "0a63b2348c04a634986594b0ed23e940b2a893a1de94d7fe90ecdd3abc55581a",
+    "engine/tests/test_omnivoice_worker.py": "8f09b7fbd4b62577b54eb13861cb32893d01d1b26615b1160be312528d06e0e4",
+    "engine/tests/test_render.py": "9752165ecfa0fd94f1c3ddc08502b34cf88f21fbe451a776f8eb746aa8f89baf",
+    "engine/tests/test_speakers.py": "820c78a4f6a1808d8f3a5fdd6159fd4980692e9bcf9d3cc430c64400bdd9b52d"
+  },
+  "limits": [
+    "No fresh whole-video render or speed comparison.",
+    "Acoustic source matching is heuristic, with unresolved requiring manual selection.",
+    "Earlier underfill/early-ending and general long-video quality remain unresolved."
+  ]
+}

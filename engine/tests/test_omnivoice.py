@@ -60,7 +60,9 @@ for raw in sys.stdin:
             pass
         else:
             np.save(root / f'audio-{msg["id"]}.npy', x, allow_pickle=False)
-    print(json.dumps({'version':1, 'id':rid, 'ok':True, 'sample_rate':24000,
+    print(json.dumps({'version':2, 'id':rid, 'ok':True, 'sample_rate':24000,
+                      'profile':'female' if mode == 'wrong-profile' else msg.get('profile'), 'instruct':msg.get('instruct'),
+                      'voice_identity':msg.get('voice_identity'),
                       'pid':os.getpid(), 'offline':os.environ.get('HF_HUB_OFFLINE'),
                       'pythonpath':os.environ.get('PYTHONPATH')}), flush=True)
 ''')
@@ -90,7 +92,7 @@ def test_persistent_process_keeps_native_voice_and_offline_environment(adapter, 
     assert first["offline"] == "1" and first["pythonpath"] is None
     a = adapter.prepare_voice(np.ones(16000), 16000)
     b = adapter.prepare_voice(np.zeros(32000), 16000)
-    assert a == b == adapter.preset_voice("any-speaker")
+    assert a == b == adapter.preset_voice("native")
     assert adapter.native_voice
 
 
@@ -322,3 +324,44 @@ def test_production_worker_launch_isolates_sibling_adapter_from_upstream_import(
     probe.write_text("import fractions; print(fractions.Fraction(1, 2))\n")
     result = subprocess.run([sys.executable, "-I", "-u", str(probe)], capture_output=True, text=True, timeout=5)
     assert result.returncode == 0 and result.stdout.strip() == "1/2"
+
+
+def test_profiles_have_distinct_cache_identity_and_one_worker(adapter, monkeypatch):
+    auto = OmniVoiceTTS(adapter.model_dir, Path(sys.executable))
+    monkeypatch.setattr(auto, "_command", adapter._command)
+    monkeypatch.setattr(auto, "_verify_models", lambda: None)
+    try:
+        voices = [auto.preset_voice(p) for p in ("male", "female", "native")]
+        assert len({v.identity for v in voices}) == 3
+        pid = auto._process.pid
+        for voice in voices:
+            take = auto.synthesize_mel("నమస్కారం!", voice)
+            assert take.seconds == 1 and auto._process.pid == pid
+        male, female = (auto.profile_cache_identity(p) for p in ("male", "female"))
+        assert male["instruct"] == "male" and female["instruct"] == "female" and male != female
+        assert male["seed"] == female["seed"] == 20261010
+        returned = auto.cache_identity
+        returned["profiles"]["male"] = "female"
+        assert auto.profile_cache_identity("male")["instruct"] == "male"
+        with pytest.raises(OmniVoiceError, match="Unknown"):
+            auto.preset_voice("male, whisper")
+        from maata_engine.backends.omnivoice import OmniVoiceVoice
+        forged = OmniVoiceVoice(voices[0].identity, "female")
+        with pytest.raises(OmniVoiceError, match="configured"):
+            auto.synthesize_mel("నమస్కారం!", forged)
+    finally:
+        auto.release()
+
+
+def test_mismatched_worker_profile_is_rejected(adapter):
+    adapter.test_mode = "wrong-profile"
+    voice = adapter.preset_voice("native")
+    with pytest.raises(OmniVoiceError, match="profile did not match"):
+        adapter.synthesize_mel("నమస్కారం!", voice)
+    assert adapter._process is None
+
+
+def test_reference_mode_cannot_accept_gender_profiles(adapter):
+    with pytest.raises(OmniVoiceError, match="reference conditioning"):
+        adapter.preset_voice("male")
+    assert adapter._process is None

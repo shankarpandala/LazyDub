@@ -2854,7 +2854,7 @@ def check_manifest(m: dict, render_dir) -> None:
     assert m.keys() == {"version", "videoId", "title", "channel", "duration", "stopAt", "complete", "sampleRate",
                         "settings", "speakers", "lines", "skipped", "stats"}
     assert m["version"] == 2 and m["sampleRate"] == 24000 and m["complete"] is True
-    assert m["settings"].keys() == {"style", "speedCap", "ttsScript", "speakers", "presets"}
+    assert m["settings"].keys() == {"style", "speedCap", "ttsScript", "speakers", "presets", "voiceProfiles"}
     for x in m["lines"]:
         assert x.keys() == MANIFEST_LINE.keys()  # no end, budget, units, freeze or edits
         for f, t in MANIFEST_LINE.items():
@@ -3396,6 +3396,13 @@ class NativeTTS(MelTTS):
     model_revision = "native-test-model"
     cache_identity = {"model": model_revision, "reference": "selected-B", "steps": 32}
 
+    def preset_voice(self, name):
+        assert name in ("male", "female")
+        return {"profile": name, "f0": 120.0 if name == "male" else 220.0}
+
+    def profile_cache_identity(self, profile):
+        return {**self.cache_identity, "profile": profile}
+
     def prepare_voice(self, *args):
         pytest.fail("Native mode must not condition on English source audio")
 
@@ -3406,7 +3413,8 @@ class NativeTTS(MelTTS):
 async def test_native_narrator_calibrates_once_and_restores_without_source_clone(tmp_path):
     tts = NativeTTS()
     b = backend(tts=tts)
-    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, presets=("S1",)))
+    job = job_for(tmp_path, b, RenderSettings(stop_at=12.0, presets=("S1",),
+                                           voice_profiles=(("S1", "male"), ("S2", "male"))))
     assert await job.run() == "done"
     assert tts.built == 0 and tts.takes == len(CALIBRATION_TE)
     assert len({job._key(sid) for sid in job.voices}) == 1
@@ -3420,7 +3428,7 @@ async def test_native_narrator_calibrates_once_and_restores_without_source_clone
     assert all(render._voice_kind(row) == "native" for row in take_rows(tmp_path))
     before = {p.name: p.read_bytes() for p in (job.render_dir / "voices").glob("*.npy")}
     b.tts = again_tts = NativeTTS()
-    again = job_for(tmp_path, b)
+    again = job_for(tmp_path, b, job.settings)
     assert await again.run() == "done"
     assert again_tts.built == again_tts.takes == 0 and not again_tts.batches
     assert json.loads((job.render_dir / "voices.json").read_text()) == stored
@@ -3429,7 +3437,8 @@ async def test_native_narrator_calibrates_once_and_restores_without_source_clone
 
 async def test_native_reference_change_recalibrates_and_misses_old_take_cache(tmp_path):
     tts = NativeTTS()
-    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0))
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "female"), ("S2", "female"))))
     assert await job.run() == "done"
     old_keys = {job._key(sid) for sid in job.voices}
     old_rows = take_rows(tmp_path)
@@ -3439,6 +3448,120 @@ async def test_native_reference_change_recalibrates_and_misses_old_take_cache(tm
     assert not old_keys.intersection(job._key(sid) for sid in job.voices)
     assert all(not list(job._rows_for(st)) for st in job.units.values())
     assert old_rows  # old audio remains on disk; it is not relabelled as the new voice
+
+
+def test_voice_profile_settings_round_trip_and_validate_overrides():
+    settings = RenderSettings(voice_profiles=(("S2", "female"), ("S1", "male")))
+    assert settings.to_json()["voiceProfiles"] == {"S1": "male", "S2": "female"}
+    assert RenderSettings.from_json(settings.to_json()) == settings
+    assert RenderSettings.from_json({"style": "formal"}).voice_profiles == ()
+    with pytest.raises(ValueError, match="Voice profiles"):
+        RenderSettings(voice_profiles=(("S1", "auto"),))  # auto removes an override; it is not a resolved profile
+
+
+async def test_unresolved_native_profiles_persist_and_require_manual_choice_before_any_speech(tmp_path):
+    tts = NativeTTS()
+    events = []
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0), events)
+    assert await job.run() == "failed"  # the demo tones are not reliable source speech
+    assert "Choose Male or Female" in job.doc["error"] and "speaker panel" in job.doc["error"]
+    assert tts.takes == 0 and not tts.batches and not take_rows(tmp_path)
+    stored = json.loads((job.render_dir / "voices.json").read_text())["speakers"]
+    assert set(stored) == {"S1", "S2"}
+    assert all(e["voiceProfile"] == "auto" and e["resolvedVoiceProfile"] is None
+               and e["voiceProfileSource"] == "unresolved" and e["voiceProfileEvidence"] for e in stored.values())
+    assert any(e["type"] == "voice_ready" for e in events)
+    job.settings = replace(job.settings, voice_profiles=(("S1", "male"), ("S2", "female")))
+    assert await job.run() == "done" and not job.skipped
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert {job._key(sid).voice for sid in job.voices} == {"native:male", "native:female"}
+
+
+async def test_native_profile_mapping_restores_and_only_changed_profile_misses_takes(tmp_path, monkeypatch):
+    calls = []
+
+    def source_profile(clips):
+        profile = "male" if not calls else "female"
+        calls.append(profile)
+        return {"policy": render.VOICE_PROFILE_POLICY, "profile": profile, "pitchHz": 120 if profile == "male" else 220,
+                "voicedSeconds": 3.0, "voicedFraction": 0.7, "sampleSeconds": 12.0}
+
+    monkeypatch.setattr(render, "infer_voice_profile", source_profile)
+    tts = NativeTTS()
+    b = backend(tts=tts)
+    job = job_for(tmp_path, b, RenderSettings(stop_at=30.0))
+    assert await job.run() == "done" and calls == ["male", "female"]
+    old = {sid: job._key(sid) for sid in job.voices}
+    old_rows = take_rows(tmp_path)
+    old_files = {t["key"]: (job.render_dir / "takes" / (t["key"] + ".npz")).read_bytes()
+                 for row in old_rows for t in row["takes"]}
+    stored = json.loads((job.render_dir / "voices.json").read_text())
+    assert tts.takes == 2 * len(CALIBRATION_TE)
+    assert stored["speakers"]["S1"]["voiceProfileSource"] == "acoustic"
+    assert stored["speakers"]["S2"]["resolvedVoiceProfile"] == "female"
+    monkeypatch.setattr(render, "infer_voice_profile", lambda _: pytest.fail("Matching persisted evidence must restore"))
+    again = job_for(tmp_path, b, job.settings)
+    assert await again.run() == "done" and tts.takes == 2 * len(CALIBRATION_TE)
+    assert {sid: again._key(sid) for sid in again.voices} == old
+    assert again.pcm == job.pcm
+
+    again.settings = replace(again.settings, voice_profiles=(("S1", "female"),))
+    await again._voices()  # no redub: inspect the exact production restore gates after the explicit choice
+    assert again._key("S1") != old["S1"] and again._key("S2") == old["S2"]
+    assert again._key("S1") == again._key("S2")
+    assert tts.takes == 2 * len(CALIBRATION_TE)  # S2's matching female calibration is shared, not regenerated
+    rows_by_speaker = {sid: [st for st in again.units.values() if st.unit.speaker == sid and st.take] for sid in old}
+    assert all(rows_by_speaker.values())
+    assert all(not list(again._rows_for(st)) for st in rows_by_speaker["S1"])
+    assert all(list(again._rows_for(st)) for st in rows_by_speaker["S2"])
+    after = json.loads((job.render_dir / "voices.json").read_text())
+    assert after["speakers"]["S1"]["voiceProfileSource"] == "manual"
+    assert after["speakers"]["S2"] == stored["speakers"]["S2"]
+    assert all((job.render_dir / "takes" / (key + ".npz")).read_bytes() == value for key, value in old_files.items())
+
+
+async def test_legacy_automatic_voice_calibration_cannot_approve_profile_or_restore_audio(tmp_path, monkeypatch):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "male"), ("S2", "male"))))
+    assert await job.run() == "done"
+    path = job.render_dir / "voices.json"
+    stored = json.loads(path.read_text())
+    for e in stored["speakers"].values():
+        for name in ("voiceProfile", "resolvedVoiceProfile", "voiceProfileSource", "voiceProfileEvidence"):
+            e.pop(name, None)
+        e["key"]["voice"] = "native"
+        e["key"]["reference"] = "native:legacy-automatic"
+    path.write_text(json.dumps(stored))
+    legacy_rows = take_rows(tmp_path)
+    for row in legacy_rows:
+        row["voice"][0], row["voice"][3] = "native", "native:legacy-automatic"
+    (job.render_dir / "takes.jsonl").write_text("".join(json.dumps(row) + "\n" for row in legacy_rows))
+    previous = tts.takes
+    await job._voices()
+    assert tts.takes == previous + len(CALIBRATION_TE)  # same model/base identity is insufficient for profile reuse
+    assert all(e["key"]["voice"] == "native:male" for e in json.loads(path.read_text())["speakers"].values())
+    assert all(not list(job._rows_for(st)) for st in job.units.values() if st.take)
+    assert all((job.render_dir / "takes" / (t["key"] + ".npz")).is_file() for row in legacy_rows for t in row["takes"])
+
+
+async def test_swapping_native_profiles_keeps_each_preview_with_its_original_profile(tmp_path):
+    tts = NativeTTS()
+    job = job_for(tmp_path, backend(tts=tts), RenderSettings(stop_at=12.0,
+                  voice_profiles=(("S1", "male"), ("S2", "female"))))
+    assert await job.run() == "done"
+    # Distinguishable existing previews expose donor-file overwrite ordering without synthesizing new audio.
+    male, female = np.full(100, 0.1, np.float16), np.full(100, -0.2, np.float16)
+    np.save(job.render_dir / "voices/S1.npy", male)
+    np.save(job.render_dir / "voices/S2.npy", female)
+    keys = {sid: job._key(sid) for sid in job.voices}
+    before = tts.takes
+    job.settings = replace(job.settings, voice_profiles=(("S1", "female"), ("S2", "male")))
+    await job._voices()
+    np.testing.assert_array_equal(np.load(job.render_dir / "voices/S1.npy"), female)
+    np.testing.assert_array_equal(np.load(job.render_dir / "voices/S2.npy"), male)
+    assert job._key("S1") == keys["S2"] and job._key("S2") == keys["S1"]
+    assert tts.takes == before
 
 
 def test_pause_and_task_cancellation_signal_isolated_tts(tmp_path):

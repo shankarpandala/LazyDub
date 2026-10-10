@@ -4,10 +4,57 @@ import numpy as np
 import pytest
 from hypothesis import given, settings, strategies as st
 
-from maata_engine.speakers import DiarBlock, GlobalSpeaker, SpeakerRegistry, activity, match_ids, settle
+from maata_engine.speakers import (DiarBlock, GlobalSpeaker, SpeakerRegistry, activity, infer_voice_profile,
+                                  match_ids, settle)
 from maata_engine.types import SpeakerTurn
 
 DIM = 256
+
+
+def profile_tone(hz, seconds=3.0):
+    t = np.arange(round(16_000 * seconds)) / 16_000
+    return (0.15 * np.sin(2 * np.pi * hz * t) + 0.07 * np.sin(4 * np.pi * hz * t)).astype(np.float32)
+
+
+@pytest.mark.parametrize("hz, profile", [(100, "male"), (145, "male"), (175, None), (215, "female"), (290, "female")])
+def test_voice_profile_requires_stable_pitch_outside_ambiguous_range(hz, profile):
+    result = infer_voice_profile([profile_tone(hz)])
+    assert result["profile"] == profile
+    assert result["pitchHz"] == pytest.approx(hz, abs=1)
+    assert result["voicedSeconds"] > 2.5 and result["voicedFraction"] > 0.95
+
+
+@pytest.mark.parametrize("clips", [
+    [], [np.zeros(48_000)], [profile_tone(110, 0.5)], [np.full(48_000, np.nan)],
+    [np.random.default_rng(9).normal(0, 0.1, 48_000)], [profile_tone(110), profile_tone(230)],
+])
+def test_voice_profile_does_not_guess_from_missing_noisy_short_or_mixed_evidence(clips):
+    assert infer_voice_profile(clips)["profile"] is None
+
+
+def test_voice_profile_analysis_is_bounded_and_does_not_change_source():
+    source = profile_tone(120, 15)
+    original = source.copy()
+    result = infer_voice_profile([source, profile_tone(230)])
+    assert result["sampleSeconds"] == 12.0 and result["profile"] == "male"
+    np.testing.assert_array_equal(source, original)
+
+
+def test_voice_profile_keeps_unvoiced_consonants_out_of_pitch_votes():
+    rng = np.random.default_rng(13)
+    # An authored synthetic speech-like envelope: periodic vowel sections interleaved with unvoiced noise.
+    sections = [part for _ in range(6) for part in
+                (profile_tone(130, 0.5), rng.normal(0, 0.1, 12_000).astype(np.float32))]
+    result = infer_voice_profile([np.concatenate(sections)])
+    assert result["profile"] == "male" and result["voicedSeconds"] >= 2.0
+    assert 0.2 <= result["voicedFraction"] < 0.6  # not an acoustic confidence score
+
+
+def test_nonperiodic_polyphonic_signal_does_not_supply_reliable_speech_pitch():
+    t = np.arange(64_000) / 16_000
+    # A synthetic dissonant mixture, not proof that pitch can reject all music (a sustained note is ambiguous).
+    music = sum(0.1 * np.sin(2 * np.pi * hz * t) for hz in (112, 177, 251, 337))
+    assert infer_voice_profile([music])["profile"] is None
 
 
 def voices(n, seed=0):

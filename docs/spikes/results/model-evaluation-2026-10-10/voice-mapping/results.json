@@ -1,0 +1,474 @@
+{
+  "version": 1,
+  "scope": "Six authored Telugu profile samples, one take per phrase/profile, no user media",
+  "phrases": [
+    {
+      "id": "conversation",
+      "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను."
+    },
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు."
+    },
+    {
+      "id": "expressive",
+      "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!"
+    }
+  ],
+  "runs": {
+    "omnivoice-profiles": {
+      "cache_identity": {
+        "model": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+        "source": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+        "steps": 32,
+        "precision": "float16",
+        "device": "mps",
+        "voice_policy": "telugu-gender-profiles-v1",
+        "mode": "automatic",
+        "seed": 20261010,
+        "seed_policy": "fixed-before-every-generation",
+        "profiles": {
+          "automatic": null,
+          "male": "male",
+          "female": "female"
+        },
+        "reference_audio_sha256": null,
+        "reference_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "preprocess_prompt": false,
+        "normalize_text": false,
+        "duration": "natural",
+        "watermark": "PerthImplicitWatermarker",
+        "watermark_version": "1.1.0",
+        "protocol": 2
+      }
+    },
+    "male": {
+      "profile_identity": {
+        "model": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+        "source": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+        "steps": 32,
+        "precision": "float16",
+        "device": "mps",
+        "voice_policy": "telugu-gender-profiles-v1",
+        "mode": "automatic",
+        "seed": 20261010,
+        "seed_policy": "fixed-before-every-generation",
+        "profiles": {
+          "automatic": null,
+          "male": "male",
+          "female": "female"
+        },
+        "reference_audio_sha256": null,
+        "reference_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "preprocess_prompt": false,
+        "normalize_text": false,
+        "duration": "natural",
+        "watermark": "PerthImplicitWatermarker",
+        "watermark_version": "1.1.0",
+        "protocol": 2,
+        "profile": "male",
+        "instruct": "male"
+      },
+      "voice_identity": "5b11751cd10baddc479f8a83dc4314191daeeae90fb17bf5ae03b8c5a814fc31",
+      "prepare_seconds": 4.1003481250372715
+    },
+    "female": {
+      "profile_identity": {
+        "model": "c5fdb5ccb189668d56333f77ba2629f4cd7535f4",
+        "source": "08be0b4ccbac3e13e374e86fbfead4b4cac343e2",
+        "steps": 32,
+        "precision": "float16",
+        "device": "mps",
+        "voice_policy": "telugu-gender-profiles-v1",
+        "mode": "automatic",
+        "seed": 20261010,
+        "seed_policy": "fixed-before-every-generation",
+        "profiles": {
+          "automatic": null,
+          "male": "male",
+          "female": "female"
+        },
+        "reference_audio_sha256": null,
+        "reference_text_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "preprocess_prompt": false,
+        "normalize_text": false,
+        "duration": "natural",
+        "watermark": "PerthImplicitWatermarker",
+        "watermark_version": "1.1.0",
+        "protocol": 2,
+        "profile": "female",
+        "instruct": "female"
+      },
+      "voice_identity": "cd231915ec280c4a10a9f03484727b8aba93b7daabc2298cef715d0c91888429",
+      "prepare_seconds": 1.18750031106174e-05
+    }
+  },
+  "samples": [
+    {
+      "id": "conversation",
+      "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను.",
+      "model": "male",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-conversation-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-conversation-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 2.92,
+      "generation_seconds": 2.335109999985434,
+      "watermark_seconds": 1.2529067909927107,
+      "capped": false,
+      "raw_sha256": "388eb49ed0d3db56575e4c7bfd4a620d7664475d23e02e08ed4a737548cc9512",
+      "sha256": "aced470637a739d4c9d19a7af10609ad71f84c742abe03105c1d926cb5f919e4",
+      "stats": {
+        "frames": 70080,
+        "peak": 0.47575485706329346,
+        "rms": 0.0725070504194353,
+        "nonfinite": 0,
+        "last_100ms_rms": 2.2568896974575826e-06,
+        "trailing_below_1pct_peak_s": 0.15883333333333333,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "male",
+      "instruct": "male",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నమస్కారం మీరు యలావన్నరు నేను బాగునను",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-conversation-asr.json",
+        "seconds": 1.0820428340230137,
+        "normalized_character_errors": 6,
+        "expected_characters": 36,
+        "cer": 0.16666666666666666,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1888387072
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 132.2,
+        "voicedSeconds": 0.58,
+        "voicedFraction": 0.309,
+        "sampleSeconds": 2.92
+      }
+    },
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+      "model": "male",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-names_numbers-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-names_numbers-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 4.04,
+      "generation_seconds": 3.065136875025928,
+      "watermark_seconds": 0.008777791983447969,
+      "capped": false,
+      "raw_sha256": "f5af37849e04484d083ba576f38b45f4e409499b01daed8151cc6f25f27fd6c3",
+      "sha256": "11b71078596a4b6989feba943e4589a366b65d0d72b188db1a1e6d13f0268bf7",
+      "stats": {
+        "frames": 96960,
+        "peak": 0.521064817905426,
+        "rms": 0.08705740035316553,
+        "nonfinite": 0,
+        "last_100ms_rms": 1.8528248793425494e-06,
+        "trailing_below_1pct_peak_s": 0.19295833333333334,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "male",
+      "instruct": "male",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " రవిరే పూదయం తొమ్ిది గంటలకు వాట్సాప్ లో రొండు ఫైల్లు పంపుతాడు.",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-names_numbers-asr.json",
+        "seconds": 0.7195853749872185,
+        "normalized_character_errors": 5,
+        "expected_characters": 54,
+        "cer": 0.09259259259259259,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1895202816
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 142.5,
+        "voicedSeconds": 1.64,
+        "voicedFraction": 0.506,
+        "sampleSeconds": 4.04
+      }
+    },
+    {
+      "id": "expressive",
+      "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!",
+      "model": "male",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-expressive-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-expressive-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 3.28,
+      "generation_seconds": 2.4525071249809116,
+      "watermark_seconds": 0.007519207953009754,
+      "capped": false,
+      "raw_sha256": "a587c3f4aa84022478cc1294da7294c2d10ead2a906e33a7a331b7ba4369e4dc",
+      "sha256": "e0c682da92ca1c8290f6c91d9c8169e22f2208d208a98ac69740bdfcee2aa48b",
+      "stats": {
+        "frames": 78720,
+        "peak": 0.502179741859436,
+        "rms": 0.0873837738638295,
+        "nonfinite": 0,
+        "last_100ms_rms": 4.005129705446959e-05,
+        "trailing_below_1pct_peak_s": 0.11858333333333333,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "male",
+      "instruct": "male",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నిజంగా నింత మంచివార్తా నాకు ఇప్ప్డి చెబుతునారా.",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/male-expressive-asr.json",
+        "seconds": 0.6194257499882951,
+        "normalized_character_errors": 7,
+        "expected_characters": 43,
+        "cer": 0.16279069767441862,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1896562688
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 129.4,
+        "voicedSeconds": 1.1,
+        "voicedFraction": 0.474,
+        "sampleSeconds": 3.28
+      }
+    },
+    {
+      "id": "conversation",
+      "text": "నమస్కారం! మీరు ఎలా ఉన్నారు? నేను బాగున్నాను.",
+      "model": "female",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-conversation-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-conversation-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 2.92,
+      "generation_seconds": 2.1632177079445682,
+      "watermark_seconds": 0.006557458022143692,
+      "capped": false,
+      "raw_sha256": "0ed31957f5b4374a32f1a3bc4dae34946c81a900887b7f7ff0d017381fd3d986",
+      "sha256": "6997d2395729921d43b7662a2ed742ed325321155dd22d0aa8315f695f7a5b37",
+      "stats": {
+        "frames": 70080,
+        "peak": 0.49115070700645447,
+        "rms": 0.07143229509779749,
+        "nonfinite": 0,
+        "last_100ms_rms": 4.20527132310005e-06,
+        "trailing_below_1pct_peak_s": 0.18283333333333332,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "female",
+      "instruct": "female",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నమస్కారం మిరు యలా ఉన్నారు నేను బాగునాను",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-conversation-asr.json",
+        "seconds": 0.5718913329765201,
+        "normalized_character_errors": 4,
+        "expected_characters": 36,
+        "cer": 0.1111111111111111,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1897529344
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 259.0,
+        "voicedSeconds": 0.88,
+        "voicedFraction": 0.463,
+        "sampleSeconds": 2.92
+      }
+    },
+    {
+      "id": "names_numbers",
+      "text": "రవి రేపు ఉదయం తొమ్మిది గంటలకు వాట్సాప్లో రెండు ఫైళ్లు పంపుతాడు.",
+      "model": "female",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-names_numbers-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-names_numbers-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 4.04,
+      "generation_seconds": 2.8565112079959363,
+      "watermark_seconds": 0.008535375003702939,
+      "capped": false,
+      "raw_sha256": "255500105b0ed433959a3a67d2c6ca98b394fa13a82dfde61fe428372a59b54e",
+      "sha256": "e0dcceb9413128d5f07125ba1d2380f1306addf262067b4dea7a283975df1368",
+      "stats": {
+        "frames": 96960,
+        "peak": 0.4972537159919739,
+        "rms": 0.06623994368980562,
+        "nonfinite": 0,
+        "last_100ms_rms": 2.4403228172302704e-06,
+        "trailing_below_1pct_peak_s": 0.18654166666666666,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "female",
+      "instruct": "female",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " రవిరేపు ఉదేయం తొమిది గంటలకు వాట్సాప్ లో రెండు పంపుతాడు.",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-names_numbers-asr.json",
+        "seconds": 0.6503440419910476,
+        "normalized_character_errors": 9,
+        "expected_characters": 54,
+        "cer": 0.16666666666666666,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1901772800
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 269.0,
+        "voicedSeconds": 1.32,
+        "voicedFraction": 0.455,
+        "sampleSeconds": 4.04
+      }
+    },
+    {
+      "id": "expressive",
+      "text": "నిజంగానా? ఇంత మంచి వార్త నాకు ఇప్పుడే చెబుతున్నారా!",
+      "model": "female",
+      "path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-expressive-marked.wav",
+      "raw_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-expressive-raw.wav",
+      "sample_rate": 24000,
+      "duration_seconds": 3.28,
+      "generation_seconds": 2.37492316699354,
+      "watermark_seconds": 0.007020708988420665,
+      "capped": false,
+      "raw_sha256": "e59cccab70747683fcb9eb65508c0d0ac9059cc8c476617f72cbb2600addab94",
+      "sha256": "d654668766561bcaa216200c23df9ee64cd84b69bf292118fc0daa3d1cc72df7",
+      "stats": {
+        "frames": 78720,
+        "peak": 0.49489885568618774,
+        "rms": 0.08534337088228121,
+        "nonfinite": 0,
+        "last_100ms_rms": 5.429247902755031e-06,
+        "trailing_below_1pct_peak_s": 0.15866666666666668,
+        "tail_check_limit": "Waveform energy cannot establish word-ending completeness."
+      },
+      "audio_failure": null,
+      "profile": "female",
+      "instruct": "female",
+      "seed": 20261010,
+      "watermark_detect_score": 1.0,
+      "roundtrip": {
+        "model": "mlx-community/whisper-large-v3-turbo",
+        "revision": "a4aaeec0636e6fef84abdcbe3544cb2bf7e9f6fb",
+        "forced_language": "te",
+        "text": " నిజంగాన ఇంతమంచి వార్తనాకు ఇప్డి చెబుతునారా?",
+        "raw_result_path": "~/Library/Caches/Maata/voice-mapping-2026-10-10/female-expressive-asr.json",
+        "seconds": 0.5970784170203842,
+        "normalized_character_errors": 6,
+        "expected_characters": 43,
+        "cer": 0.13953488372093023,
+        "normalization": "NFC, remove whitespace and punctuation; retain letters/numbers/combining marks",
+        "memory": {
+          "process_max_rss_bytes": 1902116864
+        }
+      },
+      "pitch_diagnostic": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 261.8,
+        "voicedSeconds": 1.22,
+        "voicedFraction": 0.526,
+        "sampleSeconds": 3.28
+      }
+    }
+  ],
+  "limitations": [
+    "Gender instructions are trained upstream on English/Chinese; Telugu generalization is screened only.",
+    "No native-listening, perceived gender, stable identity or long-video acceptance claim.",
+    "No reference conditioning, forced duration, pitch shift or speech-rate control; fixed seed 20261010 each call.",
+    "Three different sentences per profile are not repeated throughput measurements.",
+    "ASR roundtrip is diagnostic and cannot prove pronunciation, gender or meaning completeness."
+  ],
+  "sources": [
+    "https://github.com/k2-fsa/OmniVoice/blob/08be0b4ccbac3e13e374e86fbfead4b4cac343e2/docs/voice-design.md"
+  ],
+  "network": "sandbox-exec deny network*; pinned local models and offline environment",
+  "implementation_sha256": {
+    "engine/src/maata_engine/backends/omnivoice.py": "c67307cfab6a04c9b0e974e3f9ceceab0e5267a26fe3a646522a51edbccb7cd3",
+    "engine/src/maata_engine/backends/_omnivoice_worker.py": "fdf220f36bbbd18fbc40f7d487d5672fa18bc38f34c08745376b2269d28c29ca"
+  },
+  "worker_released": true,
+  "pitch_diagnostic": {
+    "male": {
+      "combined": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 138.5,
+        "voicedSeconds": 3.32,
+        "voicedFraction": 0.446,
+        "sampleSeconds": 10.24
+      },
+      "per_sentence_median_hz": [
+        132.2,
+        142.5,
+        129.4
+      ]
+    },
+    "female": {
+      "combined": {
+        "policy": "source-pitch-v1",
+        "profile": null,
+        "pitchHz": 262.8,
+        "voicedSeconds": 3.42,
+        "voicedFraction": 0.48,
+        "sampleSeconds": 10.24
+      },
+      "per_sentence_median_hz": [
+        259.0,
+        269.0,
+        261.8
+      ]
+    }
+  },
+  "pitch_diagnostic_limit": "Vocal pitch diagnostic only; the source classifier is not validated as a generated-voice gender or naturalness judge.",
+  "manual_text_asr_audit": {
+    "possible_omission": {
+      "profile": "female",
+      "phrase": "names_numbers",
+      "word": "ఫైళ్లు",
+      "meaning": "files",
+      "finding": "Expected files noun absent in ASR; other major name/time/channel/count/action elements retained. Requires listening; not a confirmed audible omission."
+    },
+    "other_samples": "Greeting/question/well clause and expressive major content recognizable despite ASR spelling substitutions.",
+    "independent_review": "Second agent independently read all six authored ASR forms; no additional model calls."
+  }
+}

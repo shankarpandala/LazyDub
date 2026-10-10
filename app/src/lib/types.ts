@@ -14,6 +14,8 @@ export type TtsScript = "telugu" | "latin";
 /** Whether the engine uses automatic Telugu speech or clones each source speaker. */
 export type VoiceMode = "native" | "cloned";
 export type TtsModel = "OmniVoice" | "Chatterbox Telugu";
+/** A requested dubbing voice type, not an assertion about the source speaker's identity. */
+export type VoiceProfile = "auto" | "male" | "female";
 
 /** The engine's stages, in order (`render.STAGES`). */
 export type StageKey =
@@ -94,6 +96,7 @@ export type JobSettings = {
   ttsScript: TtsScript;
   /** Speakers voiced with a stock voice instead of their clone. */
   presets: string[];
+  voiceProfiles?: Record<string, VoiceProfile>;
 };
 
 /** A job of the library (`renders`), newest activity first. */
@@ -158,6 +161,12 @@ export type FoundSpeaker = {
   turns: number;
   /** Their share of each of 120 equal slices of the video. */
   activity: number[];
+  /** Absent on engines without per-speaker voice selection. */
+  voiceProfile?: VoiceProfile;
+  resolvedVoiceProfile?: "male" | "female" | null;
+  voiceProfileSource?: "manual" | "acoustic" | "unresolved";
+  /** False when this speaker's saved sample uses an earlier choice. */
+  voiceCompatible?: boolean;
 };
 
 /** The speaker check (§2.3): who the whole-file diarization found, and what it merged. */
@@ -250,6 +259,7 @@ export type ClientMessage =
   | { type: "remove"; videoId: string; forget?: boolean }
   | { type: "set_speakers"; videoId: string; speakers: "auto" | number }
   | { type: "set_voice"; videoId: string; speaker: string; usePreset: boolean }
+  | { type: "set_voice_profile"; videoId: string; speaker: string; voiceProfile: VoiceProfile }
   | { type: "renders" }
   /** One binary frame back: the speaker's Hear voice sample (engine.ts SAMPLE_ID). */
   | { type: "voice_sample"; videoId: string; speaker: string }

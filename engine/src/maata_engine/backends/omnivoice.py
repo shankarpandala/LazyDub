@@ -1,6 +1,6 @@
 """Persistent, isolated OmniVoice speech adapter; the engine never imports its Transformers runtime.
 
-The default reproduces the selected automatic Telugu generation mode; speaker identity can vary by text.
+Validated male/female design profiles condition Telugu speech; unresolved automatic mode remains explicit.
 Only the subprocess loads OmniVoice. Raw PCM takes remain local and are watermarked after timing changes.
 """
 
@@ -29,9 +29,10 @@ from ..timing.stretch import wsola
 
 MODEL_REVISION = "c5fdb5ccb189668d56333f77ba2629f4cd7535f4"
 SOURCE_REVISION = "08be0b4ccbac3e13e374e86fbfead4b4cac343e2"
-VOICE_POLICY = "automatic-telugu-seed-v1"
+VOICE_POLICY = "telugu-gender-profiles-v1"
 GENERATION_SEED = 20261010
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
+VOICE_PROFILES = {"automatic": None, "male": "male", "female": "female"}
 SAMPLE_RATE = 24_000
 MAX_AUDIO_SECONDS = 60.0
 
@@ -43,6 +44,7 @@ class OmniVoiceError(RuntimeError):
 @dataclass(frozen=True, slots=True)
 class OmniVoiceVoice:
     identity: str
+    profile: str = "automatic"
 
 
 @dataclass(slots=True)
@@ -69,8 +71,8 @@ def _audio(value: object) -> np.ndarray:
 class OmniVoiceTTS:
     """One lazy reusable subprocess, serialized requests, and interruptible inference.
 
-    The default is automatic Telugu with the globally fixed audition seed, not reference cloning or a promise
-    of stable speaker identity. ``seed_reference`` is an explicit experiment-only override; production callers
+    Profiles use the globally fixed audition seed, without reference cloning or a promise of stable identity.
+    ``seed_reference`` is an explicit experiment-only override; production callers
     omit it. No source-English audio is used. Constructor work is model-free.
     ``cancel`` signals the process without acquiring the request lock; the request thread reaps it.
     """
@@ -108,13 +110,17 @@ class OmniVoiceTTS:
             "model": MODEL_REVISION, "source": SOURCE_REVISION, "steps": self.steps,
             "precision": self.dtype, "device": device, "voice_policy": VOICE_POLICY,
             "mode": self.mode, "seed": self.seed, "seed_policy": "fixed-before-every-generation",
+            "profiles": dict(VOICE_PROFILES),
             "reference_audio_sha256": self._reference_hash,
             "reference_text_sha256": hashlib.sha256(self.reference_text.encode()).hexdigest(),
             "preprocess_prompt": False, "normalize_text": False, "duration": "natural",
             "watermark": "PerthImplicitWatermarker", "watermark_version": self._watermark_version(),
             "protocol": PROTOCOL_VERSION,
         }
-        self._voice = OmniVoiceVoice(hashlib.sha256(json.dumps(self._identity, sort_keys=True).encode()).hexdigest())
+        self._voices = {profile: OmniVoiceVoice(hashlib.sha256(json.dumps(
+            self.profile_cache_identity(profile), sort_keys=True).encode()).hexdigest(), profile)
+            for profile in (VOICE_PROFILES if self.mode == "automatic" else ("automatic",))}
+        self._voice = self._voices["automatic"]
         self._lock, self._state_lock = threading.Lock(), threading.Lock()
         self._process: subprocess.Popen | None = None
         self._temp: tempfile.TemporaryDirectory | None = None
@@ -137,7 +143,21 @@ class OmniVoiceTTS:
 
     @property
     def cache_identity(self) -> dict:
-        return dict(self._identity)
+        return {**self._identity, "profiles": dict(VOICE_PROFILES)}
+
+    @staticmethod
+    def _profile(name: str) -> str:
+        profile = "automatic" if name in ("native", "native-telugu") else name
+        if profile not in VOICE_PROFILES:
+            raise OmniVoiceError("Unknown OmniVoice profile; choose male, female or automatic.")
+        return profile
+
+    def profile_cache_identity(self, name: str) -> dict:
+        """Cheap per-profile provenance for voice keys and calibration; no inference or source audio."""
+        profile = self._profile(name)
+        if self.mode == "reference-experiment" and profile != "automatic":
+            raise OmniVoiceError("Gender profiles cannot use experimental reference conditioning.")
+        return {**self.cache_identity, "profile": profile, "instruct": VOICE_PROFILES[profile]}
 
     def missing(self) -> list[str]:
         missing = [str(p) for p in (self.runtime_python, self.model_dir / "model.safetensors",
@@ -363,6 +383,8 @@ class OmniVoiceTTS:
                         raise OmniVoiceError("OmniVoice sample rate does not match the pinned codec.")
                     self._prepared = True
                     if operation == "generate":
+                        if any(reply.get(k) != payload[k] for k in ("profile", "instruct", "voice_identity")):
+                            raise OmniVoiceError("OmniVoice response voice profile did not match its request.")
                         # Output is always our exact request's private file, never a path supplied by the worker.
                         path = Path(self._temp.name) / f"audio-{rid}.npy"
                         if path.is_symlink() or not path.is_file() or path.stat().st_size > SAMPLE_RATE * 61 * 4 + 4096:
@@ -383,20 +405,25 @@ class OmniVoiceTTS:
         return self.preset_voice("native-telugu")
 
     def preset_voice(self, name: str) -> OmniVoiceVoice:
+        profile = self._profile(name)
+        self.profile_cache_identity(profile)  # reject profile/reference mixing before starting any worker
         if not self._prepared:
             self._request("prepare")
-        return self._voice
+        return self._voices[profile]
 
     def synthesize_mel(self, text: str, voice: OmniVoiceVoice, language: str = "te",
                        max_seconds: float | None = None) -> WaveformTake:
         """Compatibility take API: already decoded PCM, with natural duration for existing calibration/planning."""
-        if language != "te" or voice != self._voice:
+        if (language != "te" or not isinstance(voice, OmniVoiceVoice)
+                or voice != self._voices.get(voice.profile)):
             raise OmniVoiceError("OmniVoice requires Telugu and its configured automatic/reference mode.")
         if not isinstance(text, str) or not text.strip() or len(text) > 8192:
             raise OmniVoiceError("OmniVoice text is empty or exceeds its bounded input size.")
         if max_seconds is not None and (not math.isfinite(max_seconds) or max_seconds <= 0):
             raise ValueError("max_seconds must be positive and finite.")
-        result = self._request("generate", text=text, max_seconds=max_seconds)
+        result = self._request("generate", text=text, max_seconds=max_seconds,
+                               profile=voice.profile, instruct=VOICE_PROFILES[voice.profile],
+                               voice_identity=voice.identity)
         samples = result["samples"]
         over_budget = max_seconds is not None and len(samples) / SAMPLE_RATE >= max_seconds
         # Completed natural fixed-frame output did not hit an autoregressive stop-token cap. Existing QA interprets

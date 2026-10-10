@@ -150,6 +150,46 @@ def test_automatic_mode_refuses_hidden_reference_or_changed_seed(model):
         worker.SpeechWorker(config)
 
 
+def test_profile_generation_uses_exact_instruction_without_reference(model):
+    config, calls, _ = model
+    config.update(mode="automatic", reference_path=None, reference_text="", reference_sha256=None)
+    running = worker.SpeechWorker(config)
+    for profile in ("male", "female", "male"):
+        running.generate("రవి రేపు వస్తాడు.", profile)
+    generated = [c[1] for c in calls if c[0] == "generate"]
+    assert [g["instruct"] for g in generated] == ["male", "female", "male"]
+    assert all(g["language"] == "te" and g["normalize_text"] is False for g in generated)
+    assert all("voice_clone_prompt" not in g and "duration" not in g and "speed" not in g for g in generated)
+    assert [c[1] for c in calls if c[0] == "seed"] == [20261010] * 3
+    assert not any(c[0] in ("create_prompt", "load_prompt") for c in calls)
+
+
+@pytest.mark.parametrize("profile,instruct,identity,mode", [
+    (None, None, "a" * 64, "automatic"),
+    ("male", "female", "a" * 64, "automatic"),
+    ("male", "male, low pitch", "a" * 64, "automatic"),
+    ("female", "female", "bad", "automatic"),
+    ("female", "female", "a" * 64, "reference-experiment"),
+])
+def test_profile_protocol_rejects_untrusted_or_mismatched_values(profile, instruct, identity, mode):
+    with pytest.raises(ValueError):
+        worker.checked_profile(profile, instruct, identity, mode)
+
+
+def test_invalid_profile_request_is_rejected_before_loading_model(tmp_path, monkeypatch):
+    message = {"version": 2, "id": 1, "op": "generate", "config": {"mode": "automatic"},
+               "text": "నమస్కారం!", "profile": "male", "instruct": "female", "voice_identity": "a" * 64}
+    monkeypatch.setattr(sys, "stdin", SimpleNamespace(buffer=io.BytesIO((json.dumps(message) + "\n").encode())))
+    stdout = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", stdout)
+    def forbidden(config):
+        pytest.fail("Invalid profile must fail before model loading")
+    worker.serve(tmp_path, forbidden, stop_on_eof=False)
+    result = json.loads(stdout.getvalue())
+    assert result["ok"] is False and "profile" in result["error"]
+    assert not (tmp_path / "audio-1.npy").exists()
+
+
 def test_protocol_reuses_worker_and_refuses_config_change(tmp_path, monkeypatch):
     loaded = []
 
@@ -159,11 +199,12 @@ def test_protocol_reuses_worker_and_refuses_config_change(tmp_path, monkeypatch)
         def __init__(self, config):
             loaded.append(config)
 
-        def generate(self, text):
+        def generate(self, text, profile):
             print("library noise")
             return np.full(1000, .1, np.float32), .04
 
-    messages = [{"version": 1, "id": i, "op": "generate", "config": {"reference": "B"}, "text": "మాట"}
+    messages = [{"version": 2, "id": i, "op": "generate", "config": {"reference": "B"}, "text": "మాట",
+                 "profile": "male", "instruct": "male", "voice_identity": "b" * 64}
                 for i in (1, 2, 3)]
     messages[-1]["config"] = {"reference": "other"}
     stdin = SimpleNamespace(buffer=io.BytesIO(("\n".join(json.dumps(m) for m in messages) + "\n").encode()))
@@ -210,7 +251,7 @@ w.serve(pathlib.Path(sys.argv[2]), SleepingModel)
     proc = subprocess.Popen([sys.executable, str(script), worker.__file__, str(tmp_path)],
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
-        proc.stdin.write(json.dumps({"version":1,"id":1,"op":"prepare","config":{}}).encode() + b"\n")
+        proc.stdin.write(json.dumps({"version":2,"id":1,"op":"prepare","config":{}}).encode() + b"\n")
         proc.stdin.flush()
         until = time.monotonic() + 3
         while not (tmp_path / "loading").exists() and time.monotonic() < until:

@@ -1,0 +1,7 @@
+{
+  "date": "2026-10-10",
+  "prompt": "Do the Male and Female profiles sound correctly matched and natural? Can you hear files in the female names/numbers sample?",
+  "answer": "Both match and all words are audible",
+  "sample_count": 6,
+  "scope": "Bounded authored male/female Telugu samples; does not certify source matching on all speakers, stable identity or full-video quality."
+}

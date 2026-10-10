@@ -113,3 +113,18 @@ both subtitle streams. Its final labels are 57 C, 1 m and 7 P, with one long-tim
 labels, not independent acoustic acceptance; the completed file must still be heard. Export loudness was -16.02 LUFS
 and -1.80 dBTP with the background bed. Whole-export watermark/native listening and underfill remain unverified.
 The output hash and sanitized results are in `user-test-completed.json`. It is preserved, not automatically redubbed.
+
+## Male/female matching follow-up
+
+The user reported that automatic voices were assigned inappropriately. ADR-029 adds explicit OmniVoice male/female
+instructions and local source-pitch matching, with a per-speaker manual override. Ambiguous source evidence stops
+for a choice instead of choosing a random voice. These instructions do not clone the source speaker or guarantee
+stable timbre across all lines.
+
+Six original profile samples were generated offline without retries. All waveform and PerTh checks passed. ASR
+missed “ఫైళ్లు” in the female names/numbers sentence, but the user listened and confirmed **“Both match and all
+words are audible.”** This resolves that sample's listening concern; it does not certify all future speech.
+The upstream instruction training is English/Chinese, so this Telugu listening result is especially relevant.
+See [the pinned voice-design documentation](https://github.com/k2-fsa/OmniVoice/blob/08be0b4ccbac3e13e374e86fbfead4b4cac343e2/docs/voice-design.md)
+and `../spikes/results/model-evaluation-2026-10-10/voice-mapping/` for evidence. Earlier underfill and full-video
+listening remain separate, unresolved work.

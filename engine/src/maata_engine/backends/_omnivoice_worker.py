@@ -19,11 +19,23 @@ import sys
 import queue
 import threading
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 SAMPLE_RATE = 24_000
 MAX_SECONDS = 60.0
 SOURCE_REVISION = "08be0b4ccbac3e13e374e86fbfead4b4cac343e2"
 GENERATION_SEED = 20261010
+VOICE_PROFILES = {"automatic": None, "male": "male", "female": "female"}
+
+
+def checked_profile(profile, instruct, identity, mode):
+    """Only predeclared categories; free-form instructions cannot enter production requests."""
+    if not isinstance(profile, str) or profile not in VOICE_PROFILES or instruct != VOICE_PROFILES[profile]:
+        raise ValueError("Invalid OmniVoice profile or instruction.")
+    if not isinstance(identity, str) or not re.fullmatch(r"[a-f0-9]{64}", identity):
+        raise ValueError("Invalid OmniVoice profile identity.")
+    if mode == "reference-experiment" and profile != "automatic":
+        raise ValueError("Gender profiles cannot use reference conditioning.")
+    return profile
 
 
 def only_local(value) -> str:
@@ -106,7 +118,9 @@ class SpeechWorker:
             finally:
                 temporary.unlink(missing_ok=True)
 
-    def generate(self, text: str):
+    def generate(self, text: str, profile: str = "automatic"):
+        if profile not in VOICE_PROFILES or (self.prompt is not None and profile != "automatic"):
+            raise RuntimeError("Invalid OmniVoice generation profile.")
         if not isinstance(text, str) or not text.strip() or len(text) > 8192:
             raise RuntimeError("Empty or oversized OmniVoice text.")
         # Unlike autoregressive speech decoding, OmniVoice fixes its frame count before its 32 steps.
@@ -121,6 +135,8 @@ class SpeechWorker:
         self.torch.manual_seed(GENERATION_SEED)
         self.np.random.seed(GENERATION_SEED)
         options = {"voice_clone_prompt": self.prompt} if self.prompt is not None else {}
+        if VOICE_PROFILES[profile] is not None:
+            options["instruct"] = VOICE_PROFILES[profile]
         with self.torch.inference_mode():
             audio = self.model.generate(text=text, language="te", num_step=32, normalize_text=False, **options)[0]
         x = self.np.asarray(audio, dtype=self.np.float32)
@@ -165,6 +181,9 @@ def serve(work_dir: Path, factory=SpeechWorker, *, stop_on_eof: bool = True) -> 
             if (message.get("version") != PROTOCOL_VERSION or type(rid) is not int or rid < 1
                     or message.get("op") not in ("prepare", "generate")):
                 raise ValueError("Invalid OmniVoice protocol request.")
+            if message["op"] == "generate":
+                checked_profile(message.get("profile"), message.get("instruct"), message.get("voice_identity"),
+                                message.get("config", {}).get("mode"))
             with contextlib.redirect_stdout(sys.stderr):
                 if worker is None:
                     config = message["config"]
@@ -172,12 +191,13 @@ def serve(work_dir: Path, factory=SpeechWorker, *, stop_on_eof: bool = True) -> 
                 elif config != message["config"]:
                     raise ValueError("A persistent worker cannot change model or voice configuration.")
                 if message["op"] == "generate":
-                    audio, predicted = worker.generate(message["text"])
+                    audio, predicted = worker.generate(message["text"], message["profile"])
                     # The parent controls rid and work_dir; no arbitrary output path is accepted.
                     path = work_dir / f"audio-{rid}.npy"
                     with path.open("wb") as output:
                         worker.np.save(output, audio, allow_pickle=False)
-                    reply.update(frames=len(audio), estimated_seconds=predicted)
+                    reply.update(frames=len(audio), estimated_seconds=predicted,
+                                 **{k: message[k] for k in ("profile", "instruct", "voice_identity")})
             reply["ok"] = True
         except Exception as exc:
             reply["error"] = f"{type(exc).__name__}: {exc}"

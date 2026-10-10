@@ -84,6 +84,9 @@ class VoiceState:
     use_preset: bool = False
     status: str = "found"  # found | cloning | cloned | preset
     key: VoiceKey | None = None  # the clone's key in the duration estimator, taken (and calibrated) when it is built
+    voice_profile: str = "auto"
+    resolved_voice_profile: str | None = None
+    voice_profile_source: str = "unresolved"
 
 
 @dataclass

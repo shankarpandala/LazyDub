@@ -146,7 +146,7 @@
       {:else if job.status !== "done" && job.status !== "failed"}
         <section class="card wait">
           <h3>Speakers</h3>
-          <p class="muted">Once Maata has listened to the whole video, it shows who speaks, and you can hear each voice and correct the count.</p>
+          <p class="muted">Once Maata has listened to the whole video, it shows who speaks. You can hear each voice{app.voiceMode === "native" ? ", choose a Telugu voice for each speaker," : ""} and correct the count.</p>
         </section>
       {/if}
 

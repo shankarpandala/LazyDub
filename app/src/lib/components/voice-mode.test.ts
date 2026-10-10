@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { render } from "svelte/server";
 import { app } from "../state.svelte";
 import SpeakersFound from "./SpeakersFound.svelte";
+import TopBar from "./TopBar.svelte";
 import type { Render, SpeakersFound as Found } from "../types";
 
 const found: Found = {
@@ -16,9 +17,68 @@ const job: Render = {
 const speakerCard = (presets: string[], saved: Partial<Found> = {}) =>
   render(SpeakersFound, { props: { found: { ...found, ...saved }, job, presets, send: () => {} } }).body;
 
-afterEach(() => { app.voiceMode = "cloned"; });
+afterEach(() => { app.voiceMode = "cloned"; app.voiceProfileRequests = {}; app.foundBy = {}; });
 
 describe("voice mode speaker controls", () => {
+  it("describes suggestions in the top bar only after the engine exposes voice selection", () => {
+    app.voiceMode = "native";
+    let html = render(TopBar, { props: { onInspect: () => {} } }).body;
+    expect(html).toContain("Source voices are not cloned.");
+    expect(html).not.toContain("Auto suggests male or female voices");
+    app.foundBy = { [found.videoId]: { ...found, speakers: [{ ...found.speakers[0]!, voiceProfile: "auto" }] } };
+    html = render(TopBar, { props: { onInspect: () => {} } }).body;
+    expect(html).toContain("Auto suggests male or female voices from source audio.");
+    expect(html).toContain("Choose a voice when no clear match is available");
+    expect(html).not.toContain("automatic voice can vary");
+    app.voiceMode = "cloned";
+    expect(render(TopBar, { props: { onInspect: () => {} } }).body).toContain("AI-generated from the original speakers");
+  });
+  it("shows editable voice choices and an acoustic suggestion without declaring speaker gender", () => {
+    app.voiceMode = "native";
+    const html = speakerCard([], { speakers: [{ ...found.speakers[0]!, voiceProfile: "auto",
+      resolvedVoiceProfile: "female", voiceProfileSource: "acoustic" }] });
+    expect(html).toContain('aria-label="Telugu voice for Speaker 1"');
+    expect(html).toContain('value="auto"');
+    expect(html).toContain('value="male"');
+    expect(html).toContain('value="female"');
+    expect(html).toContain("Auto suggestion: Female voice");
+    expect(html).toContain("Hear voice");
+    expect(html).toContain("Voice choice applies when you resume or dub again. Saved video stays unchanged.");
+    expect(html).not.toContain("Speaker 1 is female");
+  });
+
+  it("keeps old saved dubs editable but never offers their mismatched audio as the chosen voice", () => {
+    app.voiceMode = "native";
+    const html = speakerCard([], { voiceMode: "cloned", voiceCompatible: false,
+      speakers: [{ ...found.speakers[0]!, voiceProfile: "female", resolvedVoiceProfile: null,
+        voiceProfileSource: "manual", voiceCompatible: false }] });
+    expect(html).toContain('aria-label="Telugu voice for Speaker 1"');
+    expect(html).toContain("Female voice selected");
+    expect(html).toContain("Saved sample uses the previous voice");
+    expect(html).not.toContain("Hear voice");
+  });
+
+  it("asks for a choice when Auto is unresolved and hides a stale row even if global provenance matches", () => {
+    app.voiceMode = "native";
+    const unresolved = { ...found.speakers[0]!, voiceProfile: "auto" as const, resolvedVoiceProfile: null,
+      voiceProfileSource: "unresolved" as const };
+    const html = speakerCard([], { voiceCompatible: true, speakers: [unresolved] });
+    expect(html).toContain("Auto: choose a voice");
+    expect(html).not.toContain("Hear voice");
+    const stale = speakerCard([], { voiceCompatible: true, speakers: [{ ...unresolved,
+      voiceProfile: "male", resolvedVoiceProfile: "male", voiceProfileSource: "manual", voiceCompatible: false }] });
+    expect(stale).not.toContain("Hear voice");
+  });
+
+  it("does not audition the old voice while a new selection awaits its server echo", () => {
+    app.voiceMode = "native";
+    app.voiceProfileRequests = { [found.videoId]: { S1: "female" } };
+    const html = speakerCard([], { speakers: [{ ...found.speakers[0]!, voiceProfile: "male",
+      resolvedVoiceProfile: "male", voiceProfileSource: "manual" }] });
+    expect(html).toContain("Saving voice choice…");
+    expect(html).not.toContain("Hear voice");
+  });
+
   it("offers an automatic speech sample without promising a stable cloned voice", () => {
     app.voiceMode = "native";
     const html = speakerCard(["S1"]);
@@ -37,6 +97,8 @@ describe("voice mode speaker controls", () => {
     expect(stock).toContain('role="switch"');
     expect(stock).not.toContain("Hear voice");
     expect(speakerCard([])).toContain("Hear voice");
+    expect(speakerCard([], { speakers: [{ ...found.speakers[0]!, voiceProfile: "auto", resolvedVoiceProfile: null,
+      voiceProfileSource: "unresolved" }] })).toContain("Hear voice");
   });
 
   it("does not relabel or audition an old clone as the new native voice", () => {

@@ -53,6 +53,12 @@ Maata (working name; the repo is `LazyDub`) is a cross-platform desktop app that
   Model/mode/seed identity separates take caches; PerTh follows time stretching. Cancel, timeout and parent exit
   reap the worker. Run `scripts/setup-omnivoice.sh` to provision its separate pinned runtime and model.
   Cancelled jobs stay stopped, completed outputs stay intact, and the deleted monitoring schedule stays deleted.
+- Speaker voice matching (ADR-029): OmniVoice now uses a persisted male/female profile per speaker, selected from
+  bounded local source-pitch evidence or an explicit user choice. Ambiguous source speech requires a choice before
+  synthesis. Each profile has its own calibration and audio cache identity; Auto/Male/Female controls are in the
+  speaker panel. Editing a stopped job saves settings without restarting it. The maintainer accepted six original
+  profile samples as correctly matched with all words audible; this is not long-video or speaker-identity acceptance.
+  See `docs/spikes/results/model-evaluation-2026-10-10/voice-mapping/`.
 - Reproducible component measurements and a real-model integration smoke live in `docs/spikes/results/`.
   `engine/.venv/bin/python scripts/bench_inference_components.py --component separator` reruns the paired offline
   separator benchmark. `engine/.venv/bin/python scripts/check-translation.py --out /tmp/maata-translation.json`

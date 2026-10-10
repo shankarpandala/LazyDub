@@ -1012,7 +1012,7 @@ async def test_renders_items_carry_their_options_and_the_video_both_estimates(en
         await w.send(type="inspect", url="https://youtu.be/" + "x" * 11)
         video = await w.until(lambda m: m["type"] == "video")
     assert item["settings"] == {"speakers": None, "style": "formal", "stopAt": 60.0, "speedCap": 1.1,
-                                "ttsScript": "telugu", "presets": []}
+                                "ttsScript": "telugu", "presets": [], "voiceProfiles": {}}
     assert item["createdAt"] == job_json(eng, VID_A)["createdAt"] and item["createdAt"] > 0
     assert item["error"] is None and item["slept"] is None
     # what the job view shows of a job that isn't running (it sends no `render`): its stages, elapsed time and report
@@ -1151,3 +1151,140 @@ async def test_old_clone_preview_cannot_be_served_as_selected_native_voice(tmp_p
     assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is True
     tts.cache_identity = {"reference": "different-B"}
     assert eng._voice_provenance({"videoId": VID_A})["voiceCompatible"] is False
+
+
+@pytest.mark.parametrize("initial_status", ["done", "paused", "failed", "interrupted"])
+async def test_native_voice_choice_does_not_resume_stopped_jobs(eng, initial_status):
+    await run_job(eng, URL_A)
+    set_status(eng, VID_A, status=initial_status)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    before = job_json(eng, VID_A)
+    output = before["output"]
+    async with window(eng) as w:
+        n = len(w.msgs)
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="female")
+        found = await w.until(lambda m: m["type"] == "speakers_found" and
+                             m["speakers"][0].get("voiceProfile") == "female", after=n)
+        assert found["speakers"][0]["voiceCompatible"] is False
+        assert found["speakers"][0]["resolvedVoiceProfile"] is None
+        assert not [m for m in w.msgs[n:] if m["type"] == "render" and m.get("status") in ("running", "queued")]
+    saved = job_json(eng, VID_A)
+    assert saved["settings"]["voiceProfiles"] == {"S1": "female"}
+    assert saved["status"] == initial_status and saved["output"] == output
+    assert saved["stages"] == before["stages"] and saved["updatedAt"] == before["updatedAt"]
+    assert eng.job is None and not eng.queue
+
+
+async def test_native_voice_choice_auto_clears_override_and_validates_speaker(eng):
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    async with window(eng) as w:
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="male")
+        await w.until(lambda m: m["type"] == "speakers_found" and m["speakers"][0].get("voiceProfile") == "male")
+        for speaker, profile in [("S999", "female"), ("S1", "invalid"), ("S1", {"male": True})]:
+            n = len(w.msgs)
+            await w.send(type="set_voice_profile", videoId=VID_A, speaker=speaker, voiceProfile=profile)
+            await w.until(lambda m: m["type"] == "error", after=n)
+            assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "male"}
+        n = len(w.msgs)
+        await w.send(type="set_voice_profile", videoId=VID_A, speaker="S1", voiceProfile="auto")
+        await w.until(lambda m: m["type"] == "speakers_found" and m["speakers"][0].get("voiceProfile") == "auto", after=n)
+    assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {}
+    assert eng.job is None
+
+
+async def test_native_voice_preview_cannot_play_a_different_profile(eng):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    tts = eng.backend.tts
+    tts.native_voice = True
+    tts.model_revision = "native-test"
+    tts.cache_identity = {"policy": "profile-test"}
+    path = eng.cache_dir / VID_A / "render" / "voices.json"
+    path.write_text(json.dumps({"inputs": {"model": tts.model_revision, "synthesis": tts.cache_identity},
+                               "speakers": {"S1": {"how": "native", "voiceProfile": "auto", "sample": True,
+                                           "resolvedVoiceProfile": "male", "voiceProfileSource": "acoustic"}}}))
+    msg = {"videoId": VID_A, "speakers": [{"id": "S1"}]}
+    assert eng._voice_provenance(msg)["speakers"][0]["voiceCompatible"]
+    d = job_json(eng, VID_A)
+    set_status(eng, VID_A, settings={**d["settings"], "voiceProfiles": {"S1": "female"}})
+    row = eng._voice_provenance(msg)["speakers"][0]
+    assert row["voiceProfile"] == "female" and not row["voiceCompatible"] and row["resolvedVoiceProfile"] is None
+    frames, messages = [], []
+    async def send_json(m):
+        messages.append(m)
+    async def send_bytes(m):
+        frames.append(m)
+    await eng._voice_sample(Client(send_json, send_bytes), VID_A, "S1")
+    assert not frames and "voice choice" in messages[-1]["message"]
+
+
+@pytest.mark.parametrize("stopping", [False, True])
+async def test_voice_choice_restarts_running_work_but_preserves_a_pause(eng, stopping):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng.job = eng._job(VID_A, None)
+    eng.job.doc["status"] = "running"
+    if stopping:
+        eng.job.pause()
+    eng.queue = [(VID_B, RenderSettings()), (VID_C, RenderSettings())]
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "male")
+    assert eng.job.stopping
+    if stopping:
+        assert waiting(eng) == [VID_B, VID_C]
+        assert dict(eng.job.settings.voice_profiles) == {"S1": "male"}
+        assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "male"}
+    else:
+        assert waiting(eng) == [VID_A, VID_B, VID_C]
+        assert dict(eng.queue[0][1].voice_profiles) == {"S1": "male"}
+        assert eng.job.settings.voice_profiles == ()
+    # Pending selections are reflected without falsely relabelling old samples.
+    row = eng._voice_provenance({"videoId": VID_A, "speakers": [{"id": "S1"}]})["speakers"][0]
+    assert row["voiceProfile"] == "male" and not row["voiceCompatible"]
+
+
+async def test_voice_choice_keeps_queued_order_and_survives_restart(eng):
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng._quitting = True  # simulate pending queue persistence without launching model work
+    eng.queue = [(VID_B, RenderSettings()), (VID_A, RenderSettings()), (VID_C, RenderSettings())]
+    set_status(eng, VID_A, status="queued", queuedAt=123.0)
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "female")
+    assert waiting(eng) == [VID_B, VID_A, VID_C]
+    assert dict(eng.queue[1][1].voice_profiles) == {"S1": "female"}
+    doc = job_json(eng, VID_A)
+    assert doc["status"] == "queued" and doc["queuedAt"] == 123.0
+    assert dict(eng._job(VID_A, None).settings.voice_profiles) == {"S1": "female"}
+
+
+@pytest.mark.parametrize("terminal_status", ["done", "failed", "paused"])
+async def test_voice_choice_during_terminal_notification_does_not_restart(eng, terminal_status):
+    """A window can react to the terminal render event before _run_job clears self.job."""
+    from maata_engine.server import Client
+    await run_job(eng, URL_A)
+    eng.backend.tts.native_voice = True
+    eng.backend.tts.model_revision = "native-test"
+    eng.backend.tts.cache_identity = {"policy": "profile-test"}
+    eng.job = eng._job(VID_A, None)
+    eng.job.doc["status"] = terminal_status
+    output = dict(eng.job.doc["output"])
+    async def discard(_):
+        pass
+    await eng._set_voice_profile(Client(discard, discard), VID_A, "S1", "female")
+    assert not eng.queue and not eng.job.stopping
+    assert eng.job.doc["status"] == terminal_status and eng.job.doc["output"] == output
+    assert job_json(eng, VID_A)["settings"]["voiceProfiles"] == {"S1": "female"}

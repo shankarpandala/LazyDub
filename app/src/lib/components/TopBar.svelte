@@ -33,6 +33,12 @@
   const backendLabel = $derived(
     app.demo ? "Demo engine" : app.backend === "apple" ? `Apple Silicon · ${app.ttsModel}` : app.backend === "cuda" ? "NVIDIA · CUDA" : "Connecting…",
   );
+  const hasVoiceProfiles = $derived(Object.values(app.foundBy).some((f) => f.speakers.some((s) => s.voiceProfile !== undefined)));
+  const voiceDescription = $derived(app.voiceMode === "native"
+    ? hasVoiceProfiles
+      ? "AI-generated Telugu speech without source-voice cloning. Auto suggests male or female voices from source audio. Choose a voice when no clear match is available, or correct the suggestion."
+      : "AI-generated natural Telugu speech. Source voices are not cloned."
+    : "The Telugu voices are AI-generated from the original speakers");
   // The Library has its own big paste field.
   const showField = $derived(app.view !== "library");
 </script>
@@ -67,7 +73,7 @@
   {/if}
 
   <div class="right" data-tauri-drag-region>
-    <div class="badge" title={app.voiceMode === "native" ? "AI-generated natural Telugu speech. Source voices are not cloned; the automatic voice can vary between lines." : "The Telugu voices are AI-generated from the original speakers"}>
+    <div class="badge" title={voiceDescription}>
       <Icon name="sparkle" size={13} />
       <span>AI dub</span>
       <span class="te sep">తెలుగు</span>

@@ -267,6 +267,48 @@ describe("renders", () => {
 });
 
 describe("speakers_found", () => {
+  it("sends only a voice choice for a paused job and waits for the server's sample provenance", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    const videoId = "voicechoice1";
+    const found: SpeakersFound = {
+      videoId, mode: "auto", fresh: false, freeFor: 0, bounds: [1, 6], merged: [], voiceMode: "native",
+      speakers: [{ id: "S1", label: "Speaker 1", talkSeconds: 10, share: 1, firstAt: 0, turns: 1, activity: [],
+        voiceProfile: "auto", resolvedVoiceProfile: "male", voiceProfileSource: "acoustic" }],
+    };
+    app.receive(hello({ voiceMode: "native", renders: [item(videoId)] }), send);
+    app.receive({ type: "speakers_found", ...found }, send);
+    app.setVoiceProfile(videoId, "S1", "female", send);
+    expect(sent).toEqual([{ type: "set_voice_profile", videoId, speaker: "S1", voiceProfile: "female" }]);
+    expect(app.jobs[0]!.status).toBe("paused");
+    expect(app.foundBy[videoId]!.speakers[0]!.resolvedVoiceProfile).toBe("male");
+    expect(app.voiceProfileRequests[videoId]?.S1).toBe("female");
+    // A stale status update cannot re-enable the old sample while the choice is in flight.
+    app.receive({ type: "speakers_found", ...found }, send);
+    expect(app.voiceProfileRequests[videoId]?.S1).toBe("female");
+    app.receive({ type: "speakers_found", ...found, speakers: [{ ...found.speakers[0]!,
+      voiceProfile: "female", resolvedVoiceProfile: null, voiceProfileSource: "manual", voiceCompatible: false }] }, send);
+    expect(app.voiceProfileRequests[videoId]?.S1).toBeUndefined();
+    expect(app.foundBy[videoId]!.speakers[0]!.voiceCompatible).toBe(false);
+    app.setVoiceProfile(videoId, "S1", "female", send);
+    expect(sent).toHaveLength(1); // no-op selections do not request another regeneration
+  });
+
+  it("clears pending voice selections on errors/reconnect and ignores unsupported engines or missing speakers", () => {
+    const app = new AppState();
+    const { sent, send } = recorder();
+    app.setVoiceProfile("voicechoice1", "S1", "male", send);
+    app.receive(hello({ voiceMode: "native" }), send);
+    app.setVoiceProfile("voicechoice1", "missing", "female", send);
+    expect(sent).toEqual([]);
+    app.voiceProfileRequests = { voicechoice1: { S1: "female" } };
+    app.receive({ type: "error", message: "Voice choice could not be saved.", retryable: true }, send);
+    expect(app.voiceProfileRequests).toEqual({});
+    app.voiceProfileRequests = { voicechoice1: { S1: "male" } };
+    app.receive(hello({ voiceMode: "native" }), send);
+    expect(app.voiceProfileRequests).toEqual({});
+  });
+
   it("keeps existing presets but never sends a voice switch in native mode", () => {
     const app = new AppState();
     const { sent, send } = recorder();

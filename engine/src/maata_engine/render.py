@@ -74,7 +74,8 @@ from .qa.validators import check_line
 from .resolve import VIDEO_FORMAT, ResolveError, ResolvedVideo, Resolver, audio_start, decode_audio_to, decode_stereo
 from .settings import default_output_dir
 from .segment import merge_fragments, segment
-from .speakers import FLOOR_CAP, MIN_SHARE, MIN_TALK, SAME_COS, SpeakerRegistry, activity, match_ids, settle
+from .speakers import (FLOOR_CAP, MIN_SHARE, MIN_TALK, SAME_COS, VOICE_PROFILE_POLICY, VOICE_PROFILE_SECONDS,
+                       SpeakerRegistry, activity, infer_voice_profile, match_ids, settle)
 from .text import asr_guard, tenglish
 from .text.akshara import count_units
 from .text.asr_fix import fix_words
@@ -146,15 +147,21 @@ class RenderSettings:
     speed_cap: float = 1.2
     tts_script: str = "telugu"
     presets: tuple[str, ...] = ()  # speakers voiced with their stock voice instead of their clone (`set_voice`, §4)
+    voice_profiles: tuple[tuple[str, str], ...] = ()  # explicit male/female output profiles; absent means source matching
 
     def __post_init__(self) -> None:
         if self.speakers is not None and not AUTO_SPEAKERS[0] <= self.speakers <= AUTO_SPEAKERS[1]:
             raise ValueError(f"speakers must be {AUTO_SPEAKERS[0]}-{AUTO_SPEAKERS[1]} or None, not {self.speakers}")
         object.__setattr__(self, "presets", tuple(sorted({str(s) for s in self.presets})))
+        profiles = dict(self.voice_profiles)
+        if any(not isinstance(sid, str) or not sid or profile not in ("male", "female")
+               for sid, profile in profiles.items()):
+            raise ValueError("Voice profiles must map speaker IDs to male or female")
+        object.__setattr__(self, "voice_profiles", tuple(sorted(profiles.items())))
 
     def to_json(self) -> dict:
         return {"speakers": self.speakers, "style": self.style, "stopAt": self.stop_at, "speedCap": self.speed_cap,
-                "ttsScript": self.tts_script, "presets": list(self.presets)}
+                "ttsScript": self.tts_script, "presets": list(self.presets), "voiceProfiles": dict(self.voice_profiles)}
 
     @classmethod
     def from_json(cls, doc: object) -> RenderSettings:
@@ -163,7 +170,7 @@ class RenderSettings:
         if not isinstance(doc, dict):
             return cls()
         names = {"speakers": "speakers", "style": "style", "stopAt": "stop_at", "speedCap": "speed_cap",
-                 "ttsScript": "tts_script", "presets": "presets"}
+                 "ttsScript": "tts_script", "presets": "presets", "voiceProfiles": "voice_profiles"}
         try:
             return cls(**{f: doc[k] for k, f in names.items() if k in doc})
         except (TypeError, ValueError):
@@ -1006,56 +1013,108 @@ class RenderJob(Dubber):
         st = self.doc["stages"]["voices"]
         st["done"] = st["total"] = len(order)
 
-    async def _native_voices(self, order: list[str], entries: dict, inputs: dict, path: Path) -> None:
-        """Automatic Telugu speech without source-speaker conditioning (ADR-028).
+    async def _native_profile(self, sid: str, entry: dict) -> dict:
+        requested = dict(self.settings.voice_profiles).get(sid, "auto")
+        if requested != "auto":
+            return {"voiceProfile": requested, "resolvedVoiceProfile": requested,
+                    "voiceProfileSource": "manual", "voiceProfileEvidence": None}
+        avoid = 60.0 if self._duration() >= 180.0 else None
+        clips = self.registry.clean_clips(sid, max_total=VOICE_PROFILE_SECONDS, min_clip=1.0, avoid_before=avoid)
+        source = _digest([VOICE_PROFILE_POLICY, self._fp, clips])
+        evidence = entry.get("voiceProfileEvidence")
+        if not isinstance(evidence, dict) or evidence.get("input") != source:
+            evidence = await asyncio.to_thread(lambda: infer_voice_profile([self._cut(a, b) for a, b in clips]))
+            evidence["input"] = source
+        profile = evidence.get("profile")
+        return {"voiceProfile": "auto", "resolvedVoiceProfile": profile,
+                "voiceProfileSource": "acoustic" if profile else "unresolved", "voiceProfileEvidence": evidence}
 
-        English references are deliberately unused. Calibration, take validation and the timing planner are shared
-        with the clone path; provenance states `native`, never `cloned`. Reuse calibration only for the exact model,
-        reference and actual TTS text. The shared automatic policy needs one pace calibration, not one per detected speaker.
+    async def _native_voices(self, order: list[str], entries: dict, inputs: dict, path: Path) -> None:
+        """Resolve source-matched output profiles before synthesis; never condition on English reference audio.
+
+        Ambiguous source speech requires a manual choice. Each resolved profile shares one calibrated pace and take
+        identity; a profile change cannot restore another profile's audio. Brief gender notes are not acoustic evidence.
         """
-        if self._stop.is_set():
-            raise _Paused
-        cost = VoiceCost()
-        voice = await self._preset("native", cost)
-        key = self._voice_key("native", voice, "native:" + _digest(self.b.tts.cache_identity))
-        previous = next((e for e in entries.values() if e.get("how") == "native"
-                         and e.get("calibrationTts") == inputs["calibrationTts"]
-                         and e.get("calibration")), None)
-        kept: list[tuple[str, float, object]] = []
-        audio = None
-        if previous is None and order:
-            await self._begin("voices")
-            t0 = time.perf_counter()
-            await self._calibrate("native", key, voice, cost, self._gpu_priority(), keep=kept)
-            self.calibrate_s += time.perf_counter() - t0
-            if not kept:
-                raise RenderError("The Telugu voice could not produce usable calibration speech. Check the voice setup before retrying.")
-            audio, _ = await self._on_gpu(self.b.tts.vocode, kept[0][2], 1.0, cost=cost)
-            pairs = [[spoken, seconds] for spoken, seconds, _ in kept]
-        else:
-            pairs = previous["calibration"] if previous else []
-            if pairs:
-                self.estimator.calibrate(key, [(spoken, seconds) for spoken, seconds in pairs])
-        if order and audio is None and any(not (self.render_dir / "voices" / f"{sid}.npy").is_file() for sid in order):
-            audio, _ = await self._on_gpu(self.b.tts.synthesize, self._tts_text(CALIBRATION_TE[0]), voice, "te", cost=cost)
-        saved = {}
-        for n, sid in enumerate(order):
+        saved, unresolved = {}, []
+        for sid in order:
             if self._stop.is_set():
                 raise _Paused
+            old = entries.get(sid, {})
+            fields = await self._native_profile(sid, old)
             v = self.voices.setdefault(sid, VoiceState())
-            v.voice, v.kind, v.ref_seconds, v.status, v.key = voice, VoiceKind.NATIVE, 0.0, "native", key
-            v.use_preset = False  # legacy clone/stock switches cannot change this mode
+            v.voice_profile = fields["voiceProfile"]
+            v.resolved_voice_profile = fields["resolvedVoiceProfile"]
+            v.voice_profile_source = fields["voiceProfileSource"]
+            saved[sid] = {**old, **fields, "how": "native", "refSeconds": 0.0}
+            if fields["resolvedVoiceProfile"] is None or old.get("resolvedVoiceProfile") != fields["resolvedVoiceProfile"]:
+                for field in ("calibration", "key", "pace", "overhead", "sample", "calibrationTts"):
+                    saved[sid].pop(field, None)
+            if fields["resolvedVoiceProfile"] is None:
+                v.voice, v.key, v.status = None, None, "unresolved"
+                unresolved.append(sid)
+        _write_json(path, {"inputs": inputs, "speakers": saved})
+        await self.notify({"type": "voice_ready", "videoId": self.video_id})
+        if unresolved:
+            await self._begin("voices")
+            raise RenderError("Choose Male or Female in the speaker panel for " + ", ".join(unresolved)
+                              + ", then resume. The source speech is too ambiguous to select a voice profile reliably.")
+        profiles = list(dict.fromkeys(saved[sid]["resolvedVoiceProfile"] for sid in order))
+        # A profile swap can overwrite another profile's donor filename. Snapshot old previews before any writes.
+        previews = {}
+        for sid, entry in entries.items():
             sample = self.render_dir / "voices" / f"{sid}.npy"
-            if audio is not None:
+            if entry.get("sample") and sample.is_file():
+                with contextlib.suppress(OSError, ValueError):
+                    previews[sid] = np.load(sample, allow_pickle=False)
+        done = 0
+        for profile in profiles:
+            if self._stop.is_set():
+                raise _Paused
+            group = [sid for sid in order if saved[sid]["resolvedVoiceProfile"] == profile]
+            cost = VoiceCost()
+            voice = await self._preset(profile, cost)
+            identity = getattr(self.b.tts, "profile_cache_identity", lambda p: [self.b.tts.cache_identity, p])(profile)
+            key = self._voice_key("native:" + profile, voice, "native:" + _digest(identity))
+            key_json = {"voice": key.voice, "cfg": key.cfg, "exaggeration": key.exaggeration, "reference": key.reference}
+            matching = [(sid, e) for sid, e in entries.items() if e.get("how") == "native"
+                        and e.get("resolvedVoiceProfile") == profile and e.get("key") == key_json
+                        and e.get("calibrationTts") == inputs["calibrationTts"] and e.get("calibration")]
+            previous = matching[0][1] if matching else None
+            kept: list[tuple[str, float, object]] = []
+            audio = None
+            if previous is None:
+                await self._begin("voices")
+                t0 = time.perf_counter()
+                await self._calibrate("native:" + profile, key, voice, cost, self._gpu_priority(), keep=kept)
+                self.calibrate_s += time.perf_counter() - t0
+                if not kept:
+                    raise RenderError(f"The {profile} Telugu voice could not produce usable calibration speech. "
+                                      "Check the voice setup before retrying.")
+                audio, _ = await self._on_gpu(self.b.tts.vocode, kept[0][2], 1.0, cost=cost)
+                pairs = [[spoken, seconds] for spoken, seconds, _ in kept]
+            else:
+                pairs = previous["calibration"]
+                self.estimator.calibrate(key, [(spoken, seconds) for spoken, seconds in pairs])
+                for sid, _ in matching:
+                    if sid in previews:
+                        audio = previews[sid]
+                        break
+            if audio is None:
+                audio, _ = await self._on_gpu(self.b.tts.synthesize, self._tts_text(CALIBRATION_TE[0]), voice, "te", cost=cost)
+            for sid in group:
+                if self._stop.is_set():
+                    raise _Paused
+                v = self.voices[sid]
+                v.voice, v.kind, v.ref_seconds, v.status, v.key = voice, VoiceKind.NATIVE, 0.0, "native", key
+                v.use_preset = False  # legacy clone/stock switches cannot change this mode
+                sample = self.render_dir / "voices" / f"{sid}.npy"
                 sample.parent.mkdir(exist_ok=True)
                 _save_pcm(sample, np.asarray(audio, np.float32))
-            saved[sid] = {"how": "native", "refSeconds": 0.0, "calibration": pairs,
-                          "calibrationTts": inputs["calibrationTts"], "sample": sample.is_file(),
-                          "key": {"voice": key.voice, "cfg": key.cfg, "exaggeration": key.exaggeration,
-                                  "reference": key.reference},
-                          "pace": round(self.estimator.rate(key), 3), "overhead": round(self.estimator.overhead(key), 3)}
-            self._progress("voices", n + 1, len(order))
-        _write_json(path, {"inputs": inputs, "speakers": saved})
+                saved[sid].update(calibration=pairs, calibrationTts=inputs["calibrationTts"], sample=True, key=key_json,
+                                  pace=round(self.estimator.rate(key), 3), overhead=round(self.estimator.overhead(key), 3))
+                done += 1
+                self._progress("voices", done, len(order))
+            _write_json(path, {"inputs": inputs, "speakers": saved})
         await self.notify({"type": "voice_ready", "videoId": self.video_id})
         self._load_takes(*await asyncio.to_thread(lambda: (_read_rows(self.render_dir / "takes.jsonl"),
                                                          _read_rows(self.render_dir / "fixups.jsonl"))))
@@ -2141,6 +2200,8 @@ class RenderJob(Dubber):
             native = v.kind is VoiceKind.NATIVE and v.voice is not None
             speakers.append({"id": sid, "label": sp.label, "talkSeconds": round(sp.talk_seconds, 2),
                              "voice": "native" if native else "cloned" if cloned else "preset", "referenceSeconds": round(v.ref_seconds, 1),
+                             "voiceProfile": v.voice_profile, "resolvedVoiceProfile": v.resolved_voice_profile,
+                             "voiceProfileSource": v.voice_profile_source,
                              "pace": round(self.estimator.rate(self._key(sid)), 2),
                              "sample": (cloned or native) and (self.render_dir / "voices" / f"{sid}.npy").is_file()})
         plans = [self.final[st.unit.id] for st in self._final_lines if st.unit.id in self.pcm]
@@ -2197,7 +2258,7 @@ class RenderJob(Dubber):
         """The settings a manifest was rendered with (§2.13)."""
         s = self.settings
         return {"style": s.style, "speedCap": s.speed_cap, "ttsScript": s.tts_script, "speakers": s.speakers or "auto",
-                "presets": list(s.presets)}
+                "presets": list(s.presets), "voiceProfiles": dict(s.voice_profiles)}
 
     async def _let_go_of_tts(self) -> None:
         """The TTS model goes once the final plan's stage and the dub loop have both ended this run (§2.13): the export
@@ -3079,7 +3140,9 @@ def found_message(video_id: str, diar: dict, reg: SpeakerRegistry, job: dict, du
                for group in ORDER[ORDER.index(("transcript",)):ORDER.index(("voices", "brief")) + 1])
     return {"type": "speakers_found", "videoId": video_id, "mode": "hint" if k else "auto", "fresh": fresh,
             "freeFor": round(free), "bounds": None if k else list(AUTO_SPEAKERS),
-            "speakers": [{**row, "label": reg.speakers[row["id"]].label, "activity": activity(reg, row["id"], duration)}
+            "speakers": [{**row, "label": reg.speakers[row["id"]].label, "activity": activity(reg, row["id"], duration),
+                          "voiceProfile": (settings.get("voiceProfiles") or {}).get(row["id"], "auto"),
+                          "resolvedVoiceProfile": None, "voiceProfileSource": "unresolved"}
                          for row in diar.get("speakers", []) if row["id"] in reg.speakers],
             "merged": [{"from": a, "into": b, "why": why, "talkSeconds": talk}
                        for a, b, why, talk in diar.get("merged", [])]}

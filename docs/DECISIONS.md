@@ -874,3 +874,41 @@ Each ADR records the decision, why it was made, and what would reopen it. Versio
 - **Limits:** the B listening preference does not certify all automatic production utterances, speaker
   cloning, representative throughput or full-video quality. The earlier early-ending/underfill and whole-export
   listening findings remain unresolved. No cancelled job is resumed and no completed export is automatically redubbed.
+
+## ADR-029 — Match male and female Telugu voices to speakers (2026-10-10)
+
+- **Trigger:** the maintainer likes the improved Telugu voice but reports male/female voices used for the wrong
+  speakers. Automatic OmniVoice generation did not condition on a speaker's voice type.
+- **Synthesis:** keep the same pinned local OmniVoice model, 32 steps, precision and fixed seed. Add explicit
+  `instruct="male"` and `instruct="female"` profiles, with independent voice identities and strict worker protocol
+  validation. Do not mix these with the rejected short-reference experiment, force duration, or shift pitch.
+  [Upstream voice-design documentation](https://github.com/k2-fsa/OmniVoice/blob/08be0b4ccbac3e13e374e86fbfead4b4cac343e2/docs/voice-design.md)
+  warns that voice design was trained on English/Chinese; Telugu support must be tested by listening.
+- **Source matching:** use at most 12 seconds of clean, exclusive diarized source speech. A bounded NumPy
+  difference-function pitch estimator requires at least two seconds of periodic evidence, a periodic fraction of
+  at least 0.2, and at least 80% of periodic frames in one conservative range (70–160 Hz or 190–350 Hz). These
+  are practical vocal-range heuristics, not gender identity or confidence probabilities. Ambiguous, noisy,
+  insufficient or mixed evidence persists as unresolved and stops before new speech, with an actionable request
+  to choose Male or Female. Transcript names and grammatical-gender notes are not acoustic evidence.
+  A bounded source check on the recent test produced a 126.5 Hz median and selected the male profile; it is not
+  an accuracy benchmark or speaker identity label. No source audio/text is copied into Git.
+- **Consistency and cache:** resolve once per speaker, reuse the decision with source/policy provenance, and
+  calibrate once per resolved profile. Profile identity participates in take keys; changed profiles cannot restore
+  old automatic or opposite-profile audio. Copy cached preview donors before overwriting any speaker preview,
+  including a two-speaker profile swap. Source voices are not cloned, and this does not promise identical timbre
+  across all utterances or different voices for two speakers using the same profile.
+- **Controls and preservation:** the speaker panel exposes Auto/Male/Female, requested selection, acoustic
+  suggestion and unresolved state. Samples require matching saved profile/model provenance. A selection on a
+  completed, paused or failed job saves settings only; it never starts or redubs it. Running work restarts
+  gracefully, queued work keeps its position, and a deliberate pause remains paused. Reconnecting retains
+  selections. Existing completed videos stay unchanged until an explicit dub/resume.
+- **Audio evidence:** exactly six original Telugu samples, one generation per sentence/profile, passed waveform
+  and PerTh checks. Median detected pitch was 138.5 Hz for male and 262.8 Hz for female; this alone cannot establish
+  naturalness. ASR missed the word for files in one female sample. The maintainer listened and replied **“Both
+  match and all words are audible”**; the possible omission was not confirmed by listening. Evidence, waveform
+  hashes, raw authored ASR forms and listener response are in
+  `docs/spikes/results/model-evaluation-2026-10-10/voice-mapping/`; media stays in the local cache.
+- **Limits:** six accepted samples do not certify every future utterance, automatic matching on all sources,
+  stable speaker identity, whole-video synchronization or throughput. Earlier underfill/early endings remain
+  unresolved. Semantic approval, timing, voice-quality and watermark checks remain in force. No new dependency,
+  model download, schedule, cancelled run or automatic completed-output redub is introduced.
